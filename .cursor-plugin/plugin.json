@@ -9,6 +9,7 @@
   "homepage": "https://github.com/hsaab/supercook",
   "repository": "https://github.com/hsaab/supercook",
   "license": "MIT",
+  "logo": "assets/logo.png",
   "keywords": [
     "supercook",
     "workflow",
