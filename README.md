@@ -18,13 +18,19 @@ A development workflow you invoke with one command, that scales its own process 
 
 ## Why this exists
 
-Orchestrator skills are becoming one of the more useful things you can build for an agent, for three reasons.
+Ranked by how much they change your day.
 
-They unlock long-running work. An agent with an external ledger and a defined pipeline can survive context resets and keep going, which is what goal-oriented and cloud agent runs actually require.
+- **Process scales with the task, so one command covers everything.** Heavyweight workflows are great on risky changes and infuriating on small ones, which is why people turn them off. Supercook classifies the task first: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. You keep the safety net exactly where it pays for itself, without a process tax on trivial edits.
 
-They make sharing practice trivial. Packaged as a plugin, your team's way of working installs in one step instead of living in someone's head or in a wiki nobody reads.
+- **PRs come out small because the plan is sliced, not the diff.** Agents made 5,000-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other. Reviews get read instead of rubber-stamped, feedback lands while the context is fresh, and fewer bugs ride in on "LGTM, too long to read".
 
-They give repeatability. For work that recurs (bugs, features, refactors, opening PRs), a golden path means good results every time instead of results that depend on how the prompt was phrased.
+- **Everything it tells you is plain English tied to a file and a consequence.** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of file paths that says too much. Every explanation here names the function, the file, and what would have broken, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve. PR reviewers get the same story.
+
+- **Tests come from user journeys and land before the code.** The suite covers what users actually do rather than a hundred synthetic edge cases, it is committed before implementation, and the implementing agent cannot touch it: a guard restores any test file it modifies. Green means something, because the tests could not be bent until they passed. An independent fresh-context verifier then runs that suite before anything ships, so broken PRs get caught in-house instead of by your reviewer.
+
+- **Long work survives.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish.
+
+- **Good practice becomes installable.** Packaged as a plugin, the workflow is one clone away instead of living in someone's head or a wiki nobody reads. The same golden path runs on every repo and for every teammate, so output quality stops depending on who phrased the prompt.
 
 ## When to use it, and what to expect
 
@@ -42,15 +48,9 @@ Tracks skip what does not apply. An investigation stays read-only and produces a
 
 ## The flow
 
-```mermaid
-flowchart LR
-    task["Task in"] --> assess["Assess: how much process?"]
-    assess --> plan["Plan: slices sized for review"]
-    plan --> tests["Tests first, from user journeys"]
-    tests --> build["Implement in surgical chunks"]
-    build --> verify["Verify with fresh eyes"]
-    verify --> pr["PR out, in plain language"]
-```
+![The Supercook pipeline: intake and assessment route work to a trivial, standard, or complex path, subagents fan out per phase, and every slice exits as its own PR](assets/pipeline.svg)
+
+Purple chips are subagents, each spawned with a fresh context window and a fixed contract. The three bands are the assessor's verdict, and everything converges on the shared tail at the right, where each slice of the plan exits as its own PR. The dashed lines are `models.md` deciding which model a role runs on at launch.
 
 ## Key principles, and why they work
 
@@ -138,6 +138,7 @@ Playbooks, routed automatically from the assessment:
 
 ```
 agents/                       eight discoverable subagents, all supercook- prefixed
+assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
   models.md                   the one file for model choices

@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2280 1275" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="aDark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#4a4a44"/></marker>
+    <marker id="aGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#4a9a57"/></marker>
+    <marker id="aBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#3d6fcc"/></marker>
+    <marker id="aPurple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#8a5fc9"/></marker>
+    <marker id="aAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#e6a700"/></marker>
+    <marker id="aGold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#b08900"/></marker>
+  </defs>
+
+  <rect x="0" y="0" width="2280" height="1275" fill="#ffffff"/>
+
+  <text x="40" y="52" font-size="30" font-weight="600" fill="#26251e">Supercook: one command, process scaled to the risk of the task</text>
+
+  <!-- legend -->
+  <rect x="1860" y="25" width="400" height="170" rx="10" fill="#f7f7f4" stroke="#d8d8d2"/>
+  <rect x="1880" y="45" width="130" height="38" rx="8" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1945" y="69" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">subagent</text>
+  <text x="2025" y="69" font-size="13.5" fill="#55554e">spawned, own fresh context</text>
+  <rect x="1880" y="95" width="130" height="38" rx="8" fill="#ffffff" stroke="#4a4a44"/>
+  <text x="1945" y="119" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">parent step</text>
+  <text x="2025" y="119" font-size="13.5" fill="#55554e">the orchestrator itself</text>
+  <line x1="1880" y1="157" x2="1995" y2="157" stroke="#b08900" stroke-width="2.5" stroke-dasharray="7 5"/>
+  <text x="2008" y="162" font-size="13.5" fill="#55554e">model set by models.md</text>
+
+  <!-- tier bands -->
+  <rect x="1040" y="80" width="770" height="180" rx="12" fill="#eaf6ec" stroke="#a5d6aa"/>
+  <text x="1064" y="110" font-size="13.5"><tspan font-weight="700" fill="#2e7d32" letter-spacing="2">TRIVIAL</tspan><tspan dx="12" fill="#54705a">typos, one-liners, config flips</tspan></text>
+  <rect x="1040" y="300" width="770" height="250" rx="12" fill="#e9f0fd" stroke="#a9c4f7"/>
+  <text x="1064" y="330" font-size="13.5"><tspan font-weight="700" fill="#1a56b8" letter-spacing="2">STANDARD</tspan><tspan dx="12" fill="#4d618a">most day-to-day features and fixes</tspan></text>
+  <rect x="1040" y="590" width="770" height="470" rx="12" fill="#f4ebfd" stroke="#cbb3ea"/>
+  <text x="1064" y="620" font-size="13.5"><tspan font-weight="700" fill="#6a3ab8" letter-spacing="2">COMPLEX</tspan><tspan dx="12" fill="#655480">multi-file, risky, architectural</tspan></text>
+
+  <!-- spine -->
+  <rect x="40" y="520" width="180" height="80" rx="40" fill="#26251e"/>
+  <text x="130" y="555" font-size="16" font-weight="600" fill="#ffffff" text-anchor="middle">/supercook</text>
+  <text x="130" y="577" font-size="13" fill="#ffffff" opacity="0.65" text-anchor="middle">(your task)</text>
+
+  <rect x="270" y="505" width="220" height="110" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="380" y="536" font-size="15" font-weight="600" fill="#26251e" text-anchor="middle">Intake</text>
+  <text x="380" y="557" font-size="12.5" fill="#44443e" text-anchor="middle">new worktree and branch,</text>
+  <text x="380" y="574" font-size="12.5" fill="#44443e" text-anchor="middle">probe capabilities,</text>
+  <text x="380" y="591" font-size="12.5" fill="#44443e" text-anchor="middle">seed the ledger</text>
+
+  <!-- ledger note -->
+  <path d="M270,690 h190 l30,30 v90 h-220 z" fill="#fff9db" stroke="#d9c560"/>
+  <path d="M460,690 l30,30 h-30 z" fill="#efe3ae" stroke="#d9c560"/>
+  <text x="380" y="725" font-size="12.5" font-weight="600" fill="#5c5326" text-anchor="middle">The ledger</text>
+  <text x="380" y="743" font-size="12" fill="#5c5326" text-anchor="middle">.supercook/ledger.md</text>
+  <text x="380" y="761" font-size="12" fill="#5c5326" text-anchor="middle">every phase writes a row,</text>
+  <text x="380" y="779" font-size="12" fill="#5c5326" text-anchor="middle">a new session resumes from it</text>
+
+  <rect x="540" y="515" width="210" height="90" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="645" y="545" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-assessor</text>
+  <text x="645" y="565" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">sizes the task: tier, track,</text>
+  <text x="645" y="582" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">big-change flag</text>
+
+  <polygon points="895,495 990,560 895,625 800,560" fill="#ffe3b3" stroke="#b77400" stroke-width="1.5"/>
+  <text x="895" y="548" font-size="13" fill="#5f3d00" text-anchor="middle">trivial,</text>
+  <text x="895" y="565" font-size="13" fill="#5f3d00" text-anchor="middle">standard,</text>
+  <text x="895" y="582" font-size="13" fill="#5f3d00" text-anchor="middle">or complex?</text>
+
+  <!-- trivial band nodes -->
+  <rect x="1070" y="135" width="230" height="90" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="1185" y="172" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">Parent edits directly</text>
+  <text x="1185" y="192" font-size="12.5" fill="#44443e" text-anchor="middle">no recon, no planning</text>
+  <rect x="1340" y="135" width="210" height="90" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="1445" y="172" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">Light verify,</text>
+  <text x="1445" y="192" font-size="12.5" fill="#44443e" text-anchor="middle">then commit</text>
+  <rect x="1590" y="150" width="200" height="60" rx="30" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="1690" y="186" font-size="13" fill="#26251e" text-anchor="middle">Done. PR only if asked</text>
+
+  <!-- standard band nodes -->
+  <rect x="1070" y="375" width="230" height="110" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1185" y="410" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-explorer &#215; N</text>
+  <text x="1185" y="430" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">parallel recon, read-only:</text>
+  <text x="1185" y="447" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">seams, conventions,</text>
+  <text x="1185" y="464" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">test command</text>
+  <rect x="1350" y="375" width="220" height="110" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1460" y="418" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-planner</text>
+  <text x="1460" y="438" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">one plan, sliced into</text>
+  <text x="1460" y="455" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">PR-sized chunks</text>
+
+  <!-- complex band nodes -->
+  <rect x="1070" y="680" width="200" height="110" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1170" y="718" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-explorer &#215; N</text>
+  <text x="1170" y="738" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">broad map, then</text>
+  <text x="1170" y="755" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">targeted deep dives</text>
+  <rect x="1360" y="645" width="200" height="70" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1460" y="675" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-arena-runner</text>
+  <text x="1460" y="694" font-size="12" fill="#ffffff" opacity="0.88" text-anchor="middle">model A</text>
+  <rect x="1360" y="735" width="200" height="70" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1460" y="765" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-arena-runner</text>
+  <text x="1460" y="784" font-size="12" fill="#ffffff" opacity="0.88" text-anchor="middle">model B</text>
+  <rect x="1360" y="825" width="200" height="70" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1460" y="855" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-arena-runner</text>
+  <text x="1460" y="874" font-size="12" fill="#ffffff" opacity="0.88" text-anchor="middle">model C</text>
+  <rect x="1600" y="700" width="190" height="100" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1695" y="738" font-size="13.5" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-plan-judge</text>
+  <text x="1695" y="758" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">scores all three,</text>
+  <text x="1695" y="775" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">picks or merges</text>
+  <rect x="1590" y="870" width="200" height="110" rx="8" fill="#fff1cc" stroke="#e6a700" stroke-width="2"/>
+  <text x="1690" y="908" font-size="14" font-weight="600" fill="#5f4700" text-anchor="middle">Big change?</text>
+  <text x="1690" y="928" font-size="12.5" fill="#5f4700" text-anchor="middle">Design doc:</text>
+  <text x="1690" y="945" font-size="12.5" fill="#5f4700" text-anchor="middle">you sign off</text>
+
+  <!-- tail -->
+  <path d="M1900,420 h250 v95 q-62.5,26 -125,0 q-62.5,-26 -125,0 z" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="2025" y="455" font-size="15" font-weight="600" fill="#26251e" text-anchor="middle">The plan</text>
+  <text x="2025" y="476" font-size="12.5" fill="#44443e" text-anchor="middle">slices, each one a PR under</text>
+  <text x="2025" y="493" font-size="12.5" fill="#44443e" text-anchor="middle">about 500 reviewable lines</text>
+
+  <rect x="1900" y="590" width="250" height="100" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="2025" y="625" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-test-designer</text>
+  <text x="2025" y="645" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">failing tests from real user</text>
+  <text x="2025" y="662" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">journeys, committed first</text>
+
+  <rect x="1900" y="750" width="250" height="100" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="2025" y="785" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-implementer</text>
+  <text x="2025" y="805" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">smallest diff that passes,</text>
+  <text x="2025" y="822" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">guards keep it out of the tests</text>
+
+  <rect x="1900" y="910" width="250" height="100" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="2025" y="945" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-verifier</text>
+  <text x="2025" y="965" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">fresh context, replays the</text>
+  <text x="2025" y="982" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">plan, runs the suite</text>
+
+  <rect x="1900" y="1070" width="250" height="100" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="2025" y="1103" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">Deliver</text>
+  <text x="2025" y="1123" font-size="12.5" fill="#44443e" text-anchor="middle">one PR per slice, plain-English</text>
+  <text x="2025" y="1140" font-size="12.5" fill="#44443e" text-anchor="middle">body, stacked when dependent</text>
+
+  <rect x="1590" y="1085" width="220" height="70" rx="35" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="1700" y="1114" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">/merge-pr</text>
+  <text x="1700" y="1134" font-size="12.5" fill="#44443e" text-anchor="middle">drives it to merged</text>
+
+  <path d="M1330,1120 h240 v95 q-60,26 -120,0 q-60,-26 -120,0 z" fill="#fff9db" stroke="#d9a800" stroke-width="2"/>
+  <text x="1450" y="1148" font-size="14" font-weight="600" fill="#5c4a00" text-anchor="middle">models.md</text>
+  <text x="1450" y="1167" font-size="11.5" fill="#5c4a00" text-anchor="middle">maps each role to a model.</text>
+  <text x="1450" y="1183" font-size="11.5" fill="#5c4a00" text-anchor="middle">Ships as inherit. Change two</text>
+  <text x="1450" y="1199" font-size="11.5" fill="#5c4a00" text-anchor="middle">lines to diversify the arena</text>
+
+  <!-- flow lines -->
+  <path d="M220,560 H264" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M490,560 H534" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M750,560 H794" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M380,615 V684" fill="none" stroke="#b08900" stroke-width="2.25" stroke-dasharray="7 5" marker-end="url(#aGold)"/>
+
+  <!-- routing -->
+  <path d="M895,495 V180 H1064" fill="none" stroke="#4a9a57" stroke-width="2.25" marker-end="url(#aGreen)"/>
+  <text x="905" y="330" font-size="13" font-weight="600" fill="#4a9a57">trivial</text>
+  <path d="M990,560 H1015 V430 H1064" fill="none" stroke="#3d6fcc" stroke-width="2.25" marker-end="url(#aBlue)"/>
+  <text x="1024" y="500" font-size="13" font-weight="600" fill="#3d6fcc">standard</text>
+  <path d="M895,625 V735 H1064" fill="none" stroke="#8a5fc9" stroke-width="2.25" marker-end="url(#aPurple)"/>
+  <text x="905" y="692" font-size="13" font-weight="600" fill="#8a5fc9">complex</text>
+
+  <!-- trivial flow -->
+  <path d="M1300,180 H1334" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1550,180 H1584" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+
+  <!-- standard flow -->
+  <path d="M1300,430 H1344" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1570,430 H1845 V447 H1894" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+
+  <!-- complex flow -->
+  <path d="M1270,713 L1354,680" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1270,735 L1354,770" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1270,757 L1354,860" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1560,680 L1594,730" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1560,770 L1594,750" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1560,860 L1594,770" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1695,800 V864" fill="none" stroke="#e6a700" stroke-width="2.25" marker-end="url(#aAmber)"/>
+  <text x="1706" y="840" font-size="12.5" font-weight="600" fill="#c69100">big change</text>
+  <path d="M1790,750 H1845 V486 H1894" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1790,925 H1862 V519 H1894" fill="none" stroke="#e6a700" stroke-width="2.25" marker-end="url(#aAmber)"/>
+
+  <!-- tail flow -->
+  <path d="M2025,532 V584" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M2025,690 V744" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M2025,850 V904" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M2025,1010 V1064" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M1900,1120 H1816" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <path d="M2150,1100 C2235,1055 2235,865 2150,820" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>
+  <text x="2245" y="953" font-size="12.5" fill="#55554e" text-anchor="middle">next</text>
+  <text x="2245" y="969" font-size="12.5" fill="#55554e" text-anchor="middle">slice</text>
+
+  <!-- models feed -->
+  <path d="M1450,1120 L1458,901" fill="none" stroke="#b08900" stroke-width="2.25" stroke-dasharray="7 5" marker-end="url(#aGold)"/>
+  <text x="1472" y="1000" font-size="12" fill="#8a6d00">a different model</text>
+  <text x="1472" y="1016" font-size="12" fill="#8a6d00">per contestant</text>
+
+  <text x="40" y="1262" font-size="13" fill="#6a6a63">Not shown: the five playbooks (bugfix, feature, investigation, refactor, open-pr) adjust these phases per track. An investigation, for example, stays read-only and just answers.</text>
+</svg>
