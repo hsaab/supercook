@@ -43,6 +43,7 @@ done: every public route rejects a 101st request in a minute with a 429, and the
   - [~] slice 3: admin bypass. skip: out of plan scope, filed as follow-up
 - [ ] verify
 - [ ] deliver
+- [~] merge. skip: no merge asked for, run ends at the open PRs
 
 ## Playbook steps (feature)
 - [x] data shape named before logic: RateLimitConfig in src/rate-limit/types.ts

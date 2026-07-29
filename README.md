@@ -81,7 +81,7 @@ git clone https://github.com/hsaab/supercook.git ~/Apps/supercook
 ln -s ~/Apps/supercook ~/.cursor/plugins/local/supercook
 ```
 
-Reload the window, then confirm you see two skills (`supercook`, `merge-pr`) and eight agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`).
+Reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`).
 
 If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
 
@@ -119,8 +119,11 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook no PR <what you want>          # implement and verify, do not open a PR
 /supercook no commits <what you want>     # leave the changes uncommitted
 /supercook keep ledger <what you want>    # commit the ledger so another machine can resume
-/merge-pr                                  # drive a PR to merged
+/supercook <what you want> and merge it   # carry on through the merge
+/supercook merge PR 412                   # drive an existing PR to merged, nothing to build
 ```
+
+Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask.
 
 Playbooks, routed automatically from the assessment:
 
@@ -131,6 +134,7 @@ Playbooks, routed automatically from the assessment:
 | investigation | Read-only, cited answer, no plan or tests or PR, and nothing written to your repo |
 | refactor | Pins current behavior with characterization tests, reroutes if behavior changes |
 | open-pr | No planning or implementation, but the diff is still verified, for work already in the tree |
+| merge | Drives an existing PR to merged whatever state it is in: conflicts, review comments, broken CI, stalled checks, stacks |
 
 ## Layout
 
@@ -141,9 +145,8 @@ skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
   models.md                   the one file for model choices
   agents.md                   launch contracts and the parent-side guards
-  pipeline/                   eight guides for the nine phases, loaded when the phase runs
-  playbooks/                  one per track
-skills/merge-pr/SKILL.md      drive a PR to merged, including stacks
+  pipeline/                   nine guides for the ten phases, loaded when the phase runs
+  playbooks/                  one per track, merge included
 ```
 
 ## License

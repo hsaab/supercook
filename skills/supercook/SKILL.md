@@ -1,6 +1,6 @@
 ---
 name: supercook
-description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
+description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
 disable-model-invocation: true
 ---
 
@@ -73,6 +73,8 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 
 **Scope modifiers are honored.** `/supercook plan only`, `no PR`, `no commits` and similar set the stop point up front. Reaching it counts as done.
 
+**A merge ask extends the run instead of ending it.** `/supercook <task> and merge it` runs the pipeline through phase 9, and `/supercook merge <pr>` starts on the merge track with nothing to build. The ask also counts mid-run, after the user has seen the PR. Without it, phase 8 is the last phase. See [playbooks/merge.md](playbooks/merge.md).
+
 **`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
 
 ## The pipeline
@@ -90,10 +92,15 @@ Phases run in order. The assessor's verdict decides which ones are skipped, and 
 | 6 | Implement: surgical chunks, parent guards, line accounting | [pipeline/implementation.md](pipeline/implementation.md) |
 | 7 | Verify: fresh-context audit that runs the suite | [pipeline/verification.md](pipeline/verification.md) |
 | 8 | Deliver: PR per slice, stack lifecycle, plain-language body | [pipeline/delivery.md](pipeline/delivery.md) |
+| 9 | Merge: only on an explicit merge ask, never inferred | [pipeline/merge.md](pipeline/merge.md) |
+
+**Phase 9 is opt-in.** Absent a merge ask, phase 8 ends the run at an open PR. A PR looking mergeable is not an ask.
 
 **Tiers.** `trivial` collapses to implement plus verify, ledger still written. `standard` runs recon, one planner, tests, implement, verify, deliver. `complex` adds the arena and per-slice verification. The big-change flag inserts phase 3 at any tier, including trivial, since a small diff can still change an interface others depend on.
 
 **Precedence when they disagree.** The tier collapse wins over a playbook's phase table. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. The track still decides *what* the work is; the tier decides how much process it gets.
+
+**Phase 9 is the exception to that precedence**, in both directions. No tier collapse removes it once a merge was asked for, and no tier adds it when one was not. It answers to the ask, not to the verdict.
 
 ## Playbook routing
 
@@ -106,6 +113,7 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 | investigation | A question to answer, nothing to ship | [playbooks/investigation.md](playbooks/investigation.md) |
 | refactor | Same behavior, better structure | [playbooks/refactor.md](playbooks/refactor.md) |
 | open-pr | Ship what is already in the tree | [playbooks/open-pr.md](playbooks/open-pr.md) |
+| merge | A PR exists and the user asked for it merged | [playbooks/merge.md](playbooks/merge.md) |
 
 ## Continuation protocol
 
@@ -121,4 +129,3 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 - [agents.md](agents.md): the launch contract for all eight agents, the parent-side guard per role, and the fallback when the agents are not installed.
 - `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
 - `playbooks/`: one per track, routed at assess time.
-- `/merge-pr`: the companion skill that drives a PR to merged.

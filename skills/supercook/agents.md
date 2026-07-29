@@ -47,10 +47,11 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 - **Returns**, exactly 4 lines:
   ```
   tier: trivial | standard | complex
-  track: bugfix | feature | investigation | refactor | open-pr
+  track: bugfix | feature | investigation | refactor | open-pr | merge
   big-change: yes | no
   why: <one sentence naming what drove the verdict>
   ```
+- **`merge` is user-selected, never inferred.** Return it only when the user asked for an existing PR to be merged. A task that will produce a PR is not a merge request.
 
 ### supercook-explorer
 

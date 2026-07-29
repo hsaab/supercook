@@ -12,7 +12,7 @@ Copy these into the ledger verbatim.
 - [ ] size the diff: reviewable and raw
 - [ ] split into coherent PRs if it is oversized
 - [ ] write the PR body from the diff, in plain language
-- [ ] hand off to babysit or merge-pr as asked
+- [ ] hand off to babysit, or continue into phase 9 merge, only if asked
 ```
 
 ## Phases
@@ -30,6 +30,7 @@ This track skips planning and implementation entirely, but it is not delivery al
 | 6 implement | no |
 | 7 verify | yes, the diff still gets checked and the suite still gets run |
 | 8 deliver | yes, this is the whole job |
+| 9 merge | only when the user asked for the PR merged too |
 
 ## Understand the diff before describing it
 

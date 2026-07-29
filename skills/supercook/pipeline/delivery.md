@@ -103,8 +103,8 @@ What makes a late split survivable is the per-unit commit discipline from phase 
 
 Choose based on what the user asked for:
 
-- **Nothing more**: report and stop. The PR is open.
+- **Nothing more**: report and stop. The PR is open. This is the default, and it is what happens unless a merge was actually asked for.
 - **Keep it healthy**: hand to built-in `/babysit`. It triages comments, fixes CI, and resolves conflicts without merging.
-- **Get it merged**: `/merge-pr`. Invoking it is the consent to merge, and it walks a stack bottom-up using the lifecycle above.
+- **Get it merged**: continue into phase 9, [merge.md](merge.md), which walks a stack bottom-up using the lifecycle above. Only on an explicit ask. A PR that looks mergeable is not an ask.
 
 **The final reply** is short outcome sentences, in the same plain-language style as the PR body. What changed, in which files, and what it means. Not a wall of text, and not a recap of the process.
