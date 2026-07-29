@@ -2,7 +2,6 @@
 name: supercook-plan-judge
 description: Compares the three candidate plans from a supercook arena, then merges or picks and writes the final plan.md. Use immediately after the arena runners finish on complex-tier work, to decide which approach ships and to enforce slice sizing before implementation starts.
 model: inherit
-readonly: false
 ---
 
 # Supercook plan judge

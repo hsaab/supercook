@@ -2,7 +2,6 @@
 name: supercook-test-designer
 description: Designs and writes the failing test suite for a supercook slice, built from real user journeys rather than exhaustive edge cases. Use before implementation starts, and again whenever a test genuinely needs to change, since this agent owns every test edit for the whole run.
 model: inherit
-readonly: false
 ---
 
 # Supercook test designer

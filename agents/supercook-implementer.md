@@ -2,7 +2,6 @@
 name: supercook-implementer
 description: Implements one scoped slice of a supercook plan by making the named failing tests pass, touching only the files in its scope list and never the test suite. Use per plan slice during the implement phase, after the failing tests for that slice are committed.
 model: inherit
-readonly: false
 ---
 
 # Supercook implementer
