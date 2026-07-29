@@ -89,7 +89,9 @@ Phases run in order. The assessor's verdict decides which ones are skipped, and 
 | 7 | Verify: fresh-context audit that runs the suite | [pipeline/verification.md](pipeline/verification.md) |
 | 8 | Deliver: PR per slice, stack lifecycle, plain-language body | [pipeline/delivery.md](pipeline/delivery.md) |
 
-**Tiers.** `trivial` collapses to implement plus verify, ledger still written. `standard` runs recon, one planner, tests, implement, verify, deliver. `complex` adds the arena and per-slice verification. The big-change flag inserts phase 3 at any tier.
+**Tiers.** `trivial` collapses to implement plus verify, ledger still written. `standard` runs recon, one planner, tests, implement, verify, deliver. `complex` adds the arena and per-slice verification. The big-change flag inserts phase 3 at any tier, including trivial, since a small diff can still change an interface others depend on.
+
+**Precedence when they disagree.** The tier collapse wins over a playbook's phase table. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. The track still decides *what* the work is; the tier decides how much process it gets.
 
 ## Playbook routing
 
@@ -105,7 +107,7 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 
 ## Continuation protocol
 
-1. **Re-read the ledger before ending any turn.** Open rows mean keep working. Ending is allowed only when every row is checked or marked `skip: <reason>`, or the only blocker is a sanctioned pause that is written down.
+1. **Re-read the ledger before ending any turn.** Open rows mean keep working. Ending is allowed only when every row is checked or marked `skip: <reason>`, or the only blocker is a sanctioned pause that is written down. On the investigation track there is no ledger file, so the todo list is the record and this rule reads it instead.
 2. **Done is a predicate, stated at intake.** Write it in the ledger header. A plateau is not a stop.
 3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten.
 4. **Report without stopping.** Send progress as a mid-turn note; do not end the turn to check in.

@@ -32,7 +32,7 @@ Then repeat until mergeable and green:
 1. **Conflicts**: resolve them. Never discard someone else's side without understanding it.
 2. **Comments**: triage per below.
 3. **Failing checks**: fix in scope, report out of scope.
-4. **Stalled or flaky checks**: re-run once with `gh run rerun --failed`.
+4. **Stalled or flaky checks**: re-run once with `gh run rerun <run-id> --failed`. The run id is required; without it the command needs a TTY and will fail. Get it from `gh pr checks <n>` or `gh run list --branch <branch>`.
 5. **Re-read state.** A push invalidates the previous rollup.
 
 Report progress as you go, one line per meaningful change, in plain language naming files.
@@ -65,23 +65,21 @@ Merge only when the PR is genuinely ready: mergeable, required checks green, req
 gh pr merge <n> --squash    # or --merge / --rebase, matching the repo's default
 ```
 
-Match the repo's configured default method rather than imposing one. Delete the branch after merge when that is the repo's habit.
+Match the repo's configured default method rather than imposing one.
+
+Delete the branch after merge when that is the repo's habit, but **on a stack, capture the branch tip SHA first**. The children's rebase needs it, and a deleted branch takes it with it.
 
 ## Stacked PRs
 
-Merge bottom-up, one at a time. After each merge, the children need attention, and what they need depends on how the base merged. The full mechanics live in the supercook delivery guide: `skills/supercook/pipeline/delivery.md`.
+Merge bottom-up, one at a time. After each merge the children need attention, and what they need depends on how the base merged.
 
-The short version:
+**The mechanics live in one place**, the supercook delivery guide at `skills/supercook/pipeline/delivery.md`, under "The stack lifecycle". Follow it rather than a second copy here. Three things matter enough to repeat:
 
-```bash
-gh pr edit <child> --base <new-base>                        # always
-git rebase --onto <new-base> <old-base> <child-branch>      # squash or rebase merges only
-git push --force-with-lease                                 # ask first
-```
+**Capture `OLD_BASE=$(git rev-parse origin/<base-branch>)` before merging**, and before deleting the branch. The rebase needs it as its upstream, and deleting the branch first makes it unrecoverable.
 
-The retarget is unconditional. The replay is only needed when the base was squashed or rebased, because after a true merge commit the child's commits already exist in the new base. Then re-run the child's checks, since its base moved underneath it.
+**Do not ask `gh` for the merge method.** There is no such field. Use the ancestor test in the delivery guide, which asks whether the base's old commits still exist in the new base. That is the actual question, and it is answerable.
 
-`--force-with-lease` is irreversible, so ask before each one even though invoking this skill consented to the merge. Consent to merge is not consent to rewrite a branch.
+**`--force-with-lease` is irreversible, so ask every time**, even though invoking this skill consented to the merge. Consent to merge is not consent to rewrite a branch.
 
 ## What never happens
 

@@ -62,17 +62,22 @@ Resume depends entirely on this, so write it down before anything else happens.
 
 ## 4. Seed the ledger
 
-Create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
+**Skip this step entirely on the investigation track**, and on any request that is explicitly read-only. Those runs keep the record in the todo list instead, which satisfies the same purpose without writing to someone's repo during a read-only ask. See [../playbooks/investigation.md](../playbooks/investigation.md). Steps 1 through 3 still run, minus the worktree.
+
+Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
 
 Keep the run folder out of git without touching `.gitignore`:
 
 ```bash
-echo '.supercook/' >> "$(git rev-parse --git-path info/exclude)"
+EXCLUDE=$(git rev-parse --git-path info/exclude)
+grep -qxF '.supercook/' "$EXCLUDE" 2>/dev/null || printf '\n.supercook/\n' >> "$EXCLUDE"
 ```
 
-Use `git rev-parse --git-path`, never a literal `.git/info/exclude`. A linked worktree has a `.git` **file**, not a directory, so the literal path does not exist there.
+Use `git rev-parse --git-path`, never a literal `.git/info/exclude`. A linked worktree has a `.git` **file**, not a directory, so the literal path does not exist there and a plain append would create a stray file that excludes nothing.
 
-Two things to know about that write. It resolves to the **shared** exclude file, so the entry covers every worktree of the repo and outlives this run. That is acceptable, since it is one line in a file git never commits, but check whether the line is already there and do not add it twice. And skip the write entirely when the probe says this is not a git repo.
+Three things about that write. The `grep -qxF` guard is what makes it idempotent, since this runs once per run and the entry only needs to exist once. The leading newline in `printf` protects against an exclude file that does not end in one, which would otherwise glue the entry onto the previous line and break both. And the path resolves to the **shared** exclude file, so the entry covers every worktree of the repo and outlives this run. That last part is acceptable, since it is one line in a file git never commits, but it should not be a surprise.
+
+Skip the write entirely when the probe says this is not a git repo.
 
 Finally, mirror the phase rows into the todo list so progress is visible live.
 
@@ -86,6 +91,6 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | GitHub, or `gh` not authenticated | Phases 0 through 7 run unchanged. Delivery stops at a pushed branch or a local commit series, with the PR body written into the run folder to paste wherever it is needed. |
 | Worktree support | Say so, require a clean tree, work on the current branch. |
 | A runnable test suite | Test-first becomes verification-first. The test designer writes an executable verification recipe into the plan, and the verifier runs that. The journey thinking survives; only the assertion mechanism changes. |
-| Write access, or an ask-only request | Investigation track only. Nothing is written, and the ledger stays in the conversation. |
+| Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
 | The supercook agents | Roles run inline from the agent file bodies. |
 | A valid model slug | Inherit, log once, continue. |

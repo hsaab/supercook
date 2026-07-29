@@ -16,6 +16,8 @@ Copy these into the ledger verbatim.
 
 ## Phases
 
+This table describes standard and complex tier. A trivial refactor collapses to implement plus verify, per the precedence rule in `SKILL.md`.
+
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes |

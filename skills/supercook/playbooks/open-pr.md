@@ -17,6 +17,8 @@ Copy these into the ledger verbatim.
 
 ## Phases
 
+This track skips planning and implementation entirely, but it is not delivery alone: the diff is still verified and the suite is still run.
+
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight, no worktree since the work is already here |
@@ -47,11 +49,9 @@ Missing tests for new behavior also get reported. Offer to add them, but do not 
 
 This is the track where `/split-to-prs` earns its place, because the work arrived without a slice budget.
 
-```bash
-git diff --numstat "$(git merge-base HEAD "$BASE")"
-```
+Take both counts with the commands in [../pipeline/implementation.md](../pipeline/implementation.md#line-accounting), and report both: reviewable (human-authored) and raw (what the reviewer sees). Past about 500 reviewable lines, split.
 
-Report both totals: reviewable (human-authored, excluding lockfiles, generated, vendored, snapshots) and raw. Past about 500 reviewable lines, split.
+Check the raw number carefully on this track. Work that arrived without a budget is where a committed `dist/` directory or a regenerated lockfile turns up, and that is worth telling the user about even though it does not count against the budget.
 
 Carve along the commit boundaries that already exist when they are clean. When history is one big commit, carve along dependency order instead: data shape, then logic, then wiring. Each PR must leave the default branch working.
 

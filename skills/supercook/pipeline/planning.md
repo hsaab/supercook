@@ -49,13 +49,11 @@ A slice is one shippable PR: it leaves the default branch working, it carries it
 
 **Budget: under 500 reviewable lines per slice.**
 
-Reviewable means additions plus deletions of human-authored code, measured from the merge base, excluding lockfiles, generated code, vendored code, and snapshots:
+Reviewable means additions plus deletions of human-authored code, measured from the merge base, excluding lockfiles, generated code, vendored code, and snapshots. The exact commands live in [implementation.md](implementation.md#line-accounting), since that is where the running count gets taken. Two things matter at plan time.
 
-```bash
-git diff --numstat "$(git merge-base HEAD "$BASE")"
-```
+A rewritten line counts twice, once as an addition and once as a deletion, so 500 is roughly 250 rewritten lines or 500 brand new ones. Estimate accordingly: a slice that rewrites an existing 300 line file is near the budget, not comfortably inside it.
 
-Two things about that number. `--numstat` scores a rewritten line as one addition plus one deletion, so 500 is roughly 250 rewritten lines or 500 brand new ones. And every slice carries two totals: the **reviewable** count that the budget applies to, and the **raw** count the reviewer actually sees. Generated files still cost review attention even when they do not count against the budget.
+Every slice carries two numbers later, the **reviewable** count the budget applies to and the **raw** count the reviewer sees. If a slice will drag a large lockfile or a generated bundle along with it, say so in the plan even though it does not count against the budget.
 
 Estimate each slice from the recon pointers. A slice that cannot honestly be estimated under budget gets split here.
 

@@ -71,8 +71,8 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 - **Inputs**: identical brief for all three, plus recon pointers. The only difference between launches is the model.
 - **Effort budget**: one pass, no implementation, no file writes outside its own candidate plan.
-- **Done when**: a complete candidate plan exists with slices, risks, and an explicit "what I would do differently" note.
-- **Returns**: the candidate plan, plus the one design decision it is least sure about.
+- **Done when**: a complete candidate plan exists in its own file, with slices, risks, and the one decision it is least sure about.
+- **Returns**: the approach in two sentences, the slice list with estimates, and its least-sure decision. Not the plan itself: the judge reads the candidate files directly, so returning the full plan would put three plans in the parent's context for no reason.
 
 ### supercook-plan-judge
 
@@ -118,28 +118,11 @@ A boundary written in a prompt is a request. These checks are what make it a con
 | `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception. |
 | `supercook-test-designer` | Confirm the new tests actually fail, and fail for the intended reason. |
 
-### Test integrity guard
+### Test integrity and scope guards
 
-Detection has to be right or the guard is theatre. `git diff --name-only` does not report an untracked file and `git restore` cannot remove one, so an implementer that **adds** `thing.test.ts` would walk straight through a diff-only check.
+Both mechanisms are defined once, in [pipeline/implementation.md](pipeline/implementation.md#the-guards), because that is the phase where they run. Do not keep a second copy here: two copies of the load-bearing safety rule is exactly what the DRY principle in `SKILL.md` argues against, and the copy that drifts is the one that gets followed.
 
-```bash
-# BEFORE committing the chunk
-git status --porcelain --untracked-files=all
-```
-
-Match every changed and every new path against the test patterns recorded in the ledger during recon, then:
-
-- **Modified test file**: `git restore --source=HEAD --staged --worktree -- <paths>`
-- **Added test file**: delete it.
-- Either way: log a guard row in the ledger naming the file.
-
-Order matters. Commit first and `--source=HEAD` cheerfully restores the tampered version.
-
-If the implementer's report says a test is genuinely wrong, that becomes a `supercook-test-designer` amendment task. Tests only ever change through the role that owns them, deliberately and on the record.
-
-### Scope guard
-
-Same mechanism, different match list. A changed path outside the slice's declared scope gets restored or deleted, logged, and the chunk re-delegated with a corrected scope.
+The one-line summary, so this table is readable without a second file open: detect with `git status --porcelain --untracked-files=all` before committing, restore modified tests, delete added ones, log every intervention, and route a genuinely wrong test to `supercook-test-designer` as an amendment rather than editing it here.
 
 ## Fallback when the agents are not installed
 

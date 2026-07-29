@@ -75,16 +75,35 @@ Same mechanism, different match list. A changed path outside the slice's declare
 
 ## Line accounting
 
-Log both totals in the ledger at each chunk end:
+This is the one definition of the counts. Everywhere else refers here.
+
+`BASE` is the branch this slice will target: the default branch for an independent slice, or the previous slice's branch for a stacked one.
 
 ```bash
-git diff --numstat "$(git merge-base HEAD "$SLICE_BASE")"
+BASE=$(git merge-base HEAD origin/<base-branch>)
+
+# Raw: everything the reviewer will see.
+git diff --numstat "$BASE" | awk '{t+=$1+$2} END {print t+0}'
+
+# Reviewable: human-authored only. This is what the budget applies to.
+git diff --numstat "$BASE" -- \
+  ':!*.lock' ':!*lock.yaml' ':!*lock.json' ':!*.snap' ':!vendor' ':!*generated*' \
+  | awk '{t+=$1+$2} END {print t+0}'
 ```
 
-- **Reviewable**: additions plus deletions of human-authored code, excluding lockfiles, generated code, vendored code, and snapshots. This is what the budget applies to.
-- **Raw**: everything. This is what the reviewer sees.
+**The exclusions must be spelled out or they do nothing.** A bare `git diff --numstat` gives the raw count only, so the two totals come out identical and the budget silently stops meaning anything. Two syntax traps, both easy to hit:
 
-A rewritten line counts twice, once as an addition and once as a deletion, so 500 reviewable is roughly 250 rewritten lines.
+- `:!<pattern>` (or the long form `:(exclude)<pattern>`) works. A `**/`-prefixed pattern like `':(exclude)**/package-lock.json'` silently matches nothing at the repo root, so the file stays in the count and the filter looks like it ran.
+- Adding a leading `.` pathspec makes the excludes inert entirely. Pass the exclusions alone.
+
+Adapt the exclude list to the repo. Recon already reported the layout, so use it: a repo with `dist/`, `__snapshots__/`, or a `proto/gen` directory needs those added.
+
+- **Reviewable**: additions plus deletions of human-authored code. What the budget applies to.
+- **Raw**: everything. What the reviewer sees, and worth reporting even when it does not count against the budget, because a 3,000 line lockfile diff still costs review attention.
+
+A rewritten line counts twice, once as an addition and once as a deletion, so 500 reviewable is roughly 250 rewritten lines or 500 brand new ones.
+
+Log both numbers in the ledger at each chunk end.
 
 **Past about 400 reviewable lines, close the slice at the next atomic boundary**: verify it, ship its PR, open the next slice. Do not let it swell past the budget. The exception is a logged cohesion exception from the plan.
 

@@ -26,7 +26,7 @@ run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
-models: arena-b gpt-5.6-sol-max ok | arena-c opus-max ok | rest inherit
+models: arena-b gpt-5.6-sol-max ok | arena-c claude-opus-5-thinking-high ok | rest inherit
 test-paths: **/*.test.ts
 done: every public route rejects a 101st request in a minute with a 429, and the suite is green
 
@@ -74,11 +74,15 @@ A blocked row still counts as open unless the blocker is a sanctioned pause, in 
 
 A new, resumed, or compacted session starts here.
 
-1. Find candidate ledgers under `.supercook/*/ledger.md`.
-2. Match on **repo plus branch plus run-id**. Never pick "the newest file": that is how a parallel run gets hijacked.
-3. Exactly one open candidate for this repo and branch means resume it from the first open row.
-4. Several candidates means list them with their run-ids and first open rows, and ask which to resume. This is a sanctioned pause.
-5. No candidate means this is a new run. Go to [intake.md](intake.md).
+A fresh session does not know the run-id yet, so matching happens in this order:
+
+1. **Find candidates.** `.supercook/*/ledger.md` in the current tree. Also check the system temp dir, since a git-less run keeps its folder there. On the investigation track there is nothing to find, by design.
+2. **Filter to this repo and branch**, read from each candidate's header. Those two are knowable without a run-id, which is what makes them the filter.
+3. **Exactly one candidate with open rows**: resume it. Log its run-id so the rest of the session refers to that run and not another.
+4. **More than one**: list them with their run-ids, branches, and first open rows, and ask which to resume. This is a sanctioned pause. Never break the tie by picking the newest file, which is exactly how a parallel run gets hijacked.
+5. **None**: this is a new run. Go to [intake.md](intake.md).
+
+The run-id is what identifies a run once you have one, and what every later ledger row and PR reference points at. It is not the search key on a cold start, because nothing has told you it yet.
 
 ## What persistence does and does not cover
 

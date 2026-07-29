@@ -52,29 +52,43 @@ Record the stack order and each PR's base in the ledger. That record is what mak
 
 ## The stack lifecycle
 
-A stack is not finished when the PRs are open. When a base PR merges, its children need attention, and what they need depends on how it merged.
+A stack is not finished when the PRs are open. When a base PR merges, its children need attention, and what they need depends on how the base merged.
+
+**Record the base branch tip SHA before merging it.** The rebase below needs it as the upstream, and it becomes unrecoverable once the branch is deleted.
 
 ```bash
-# 1. Which merge method did the base use?
-gh pr view <base-pr> --json mergeCommit,state
-
-# 2. Retarget every child, always
-gh pr edit <child-pr> --base <new-base>
-
-# 3. Replay history, only if the base was squashed or rebased
-git rebase --onto <new-base> <old-base> <child-branch>
-git push --force-with-lease
+OLD_BASE=$(git rev-parse origin/<base-branch>)   # BEFORE the merge
 ```
 
-Two things to get right:
+After the base merges:
 
-**The retarget is unconditional.** Every child pointing at a merged branch needs a new base.
+```bash
+git fetch origin
 
-**The replay is conditional.** After a true merge commit, the child's commits are already contained in the new base, so a retarget alone is correct and a rebase just churns history. After a squash or a rebase merge, the child carries commits that now exist in a different form on the base, so it must be replayed or the PR shows the base's changes as its own.
+# 1. Retarget every child. Always.
+gh pr edit <child-pr> --base <new-base>
 
-`push --force-with-lease` is an irreversible action. Ask once, per the risk tiers in `SKILL.md`.
+# 2. Decide whether history has to be replayed.
+if git merge-base --is-ancestor "$OLD_BASE" origin/<new-base>; then
+  echo "contained: retarget alone is correct, no replay"
+else
+  git rebase --onto origin/<new-base> "$OLD_BASE" <child-branch>
+  git push --force-with-lease            # ask first, every time
+fi
+```
 
-Then re-run checks on each retargeted PR, since its base changed underneath it.
+**Do not try to read the merge method from `gh`.** `gh pr view --json` has no merge-method field, and `mergeCommit` returns an oid for every merge type, so it cannot answer this question. The ancestor test above answers it exactly instead: it asks whether the base's old commits still exist in the new base.
+
+**Why the two branches differ.** After a true merge commit, the child's commits are already contained in the new base, so the ancestor test passes, a retarget alone is correct, and a rebase would only churn history. After a squash or a rebase merge, the base's commits exist in a different form under different SHAs, the ancestor test fails, and the child must be replayed or its PR will show the base's changes as its own.
+
+**`push --force-with-lease` is irreversible, so ask every time**, per the irreversible tier in `SKILL.md`. Consent to merge a stack is not consent to rewrite each branch in it.
+
+**Re-running checks.** A rebase and force-push re-triggers checks on its own, since the head SHA changed. A bare retarget does not, because nothing about the child's commits moved, so trigger them explicitly when the child's checks matter:
+
+```bash
+gh pr checks <child-pr>                  # what state are they in now?
+gh run rerun <run-id> --failed           # a run id is required, this is not interactive
+```
 
 ## Splitting as a backstop
 

@@ -23,7 +23,7 @@ The flag is independent of tier. A standard-tier task can be a big change, and p
 
 Ask once, in one line, and say what each costs:
 
-> This changes the session token shape across two gateways, so it needs architecture sign-off first. Full design doc (all 16 sections, best when others will review it later) or lite (6 sections, enough to agree and move)?
+> This changes the session token shape across two gateways, so it needs architecture sign-off first. Full design doc (all 15 sections, best when others will review it later) or lite (6 sections, enough to agree and move)?
 
 Then draft it into the run folder as `design-doc.md`. Do not wait for an answer before starting to think; wait for it before writing the final structure.
 
@@ -62,7 +62,7 @@ API and interface contracts - the endpoints, events, or payloads that change sha
 Security - authn/authz impact and anything sensitive this touches.
 ```
 
-Alternatives considered is worth adding to a lite doc whenever you rejected something a reviewer would reasonably ask about. It is the cheapest way to stop the same debate happening twice.
+Add a seventh section, Alternatives considered, whenever you rejected something a reviewer would reasonably ask about. It is the cheapest way to stop the same debate happening twice, so reach for it rather than treating six as a limit.
 
 ## Diagrams
 

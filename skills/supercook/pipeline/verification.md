@@ -24,6 +24,8 @@ Not the implementation history, not the reasoning, not the agent conversations. 
 
 Confirm fresh test output is quoted. No output means re-run rather than accept. This is the one place where being lenient defeats the entire arrangement.
 
+Also check the `tests` line. `MODIFIED` there means a test file changed outside the deliberate test-first commit, so the test-integrity guard in [implementation.md](implementation.md#the-guards) either did not run or ran after a commit. Restore the file, log it, and find out which.
+
 ## Timing on multi-slice work
 
 The verifier runs **before each slice's PR opens**, checking that slice's plan rows against that slice's diff. Then a **final pass** at the end confirms the whole plan landed and nothing fell between the slices.

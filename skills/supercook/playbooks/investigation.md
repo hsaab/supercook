@@ -4,7 +4,7 @@ A question to answer. Nothing ships.
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Track these in the todo list. This track has no ledger file, for the reason below.
 
 ```
 - [ ] restate the question precisely, including what would count as an answer
@@ -18,7 +18,7 @@ Copy these into the ledger verbatim.
 
 | Phase | Runs? |
 |---|---|
-| 0 intake | yes, lightweight |
+| 0 intake | partly: probe capabilities and note the question. No worktree, no run folder, no ledger file, no exclude write |
 | 1 assess | yes |
 | 2 recon | yes, this is the whole job |
 | 3 design doc | no |
@@ -32,9 +32,13 @@ Do not manufacture work that was not asked for. No plan, no tests, no PR, no "wh
 
 ## Nothing gets written
 
-This track is read-only, which includes the run folder. Keep progress in the conversation and the todo list rather than creating `.supercook/`. Writing files during a read-only request is a surprise, and surprises are what make people stop trusting an agent with their repo.
+This track is read-only, and that includes the run folder. Do not create `.supercook/`, do not write a `ledger.md`, and do not touch git's exclude file. Writing files during a read-only request is a surprise, and surprises are what make people stop trusting an agent with their repo.
 
-If the investigation turns into "and now fix it", that is a new run on a different track. Say so, then reroute.
+**The todo list is the ledger on this track.** The ledger's job is to hold the steps, record what was skipped, and tell the next turn what is still open. The todo list does all three, in memory, and the continuation protocol in `SKILL.md` reads it the same way. So no rule is being waived here: the record still exists, it just is not a file.
+
+The tradeoff is honest and worth knowing: an in-memory record does not survive a session restart. That is acceptable, because an investigation ends with an answer in the conversation rather than a half-finished branch someone has to resume.
+
+If the investigation turns into "and now fix it", that is a new run on a different track. Say so, then reroute, and that run gets a real ledger.
 
 ## Cite everything
 

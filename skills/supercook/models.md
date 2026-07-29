@@ -8,8 +8,8 @@ One file, one edit point. Every role below ships as `inherit`, which means it us
 standard:     inherit    # suggested: claude-fable-5-thinking-max   (assessor, planner, test-designer, verifier)
 arena-a:      inherit    # suggested: claude-fable-5-thinking-max
 arena-b:      inherit    # suggested: gpt-5.6-sol-max
-arena-c:      inherit    # suggested: claude-opus-5-thinking-max
-plan-judge:   inherit    # suggested: claude-opus-5-thinking-max
+arena-c:      inherit    # suggested: claude-opus-5-thinking-high
+plan-judge:   inherit    # suggested: claude-opus-5-thinking-high
 implementer:  inherit    # suggested: cursor-grok-4.5-high-fast
 explorer:     inherit
 ```
@@ -32,4 +32,4 @@ Give the three arena roles three **different** model families.
 
 The arena is a cook-off: three agents plan the same complex task in parallel, then `supercook-plan-judge` merges or picks. Three contestants on one inherited model still give three independent attempts, but the value comes from genuinely different reasoning. Three families disagree in useful ways; three runs of one model mostly agree with themselves.
 
-If you only change one thing in this file, change `arena-b` and `arena-c`.
+So if you change anything in this file, make it the arena. Leaving `arena-a` on `inherit` is fine and even useful: your session model becomes the third family, alongside whatever you give `arena-b` and `arena-c`.

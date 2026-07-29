@@ -17,7 +17,7 @@ Copy these into the ledger verbatim.
 
 ## Phases
 
-Every phase runs. Phase 3 depends on the big-change flag, and phase 4 uses the arena only on complex tier.
+Every phase runs at standard and complex tier. Phase 3 depends on the big-change flag, and phase 4 uses the arena only on complex tier. A trivial feature collapses to implement plus verify, per the precedence rule in `SKILL.md`.
 
 ## Name the data shape first
 
