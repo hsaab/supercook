@@ -18,7 +18,7 @@ A development workflow you invoke with one command, that scales its own process 
 
 ## Why this exists
 
-With agents writing code at unprecedented rates, skills just focused on writing code aren't good enough. Planning, testing, reviewing also deserve careful consideration at write time or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering - designed to help you cook efficiently and effectively. Here's why I think its special:
+With agents writing code at unprecedented rates, skills to write code that are just focused on writing code aren't good enough. Planning, testing, reviewing also deserve careful consideration at write time or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering - designed to help you cook efficiently and effectively. Here's why I think its special:
 
 - **One command intelligently routes based on task + complexity** How many times are we struggling to find the name of the exact skill or with the ordering of skills to accomplish a task. Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. A ledger audit trail is then written to as you go.
 
