@@ -4,6 +4,18 @@ A development workflow you invoke with one command, that scales its own process 
 
 `/supercook fix the webhook 500s` gets a small, focused fix. `/supercook add rate limiting to the public API` gets architecture alignment, a multi-model planning arena, tests written before implementation, an independent audit, and three reviewable PRs. Same command.
 
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [When to use it, and what to expect](#when-to-use-it-and-what-to-expect)
+- [The flow](#the-flow)
+- [Key principles, and why they work](#key-principles-and-why-they-work)
+- [Install](#install)
+- [Bring your own models](#bring-your-own-models)
+- [What it needs, and what happens without it](#what-it-needs-and-what-happens-without-it)
+- [Usage](#usage)
+- [Layout](#layout)
+
 ## Why this exists
 
 Orchestrator skills are becoming one of the more useful things you can build for an agent, for three reasons.
@@ -26,7 +38,7 @@ One command does not mean one heavyweight process. Supercook classifies the task
 
 Tracks skip what does not apply. An investigation stays read-only and produces an answer rather than a PR, and it writes nothing to your repo at all. `open-pr` skips planning and implementation, but still verifies the diff and runs the suite before opening. A refactor starts by pinning current behavior with tests.
 
-> Use Supercook for anything development related. Tell it the outcome you want, and it decides how much process the work deserves. Small tasks stay small. Normal changes get a focused plan, implementation, verification, and usually one reviewable PR. Large or risky changes add architecture alignment, deeper exploration, test-first development, independent review, and multiple coherent PRs. You can expect visible progress in the ledger, no silently skipped work, and a short outcome-focused handoff.
+> Use Supercook for anything development-related. Tell it the outcome you want; it decides how much process the work deserves. Small tasks stay small. Normal changes get a focused plan, implementation, verification, and usually one reviewable PR. Large or risky changes add architecture alignment, deeper exploration, test-first development, independent review, and multiple coherent PRs. You can expect visible progress in the ledger, no silently skipped work, and a short outcome-focused handoff.
 
 ## The flow
 
@@ -108,6 +120,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook plan only <what you want>      # stop after the plan
 /supercook no PR <what you want>          # implement and verify, do not open a PR
 /supercook no commits <what you want>     # leave the changes uncommitted
+/supercook keep ledger <what you want>    # commit the ledger so another machine can resume
 /merge-pr                                  # drive a PR to merged
 ```
 

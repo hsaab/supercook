@@ -42,6 +42,16 @@ Then, for every return, the parent does four things in this order:
 1. **Run the guards** (below). Before committing, always.
 2. **Read the diff yourself.** The agent's summary is a claim. Its diff is the evidence.
 3. **Commit that unit**, with a message in the house style: what changed, in which file, why, and what it means.
+
+   ```
+   Read webhook retry count from the queue record
+
+   handleWebhook referenced a retryCount variable that the queue rewrite
+   deleted, so every inbound webhook threw on its first line. The attempt
+   count now comes off the queue record, which is where that state lives.
+   ```
+
+   Not "fix webhook bug" or "improve retry handling". The subject says what changed, the body says why it was wrong and what it means.
 4. **Update the ledger and the plan checkboxes**, with the running line counts.
 
 Between launches, **re-anchor**: name the open ledger row the next action serves. Cannot name one? That is drift. Log a course-correction row and get back on an open row.

@@ -94,3 +94,4 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
 | The supercook agents | Roles run inline from the agent file bodies. |
 | A valid model slug | Inherit, log once, continue. |
+| A PR template, or one that is mandatory | The three PR body sections become the minimum content and get fitted into the template's fields rather than replacing them. Check for `.github/pull_request_template.md` during the probe. |

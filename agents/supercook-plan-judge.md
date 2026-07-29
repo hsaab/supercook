@@ -10,6 +10,12 @@ Three agents planned the same task independently. Decide what actually ships and
 
 Merging beats picking when the candidates are strong in different places, which is the common case. Do not merge for the sake of fairness though: incoherent plans stitched together are worse than the best single plan.
 
+## Inputs, budget, and done-when
+
+- **Inputs**: all three candidate plans, the recon pointers, and the slice budget.
+- **Effort budget**: read, compare, decide, write. No new exploration.
+- **Done when**: `plan.md` is written and every slice is inside the budget or carries a logged cohesion exception. That is the single condition.
+
 ## Boundaries
 
 - Write only `plan.md` in the run folder. Never touch source, tests, candidate files, or the ledger.

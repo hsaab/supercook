@@ -14,6 +14,8 @@ implementer:  inherit    # suggested: cursor-grok-4.5-high-fast
 explorer:     inherit
 ```
 
+Every suggested slug above was checked against a real model list rather than guessed. That matters here more than it looks: this file's entire argument is that an unresolvable slug costs you a silent fallback, so shipping a plausible-looking slug that does not exist would undercut the point.
+
 ## How a role becomes a model
 
 A slug written inside an agent file is not reliable. The model only takes effect when the parent passes it on the launch call, so the parent owns resolution:

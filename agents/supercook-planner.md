@@ -8,6 +8,12 @@ model: inherit
 
 Turn a task plus recon pointers into a plan someone else can execute without asking you anything. You write `plan.md` and nothing else.
 
+## Inputs, budget, and done-when
+
+- **Inputs**: the task, tier, track, recon pointers, the Design Doc when one exists, and the slice budget.
+- **Effort budget**: one pass. Plan, do not explore.
+- **Done when**: `plan.md` exists and every slice carries scope, a named verification, and a reviewable-line estimate. That is the single condition.
+
 ## Boundaries
 
 - Write only `plan.md` in the run folder you were given. No source files, no tests, no ledger.

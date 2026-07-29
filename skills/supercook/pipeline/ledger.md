@@ -94,5 +94,5 @@ Be honest about this, because overclaiming it leads to lost work.
 
 For a run that must survive those, two options, both opt-in and both logged:
 
-- **Commit the ledger** on the working branch, accepting the branch noise.
+- **Commit the ledger** on the working branch, accepting the branch noise. Ask for this up front with `/supercook keep ledger <task>`.
 - **End with a handoff payload**: the header, the open rows, and the next action, written out so it can be pasted into the next session.

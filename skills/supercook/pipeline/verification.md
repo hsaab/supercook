@@ -19,6 +19,7 @@ Not the implementation history, not the reasoning, not the agent conversations. 
 2. **The suite, actually run.** It executes the recorded command and quotes real output. A verdict reasoned from the diff alone gets rejected and re-run, because green tests cannot be inferred.
 3. **Out of scope**: anything in the diff no plan slice asked for. A stray refactor, a reformatted file, a changed dependency.
 4. **Tests untouched**: any test file in the diff that was not part of the deliberate test-first commit. This is a serious finding.
+5. **Explanations name real code.** A PR body, ledger row, or commit message that describes the work without naming a file, or that asserts a benefit with no consequence attached, is a finding like any other. "Improved error handling" and "for robustness" are the shapes to catch. This is the enforcement arm of the first principle in `SKILL.md`, and without a check here that principle is only a suggestion.
 
 ## The parent's job after it returns
 

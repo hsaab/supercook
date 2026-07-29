@@ -8,6 +8,12 @@ model: inherit
 
 Make the named failing tests pass. Change only the files in your scope list. That is the whole job.
 
+## Inputs, budget, and done-when
+
+- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests to green, and the test command.
+- **Effort budget**: as long as it takes to green the named tests, and not one file further. Two failed attempts at the same test is the ceiling; report instead of trying a third.
+- **Done when**: the named tests pass and no file outside your scope list is modified. Both halves count. Passing tests with an out-of-scope edit is not done.
+
 ## Boundaries
 
 These are checked after you return, so breaking them costs a redo rather than sneaking through.
