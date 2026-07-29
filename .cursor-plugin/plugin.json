@@ -1,0 +1,29 @@
+{
+  "name": "supercook",
+  "displayName": "Supercook",
+  "version": "0.1.0",
+  "description": "An orchestrated development workflow for any repo. Scales ceremony to task risk, keeps a ledger as an audit trail, plans with a multi-model arena on complex work, writes user-journey tests first, and ships plain-language PRs under a reviewable size budget.",
+  "author": {
+    "name": "Hassan Saab"
+  },
+  "homepage": "https://github.com/hsaab/supercook",
+  "repository": "https://github.com/hsaab/supercook",
+  "license": "MIT",
+  "keywords": [
+    "supercook",
+    "workflow",
+    "orchestration",
+    "subagents",
+    "tdd",
+    "code-review",
+    "pull-requests"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "workflow",
+    "orchestration",
+    "testing"
+  ],
+  "skills": "./skills/",
+  "agents": "./agents/"
+}
