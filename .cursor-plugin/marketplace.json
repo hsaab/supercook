@@ -1,0 +1,16 @@
+{
+  "name": "supercook-marketplace",
+  "owner": {
+    "name": "Hassan Saab"
+  },
+  "metadata": {
+    "description": "Supercook: an orchestrated development workflow for any repo."
+  },
+  "plugins": [
+    {
+      "name": "supercook",
+      "source": ".",
+      "description": "An orchestrated development workflow for any repo. Scales ceremony to task risk, keeps a ledger as an audit trail, plans with a multi-model arena on complex work, writes user-journey tests first, and ships plain-language PRs under a reviewable size budget."
+    }
+  ]
+}
