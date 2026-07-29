@@ -18,23 +18,21 @@ A development workflow you invoke with one command, that scales its own process 
 
 ## Why this exists
 
-Ranked by how much they change your day.
+With agents writing code at unprecedented rates, skills just focused on writing code aren't good enough. Planning, testing, reviewing also deserve careful consideration at write time or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering - designed to help you cook efficiently and effectively. Here's why I think its special:
 
-- **Process scales with the task, so one command covers everything.** Heavyweight workflows are great on risky changes and infuriating on small ones, which is why people turn them off. Supercook classifies the task first: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. You keep the safety net exactly where it pays for itself, without a process tax on trivial edits.
+- **One command intelligently routes based on task + complexity** How many times are we struggling to find the name of the exact skill or with the ordering of skills to accomplish a task. Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. A ledger audit trail is then written to as you go.
 
-- **PRs come out small because the plan is sliced, not the diff.** Agents made 5,000-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other. Reviews get read instead of rubber-stamped, feedback lands while the context is fresh, and fewer bugs ride in on "LGTM, too long to read".
+- **Unlock easy reviews by effortlessly merge bite size PRs** Agents made 5k-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other. 
 
-- **Everything it tells you is plain English tied to a file and a consequence.** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of file paths that says too much. Every explanation here names the function, the file, and what would have broken, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve. PR reviewers get the same story.
+- **Agent language that actually makes sense** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of text that says too much. Every explanation here names the function, the file, and the ROI impact, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve.
 
-- **Tests come from user journeys and land before the code.** The suite covers what users actually do rather than a hundred synthetic edge cases, it is committed before implementation, and the implementing agent cannot touch it: a guard restores any test file it modifies. Green means something, because the tests could not be bent until they passed. An independent fresh-context verifier then runs that suite before anything ships, so broken PRs get caught in-house instead of by your reviewer.
+- **Strict test driven development based on user outcomes** After a plan is created, a subagent creates tests based on what users actually do rather than a hundred random edge cases. It is committed before implementation, and the implementing agent cannot touch it. At the end of implementation, an independent fresh-context verifier then runs that suite before anything ships.
 
-- **Long work survives.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish.
-
-- **Good practice becomes installable.** Packaged as a plugin, the workflow is one clone away instead of living in someone's head or a wiki nobody reads. The same golden path runs on every repo and for every teammate, so output quality stops depending on who phrased the prompt.
+- **Confidence that long running tasks are done according to plan.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish. And when they finish an independent auditor will compare the agent's work to initial plan and remediate any gaps.
 
 ## When to use it, and what to expect
 
-Use it for anything development related: bugs, features, investigations, refactors, tests, performance work, and turning existing changes into a PR.
+Use it for anything development related: bugs, features, investigations, refactors, tests, performance work, and turning existing changes into a PR. Specific playbooks will be progressively inserted into context as needed per task.
 
 One command does not mean one heavyweight process. Supercook classifies the task first, then scales ceremony to the risk:
 
