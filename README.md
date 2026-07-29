@@ -76,18 +76,32 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 
 ## Install
 
+This repo is its own Cursor marketplace, so the shortest path is to add it once and install from Customize:
+
+```bash
+cursor-agent plugin marketplace add https://github.com/hsaab/supercook
+```
+
+Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`, and install it. When new commits land, pull them in with:
+
+```bash
+cursor-agent plugin marketplace update supercook-marketplace
+```
+
+If you would rather have a checkout you can edit, install it locally instead:
+
 ```bash
 git clone https://github.com/hsaab/supercook.git ~/Apps/supercook
 ln -s ~/Apps/supercook ~/.cursor/plugins/local/supercook
 ```
 
-Reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`).
+Either way, reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`).
 
 If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
 
 One thing to know before the first run: without worktree support it works on your current branch, and in that case it needs a clean tree. It will say so rather than stashing anything.
 
-This is a public repo with a manual install. It is not a Cursor Marketplace listing, which is a separate submission step.
+The marketplace above is one you add to your own account. It is not a listing in the official Cursor Marketplace, which is a separate submission step.
 
 ## Bring your own models
 
@@ -139,6 +153,7 @@ Playbooks, routed automatically from the assessment:
 ## Layout
 
 ```
+.cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
 agents/                       eight discoverable subagents, all supercook- prefixed
 assets/                       the pipeline diagram embedded above
 skills/supercook/
