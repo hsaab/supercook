@@ -1,6 +1,6 @@
 # Supercook
 
-A development workflow you invoke with one command, that scales its own process to the risk of the task.
+A development workflow you invoke with one command that scales its own process to the risk of the task.
 
 `/supercook fix the webhook 500s` gets a small, focused fix. `/supercook add rate limiting to the public API` gets architecture alignment, a multi-model planning arena, tests written before implementation, an independent audit, and three reviewable PRs. Same command.
 
@@ -18,17 +18,17 @@ A development workflow you invoke with one command, that scales its own process 
 
 ## Why this exists
 
-With agents writing code at unprecedented rates, skills to write code that are just focused on writing code aren't good enough. Planning, testing, reviewing also deserve careful consideration at write time or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering - designed to help you cook efficiently and effectively. Here's why I think its special:
+With agents writing code at unprecedented rates, skills to write code that are just focused on writing code aren't good enough. Planning, testing, and reviewing also deserve careful consideration at write time, or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering, designed to help you cook efficiently and effectively. Here's why I think it's special:
 
-- **One command intelligently routes based on task + complexity** How many times are we struggling to find the name of the exact skill or with the ordering of skills to accomplish a task. Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. A ledger audit trail is then written to as you go.
+- **One command intelligently routes based on task + complexity.** How many times are we struggling to find the name of the exact skill, or with the ordering of skills to accomplish a task? Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. A ledger audit trail is then written as you go.
 
-- **Unlock easy reviews by effortlessly merge bite size PRs** Agents made 5k-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other. 
+- **Unlock easy reviews by effortlessly merging bite-size PRs.** Agents made 5k-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other.
 
-- **Agent language that actually makes sense** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of text that says too much. Every explanation here names the function, the file, and the ROI impact, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve.
+- **Agent language that actually makes sense.** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of text that says too much. Every explanation here names the function, the file, and the ROI impact, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve.
 
-- **Strict test driven development based on user outcomes** After a plan is created, a subagent creates tests based on what users actually do rather than a hundred random edge cases. It is committed before implementation, and the implementing agent cannot touch it. At the end of implementation, an independent fresh-context verifier then runs that suite before anything ships.
+- **Strict test-driven development based on user outcomes.** After a plan is created, a subagent creates tests based on what users actually do rather than a hundred random edge cases. They are committed before implementation, and the implementing agent cannot touch them. At the end of implementation, an independent fresh-context verifier runs that suite before anything ships.
 
-- **Confidence that long running tasks are done according to plan.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish. And when they finish an independent auditor will compare the agent's work to initial plan and remediate any gaps.
+- **Confidence that long-running tasks are done according to plan.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish. And when they finish, an independent auditor will compare the agent's work to the initial plan and remediate any gaps.
 
 ## When to use it, and what to expect
 
@@ -36,7 +36,7 @@ Use it for anything development related: bugs, features, investigations, refacto
 
 One command does not mean one heavyweight process. Supercook classifies the task first, then scales ceremony to the risk:
 
-- **Trivial.** Work directly, verify, done. No exploration phase, no arena, no test ceremony. A copy fix stays a copy fix. The one thing that can still fire here is architecture alignment, because a two line change can still alter an interface other people depend on.
+- **Trivial.** Work directly, verify, done. No exploration phase, no arena, no test ceremony. A copy fix stays a copy fix. The one thing that can still fire here is architecture alignment, because a two-line change can still alter an interface other people depend on.
 - **Standard.** Targeted exploration, a short plan, tests for the real user journeys, surgical implementation, an independent verification pass, and usually one reviewable PR. Most work lands here.
 - **Complex.** Everything above plus a broad codebase map, architecture alignment when the approach needs sign-off, three models planning in parallel with a judge picking or merging, tests committed per slice, verification before every PR, and multiple coherent PRs.
 
