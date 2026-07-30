@@ -32,7 +32,7 @@ Pass these on every launch, without exception:
 - **The objective**, in one sentence, specific to this run.
 - **The run folder path**, so the agent can read `plan.md` and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
-- **The model**, resolved from [models.md](models.md), or nothing when the role is `inherit`.
+- **The model**, taken from the roster intake resolved (see [models.md](models.md)), or nothing when the role is `inherit`. Resolve once at intake, not per launch.
 - **The plain-language rule**: its returns must name files and real consequences, and must not contain em dashes.
 
 Do not paste the whole conversation, prior agent output, or file contents that the agent can read itself. A clean context window is the reason to delegate at all.

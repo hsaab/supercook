@@ -22,7 +22,7 @@ Also determine, without a separate agent launch:
 
 - **The test command.** Look at the `scripts` block, the CI config, or a test runner config file. Do not guess from the language.
 - **Whether the supercook agents are installed.** If they are not, every role runs inline from its agent file body. See the fallback section in [../agents.md](../agents.md).
-- **Which model slugs in [../models.md](../models.md) are valid** in this session. Uncommented slug that is not available means inherit and log.
+- **The model roster.** Read `~/.supercook/models.md` if it exists, then [../models.md](../models.md), and merge per role with the home file winning. A missing home file is the normal case: fall through to the shipped defaults without comment. Then check each uncommented slug against the models the launch tool offers in this session. A slug that is not available means inherit and log.
 
 Write one capability line to the ledger header:
 
@@ -98,4 +98,5 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
 | The supercook agents | Roles run inline from the agent file bodies. |
 | A valid model slug | Inherit, log once, continue. |
+| `~/.supercook/models.md` | Use the shipped roster in `../models.md`. This is the default state, so say nothing and log nothing. |
 | A PR template, or one that is mandatory | The three PR body sections become the minimum content and get fitted into the template's fields rather than replacing them. Check for `.github/pull_request_template.md` during the probe. |
