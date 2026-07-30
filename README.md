@@ -20,14 +20,10 @@ A development workflow you invoke with one command that scales its own process t
 
 With agents writing code at unprecedented rates, skills to write code that are just focused on writing code aren't good enough. Planning, testing, and reviewing also deserve careful consideration at write time, or they become the bottleneck. `/supercook` is what I landed on after two years of daily tinkering, designed to help you cook efficiently and effectively. Here's why I think it's special:
 
-- **One command intelligently routes based on task + complexity.** How many times are we struggling to find the name of the exact skill, or with the ordering of skills to accomplish a task? Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. A ledger audit trail is then written as you go.
-
+- **One command intelligently routes based on task/complexity OR just tell it.** How many times are we struggling to find the name of the exact skill, or with the ordering of skills to accomplish a task? Just type /supercook and let the skill cook. It first classifies the complexity and routes to the appropriate playbook: a copy fix stays a two-minute fix, and a risky change gets a multi-model planning arena, test-first development, and an independent audit. If you instead want to skip the classifier and assign complexity yourself, you can.
 - **Unlock easy reviews by effortlessly merging bite-size PRs.** Agents made 5k-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other.
-
 - **Agent language that actually makes sense.** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of text that says too much. Every explanation here names the function, the file, and the ROI impact, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve.
-
 - **Strict test-driven development based on user outcomes.** After a plan is created, a subagent creates tests based on what users actually do rather than a hundred random edge cases. They are committed before implementation, and the implementing agent cannot touch them. At the end of implementation, an independent fresh-context verifier runs that suite before anything ships.
-
 - **Confidence that long-running tasks are done according to plan.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish. And when they finish, an independent auditor will compare the agent's work to the initial plan and remediate any gaps.
 
 ## When to use it, and what to expect
@@ -105,9 +101,18 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Everything is configured in one file: [skills/supercook/models.md](skills/supercook/models.md).
+Seven roles, one line each: the assessor group, the three arena contestants, the plan judge, the implementer, and the explorer. Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
 
-Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role. Uncomment what you want. The orchestrator validates each slug at the start of a run and falls back to inherit with a note in the ledger if your plan does not carry it, so nothing breaks and nothing is guessed.
+Put your choices in `~/.supercook/models.md`, not in the plugin. A marketplace install lives in a commit-pinned cache directory that the next update replaces wholesale, so edits made inside the plugin do not survive `plugin marketplace update`. The home file does, and it applies to every repo you run in.
+
+```bash
+mkdir -p ~/.supercook
+curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
+```
+
+Then uncomment the roles you want. Roles you leave alone fall back to the shipped default, so a home file that sets two arena slots and nothing else changes exactly those two.
+
+At the start of every run the orchestrator merges the two files, validates each slug against the models your session actually offers, and falls back to inherit with a note in the ledger if your plan does not carry one. Nothing breaks and nothing is guessed.
 
 **The one edit worth making:** get three different model families into the arena. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off. Setting `arena-b` and `arena-c` to two other families is enough, since `arena-a` left on `inherit` contributes whatever model is already driving your session.
 
@@ -158,7 +163,7 @@ agents/                       eight discoverable subagents, all supercook- prefi
 assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
-  models.md                   the one file for model choices
+  models.md                   the default roster, overridden by ~/.supercook/models.md
   agents.md                   launch contracts and the parent-side guards
   pipeline/                   nine guides for the ten phases, loaded when the phase runs
   playbooks/                  one per track, merge included
