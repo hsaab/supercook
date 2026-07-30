@@ -1,5 +1,9 @@
 # Supercook
 
+<p align="center">
+  <img src="assets/logo.png" alt="The Supercook chef seasoning a pan with code" width="240" />
+</p>
+
 A development workflow you invoke with one command that scales its own process to the risk of the task.
 
 `/supercook fix the webhook 500s` gets a small, focused fix. `/supercook add rate limiting to the public API` gets architecture alignment, a multi-model planning arena, tests written before implementation, an independent audit, and three reviewable PRs. Same command.
