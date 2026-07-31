@@ -18,6 +18,7 @@ Everything after entry is the same loop in [../pipeline/merge.md](../pipeline/me
 Copy these into the ledger verbatim.
 
 ```
+- [ ] stack only: state the full merge sequence, take one batched consent, add one merge row per PR
 - [ ] read the PR state: mergeable, checks, reviews, base drift
 - [ ] resolve conflicts, understanding both sides
 - [ ] triage every comment, fix or answer each one
@@ -51,8 +52,9 @@ This is the opposite of the investigation track, which writes nothing. The diffe
 
 Invoking this track is the consent to attempt a merge, not a waiver of the action tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
 
-- `gh pr merge` is irreversible. Ask before running it, every time.
-- `push --force-with-lease` on a stack child is irreversible. Ask before each one. Consent to merge is not consent to rewrite a branch.
+- **Single PR**: `gh pr merge` is irreversible. Ask before running it, every time.
+- **Stack**: state the full sequence up front (every merge, every expected rebase and force push, in order) and take one yes for the whole walk. Any surprise (a new conflict, a red required check, a comment demanding a code change, a rebase that does not apply cleanly) breaks the batch: handle it, restate what remains, ask again. Mechanics in [../pipeline/merge.md](../pipeline/merge.md#stacked-prs).
+- A force push outside a batch-consented walk asks individually. Consent to merge is not consent to rewrite a branch.
 - Branch protection, a missing required approval, and a failing required check get reported. They are never bypassed.
 
 ## Fixes made here are still diffs

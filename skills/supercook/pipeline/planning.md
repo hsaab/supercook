@@ -57,6 +57,8 @@ Every slice carries two numbers later, the **reviewable** count the budget appli
 
 Estimate each slice from the recon pointers. A slice that cannot honestly be estimated under budget gets split here.
 
+**Dependency chains longer than 3 slices get flagged in `plan.md`.** Delivery caps a stack at 3 open PRs (see [delivery.md](delivery.md#branching-and-stacking)), so slices 4 and beyond in one chain deliver sequentially and stretch wall-clock time. A long chain is legal, but before accepting one, try cutting the work differently so more slices are independent.
+
 ### The cohesion exception
 
 Cohesion outranks the number. A slice stays whole when splitting it would leave a broken or unsafe intermediate state on the default branch:
