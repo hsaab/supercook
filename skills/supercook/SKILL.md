@@ -61,6 +61,8 @@ A skill cannot override what runs it. Cursor's mode, tool approval prompts, user
 | Reversible writes (edit, commit, branch, worktree, push a run branch) | Run it, log a ledger row. If the host asks for approval, ask once with the reason, log the answer, keep going. |
 | Irreversible (force-push, merge, deploy, delete data, message other people) | Stop and ask every time. |
 
+**One batched consent is allowed for a stack walk.** Phase 9 may state the full sequence of merges and branch rewrites once and take one yes for all of it; any deviation from the stated sequence re-asks. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
+
 Blocked is not the same as bypassable. Branch protection, failing required checks, and missing credentials get reported, never worked around.
 
 **Sanctioned pauses**, each one a ledger row rather than a silent stall:

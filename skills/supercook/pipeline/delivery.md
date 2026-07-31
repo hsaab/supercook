@@ -48,7 +48,7 @@ No em dashes, here or anywhere.
 
 Record the stack order and each PR's base in the ledger. That record is what makes the restack possible later.
 
-**Prefer shallow stacks.** Two or three deep is manageable. Past that, ship sequentially: open slice N+1 only after slice N merges. The restack cost below is why.
+**Hard cap: 3 PRs open in one chain at any time.** Slice 4 of a chain opens only after the chain drops below 3 open PRs, which happens when its bottom PR merges. Branching is unaffected: implementation keeps chaining branches locally, only the PR opening waits. The restack cost below is why the cap exists.
 
 ## The stack lifecycle
 
@@ -73,7 +73,7 @@ if git merge-base --is-ancestor "$OLD_BASE" origin/<new-base>; then
   echo "contained: retarget alone is correct, no replay"
 else
   git rebase --onto origin/<new-base> "$OLD_BASE" <child-branch>
-  git push --force-with-lease            # ask first, every time
+  git push --force-with-lease            # consent rules below
 fi
 ```
 
@@ -81,7 +81,7 @@ fi
 
 **Why the two branches differ.** After a true merge commit, the child's commits are already contained in the new base, so the ancestor test passes, a retarget alone is correct, and a rebase would only churn history. After a squash or a rebase merge, the base's commits exist in a different form under different SHAs, the ancestor test fails, and the child must be replayed or its PR will show the base's changes as its own.
 
-**`push --force-with-lease` is irreversible, so ask every time**, per the irreversible tier in `SKILL.md`. Consent to merge a stack is not consent to rewrite each branch in it.
+**`push --force-with-lease` is irreversible**, per the irreversible tier in `SKILL.md`. Ask before each one, unless a batch-consented stack walk is in progress and this rewrite was part of the stated sequence: see [merge.md](merge.md#stacked-prs). Outside a batch, consent to merge a stack is not consent to rewrite each branch in it.
 
 **Re-running checks.** A rebase and force-push re-triggers checks on its own, since the head SHA changed. A bare retarget does not, because nothing about the child's commits moved, so trigger them explicitly when the child's checks matter:
 

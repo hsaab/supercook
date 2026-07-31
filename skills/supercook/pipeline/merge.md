@@ -85,6 +85,16 @@ Delete the branch after merge when that is the repo's habit, but **on a stack, c
 
 Merge bottom-up, one at a time. After each merge the children need attention, and what they need depends on how the base merged.
 
+### Batch consent for the walk
+
+State the whole sequence once, before the first merge, in plain language: which PRs merge in which order, and which branches will need a rebase and a force push afterward. On a squash-merge repo, expect every child to need one.
+
+> Merging the stack bottom-up: #412, then #413, then #414. This repo squash-merges, so after #412 I will rebase and force-push the #413 and #414 branches, and after #413 the #414 branch again. OK to run the whole sequence?
+
+One yes covers every merge and every rewrite in that stated sequence. Log the consent as a ledger row.
+
+The batch breaks on any deviation from the stated plan: a new conflict, a red required check, a review comment that demands a code change, or a rebase that does not apply cleanly. Handle the surprise, restate what remains, and ask again. Without a batch consent, every merge and every force push asks individually, per the tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
+
 **The mechanics live in one place**, [delivery.md](delivery.md#the-stack-lifecycle) under "The stack lifecycle". Follow it rather than a second copy here. Two things are worth repeating, because this phase can run in a session where phase 8 never did:
 
 **Capture `OLD_BASE=$(git rev-parse origin/<base-branch>)` before merging**, and before deleting the branch. The rebase needs it as its upstream, and deleting the branch first makes it unrecoverable.
@@ -111,7 +121,7 @@ This phase writes rows like any other. One per loop concern, so a context reset 
 - **No skipped checks.** Not with `--admin`, not by disabling a required check.
 - **No discarded work.** Not in a conflict resolution, not in a rebase.
 - **No merging a PR the user did not point at.** One target, or one explicit stack.
-- **`--force-with-lease` is irreversible, so ask every time.** Consent to merge is not consent to rewrite a branch.
+- **`--force-with-lease` is irreversible.** A batch-consented stack walk covers the rewrites it stated up front; every other force push asks individually. Consent to merge is not consent to rewrite a branch.
 - **No em dashes** in comments, replies, or commit messages.
 
 If the PR cannot merge, say exactly why in one plain-language line and stop. A blocked merge reported honestly is a good outcome. A merged PR that skipped a gate is not.
