@@ -18,13 +18,13 @@ Everything after entry is the same loop in [../pipeline/merge.md](../pipeline/me
 Copy these into the ledger verbatim.
 
 ```
-- [ ] stack only: state the full merge sequence, take one batched consent, add one merge row per PR
+- [ ] stack only: confirm branches are gt-tracked when stacking gt (else fall back to manual); state the full merge sequence (gt merge --dry-run --no-interactive when stacking gt, else plain-language walk); take one batched consent; add one merge row per PR
 - [ ] read the PR state: mergeable, checks, reviews, base drift
 - [ ] resolve conflicts, understanding both sides
 - [ ] triage every comment, fix or answer each one
 - [ ] fix in-scope CI failures, report out-of-scope ones
-- [ ] merge with the repo's default method
-- [ ] handle children if this is a stack
+- [ ] merge with the repo's default method (gt merge --no-interactive when stacking gt, else gh pr merge)
+- [ ] handle children if this is a stack (gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only when stacking gt, else the manual restack in delivery.md); before gt sync, confirm no stack sibling is checked out in another worktree
 ```
 
 ## Phases
@@ -52,10 +52,11 @@ This is the opposite of the investigation track, which writes nothing. The diffe
 
 Invoking this track is the consent to attempt a merge, not a waiver of the action tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
 
-- **Single PR**: `gh pr merge` is irreversible. Ask before running it, every time.
-- **Stack**: state the full sequence up front (every merge, every expected rebase and force push, in order) and take one yes for the whole walk. Any surprise (a new conflict, a red required check, a comment demanding a code change, a rebase that does not apply cleanly) breaks the batch: handle it, restate what remains, ask again. Mechanics in [../pipeline/merge.md](../pipeline/merge.md#stacked-prs).
-- A force push outside a batch-consented walk asks individually. Consent to merge is not consent to rewrite a branch.
-- Branch protection, a missing required approval, and a failing required check get reported. They are never bypassed.
+- **Single PR**: `gh pr merge` (or `gt merge` for one branch) is irreversible. Ask before running it, every time.
+- **Stack with `stacking gt`**: confirm the tip branch appears in `gt log` (tracked). If it does not, `gt track --force --no-interactive` only when the parent bases are clear, otherwise walk this stack on the manual path. Then run `gt merge --dry-run --no-interactive`, present that list as the sequence, and take one yes for `gt merge` plus the restacks and `gt submit --stack` it implies. Then `gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only`. Any surprise (`gt merge` failure, new conflict, red required check, comment demanding a code change, restack that does not apply cleanly, sibling checked out in another worktree) breaks the batch: handle it, restate what remains, ask again.
+- **Stack with `stacking manual`**: state the full sequence up front (every merge, every expected rebase and force push, in order) and take one yes for the whole walk. Same break-and-reask rule as above. Mechanics in [../pipeline/merge.md](../pipeline/merge.md#stacked-prs).
+- A force push (including `gt submit` rewrites on branches the run does not own) outside a batch-consented walk asks individually. Consent to merge is not consent to rewrite a branch. `gt submit` on run-owned stack branches follows the reversible tier in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first), and a batch-consented walk already covers those rewrites.
+- Branch protection, a missing required approval, and a failing required check get reported. They are never bypassed. GitHub still enforces them under both `gt merge` and `gh pr merge`.
 
 ## Fixes made here are still diffs
 

@@ -57,11 +57,11 @@ A skill cannot override what runs it. Cursor's mode, tool approval prompts, user
 
 | Action tier | Behavior |
 |---|---|
-| Read-only (search, read, status, log) | Just run it. |
-| Reversible writes (edit, commit, branch, worktree, push a run branch) | Run it, log a ledger row. If the host asks for approval, ask once with the reason, log the answer, keep going. |
-| Irreversible (force-push, merge, deploy, delete data, message other people) | Stop and ask every time. |
+| Read-only (search, read, status, log, `gt log`, `gt merge --dry-run`) | Just run it. |
+| Reversible writes (edit, commit, branch, worktree, push a run branch, `gt create`, `gt track`, `gt sync`, `gt restack`, `gt submit` on run-owned branches) | Run it, log a ledger row. If the host asks for approval, ask once with the reason, log the answer, keep going. `gt submit` force-pushes with lease on branches the run owns; treat that as this tier when the branch is ours, irreversible when it is not. |
+| Irreversible (force-push, `gh pr merge`, `gt merge`, deploy, delete data, message other people) | Stop and ask every time. |
 
-**One batched consent is allowed for a stack walk.** Phase 9 may state the full sequence of merges and branch rewrites once and take one yes for all of it; any deviation from the stated sequence re-asks. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
+**One batched consent is allowed for a stack walk.** Phase 9 may state the full sequence of merges and branch rewrites once and take one yes for all of it; any deviation from the stated sequence re-asks. On the Graphite path, `gt merge --dry-run` is the sequence to state, and one yes covers `gt merge` plus the restacks it performs. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
 
 Blocked is not the same as bypassable. Branch protection, failing required checks, and missing credentials get reported, never worked around.
 
