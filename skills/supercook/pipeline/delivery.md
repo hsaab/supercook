@@ -41,18 +41,52 @@ No em dashes, here or anywhere.
 
 ## Branching and stacking
 
+**Terminology.** A supercook **slice** is one unit of work: one branch and one PR. A supercook **stack** is a chain of dependent PRs. That maps 1:1 onto Graphite: a slice is a Graphite branch/PR in a stack, and a stack is a Graphite stack. The words stay distinct on purpose; do not rename slices to stacks.
+
 | Slice relationship | Branch from | PR base |
 |---|---|---|
 | Independent of other slices | default branch | default branch |
 | Depends on the previous slice | the previous slice's branch | the previous slice's branch |
 
-Record the stack order and each PR's base in the ledger. That record is what makes the restack possible later.
+Record the stack order and each PR's base in the ledger. That record is what makes the restack possible later, and it is what phase 9 reads when walking a stack.
 
-**Hard cap: 3 PRs open in one chain at any time.** Slice 4 of a chain opens only after the chain drops below 3 open PRs, which happens when its bottom PR merges. Branching is unaffected: implementation keeps chaining branches locally, only the PR opening waits. The restack cost below is why the cap exists.
+**Hard cap: 3 PRs open in one chain at any time.** Slice 4 of a chain opens only after the chain drops below 3 open PRs, which happens when its bottom PR merges. Branching is unaffected: implementation keeps chaining branches locally, only the PR opening waits. The cap exists for reviewer load: three open diffs in one chain is already a lot to keep in a human head, even when restacking is cheap.
+
+### When intake recorded `stacking gt`
+
+Use Graphite for branch creation and PR open. Independent slices still start from the default branch; dependent slices stack on the previous slice's branch.
+
+```bash
+gt create --all --message "<slice commit message>"   # dependent slice: stacks on the current branch
+gt submit --stack                                    # open or update PRs for the stack; bases set for you
+```
+
+If a branch was made with plain `git` (or a worktree add), bring it into Graphite with `gt track` before submitting. `gt submit` force-pushes with lease by design; treat those rewrites under the same consent rules as any other force-with-lease (covered inside a batch-consented stack walk, ask otherwise). See [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
+
+Each Graphite PR is an ordinary GitHub PR. Reviewers, CI, branch protection, and CODEOWNERS all stay on GitHub. The Graphite web app is optional.
+
+### When intake recorded `stacking manual`
+
+Create branches and open PRs with `git` and `gh` as before, setting each dependent PR's base to the previous slice's branch. The restack mechanics below under "Manual path" apply after each base merges.
 
 ## The stack lifecycle
 
-A stack is not finished when the PRs are open. When a base PR merges, its children need attention, and what they need depends on how the base merged.
+A stack is not finished when the PRs are open. When a base PR merges, its children need attention.
+
+### Graphite path (`stacking gt`)
+
+After a base PR merges (or after someone merges mid-stack from the GitHub UI), restack and update remotes from **this run's worktree**:
+
+```bash
+gt sync                 # fetch trunk, retarget, restack, clean up merged branches
+gt submit --stack       # push restacked children so GitHub PRs match local
+```
+
+That replaces the `OLD_BASE` capture, `gh pr edit --base`, ancestor test, and `git rebase --onto` sequence. Run it from the run's own worktree; gt skips branches checked out elsewhere. Consent for the force-with-lease that `gt submit` performs follows the same tiers as the manual path: covered inside a batch-consented walk, ask otherwise. See [merge.md](merge.md#stacked-prs).
+
+**Re-running checks.** A restack that changes the head SHA re-triggers checks on its own. That is the intended gate: each child is re-validated against the post-merge trunk before it can merge.
+
+### Manual path (`stacking manual`)
 
 **Record the base branch tip SHA before merging it.** The rebase below needs it as the upstream, and it becomes unrecoverable once the branch is deleted.
 

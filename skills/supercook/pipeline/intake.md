@@ -16,6 +16,8 @@ git rev-parse --is-inside-work-tree 2>/dev/null          # git at all?
 git remote get-url origin 2>/dev/null                    # a remote?
 gh auth status 2>&1 | head -3                            # GitHub, authenticated?
 git worktree list 2>/dev/null                             # worktrees usable?
+gt --version 2>/dev/null                                  # Graphite CLI present?
+test -f "$(git rev-parse --git-path .graphite_repo_config 2>/dev/null)"  # gt init done?
 ```
 
 Also determine, without a separate agent launch:
@@ -23,12 +25,15 @@ Also determine, without a separate agent launch:
 - **The test command.** Look at the `scripts` block, the CI config, or a test runner config file. Do not guess from the language.
 - **Whether the supercook agents are installed.** If they are not, every role runs inline from its agent file body. See the fallback section in [../agents.md](../agents.md).
 - **The model roster.** Read `~/.supercook/models.md` if it exists, then [../models.md](../models.md), and merge per role with the home file winning. A missing home file is the normal case: fall through to the shipped defaults without comment. Then check each uncommented slug against the models the launch tool offers in this session. A slug that is not available means inherit and log.
+- **Stacking path.** Prefer Graphite when `gt` is installed, the repo has been `gt init`-ed (`.graphite_repo_config` exists under the git dir), and `gt` can talk to GitHub (auth token set; a missing token fails `gt submit`/`gt merge`). Otherwise use the manual stack lifecycle in [delivery.md](delivery.md#the-stack-lifecycle).
 
 Write one capability line to the ledger header:
 
 ```
-capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
+capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes | stacking gt
 ```
+
+Use `stacking gt` when Graphite is usable, or `stacking manual` when it is not. Delivery and merge read that field; they do not re-probe.
 
 ## 2. Decide the working tree
 
@@ -52,6 +57,8 @@ git worktree add ../<repo>-<slug> -b supercook/<slug> origin/<default-branch>
 ```
 
 Creating a worktree is a reversible write, so it may need host approval. Ask once with the reason, log the answer, and continue. Never assume it.
+
+**When stacking with Graphite**, run `gt sync`, `gt restack`, and `gt submit` from this run's own worktree. From gt 1.8.4 onward those commands skip non-trunk branches that are checked out in another worktree, so stack maintenance done from the wrong tree silently leaves children stale.
 
 ## 3. Fix run identity
 
@@ -94,6 +101,7 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | git | No worktree, no branch, no PR. Work in place, keep the run folder in the system temp dir, deliver a summary plus the diff. |
 | GitHub, or `gh` not authenticated | Phases 0 through 7 run unchanged. Delivery stops at a pushed branch or a local commit series, with the PR body written into the run folder to paste wherever it is needed. |
 | Worktree support | Say so, require a clean tree, work on the current branch. |
+| Graphite CLI, `gt` not authenticated, repo not `gt init`-ed, or non-GitHub host | Record `stacking manual`. Delivery and merge use the manual stack lifecycle in [delivery.md](delivery.md#the-stack-lifecycle) and [merge.md](merge.md#stacked-prs). Everything else is unchanged. |
 | A runnable test suite | Test-first becomes verification-first. The test designer writes an executable verification recipe into the plan, and the verifier runs that. The journey thinking survives; only the assertion mechanism changes. |
 | Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
 | The supercook agents | Roles run inline from the agent file bodies. |

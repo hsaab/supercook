@@ -71,21 +71,47 @@ A fix made here is still a diff, so it obeys the same rules as any other: surgic
 
 ## Merging
 
-Merge only when the PR is genuinely ready: mergeable, required checks green, required approvals present.
+Merge only when the PR is genuinely ready: mergeable, required checks green, required approvals present. Readiness still comes from `gh pr view` / `gh pr checks` above; Graphite does not replace that gate. `gt merge` and `gh pr merge` both go through GitHub's merge API, so branch protection, required checks, and required approvals still block a merge that is not ready.
 
 ```bash
 gh pr merge <n> --squash    # or --merge / --rebase, matching the repo's default
 ```
 
-Match the repo's configured default method rather than imposing one.
+Match the repo's configured default method rather than imposing one. On a Graphite stack, prefer `gt merge` under [Stacked PRs](#stacked-prs) instead of calling `gh pr merge` per PR.
 
-Delete the branch after merge when that is the repo's habit, but **on a stack, capture the branch tip SHA first**. The children's rebase needs it, and a deleted branch takes it with it.
+Delete the branch after merge when that is the repo's habit, but **on a manual stack, capture the branch tip SHA first**. The children's rebase needs it, and a deleted branch takes it with it. On the Graphite path, `gt sync` after the merge cleans up merged branches; you do not need the tip SHA.
 
 ## Stacked PRs
 
-Merge bottom-up, one at a time. After each merge the children need attention, and what they need depends on how the base merged.
+Merge bottom-up. Order is enforced by the stack's dependency graph: a child never merges before its parent. After each base merges, children need restacking (Graphite path) or retarget plus possible rebase (manual path).
 
-### Batch consent for the walk
+### Graphite path (`stacking gt`)
+
+Readiness work (comment triage, CI fixes, conflict resolution) is unchanged and still uses `gh`. Graphite only replaces the merge and restack mechanics.
+
+1. Make the stack ready: every PR from trunk up to the merge tip must be mergeable, green, and approved. Fix issues with the loop above before asking to merge.
+2. Produce the sequence for consent:
+
+```bash
+gt merge --dry-run
+```
+
+3. State that dry-run list as the batch-consent statement, in plain language: which PRs merge in which order, and that `gt merge` will restack and force-push children as each base lands. On a yes, run:
+
+```bash
+gt merge
+gt sync
+```
+
+One yes covers the single `gt merge` and the restacks it performs. Log the consent as a ledger row.
+
+The batch breaks on any surprise: a `gt merge` failure, a new conflict, a red required check, a review comment that demands a code change, or a restack that does not apply cleanly. Handle the surprise, restate what remains (re-run `gt merge --dry-run` if the tip changed), and ask again. Without a batch consent, `gt merge` asks individually as an irreversible action.
+
+Post-merge restack details live in [delivery.md](delivery.md#the-stack-lifecycle). If someone merges mid-stack from the GitHub UI instead of through Graphite, repair with `gt sync && gt submit --stack` from this run's worktree, then continue.
+
+### Manual path (`stacking manual`)
+
+Merge bottom-up with `gh pr merge`, one PR at a time. After each merge, restack children per the manual path in [delivery.md](delivery.md#the-stack-lifecycle).
 
 State the whole sequence once, before the first merge, in plain language: which PRs merge in which order, and which branches will need a rebase and a force push afterward. On a squash-merge repo, expect every child to need one.
 
@@ -121,7 +147,8 @@ This phase writes rows like any other. One per loop concern, so a context reset 
 - **No skipped checks.** Not with `--admin`, not by disabling a required check.
 - **No discarded work.** Not in a conflict resolution, not in a rebase.
 - **No merging a PR the user did not point at.** One target, or one explicit stack.
-- **`--force-with-lease` is irreversible.** A batch-consented stack walk covers the rewrites it stated up front; every other force push asks individually. Consent to merge is not consent to rewrite a branch.
+- **`--force-with-lease` and `gt submit` rewrites are irreversible.** A batch-consented stack walk covers the rewrites it stated up front; every other force push asks individually. Consent to merge is not consent to rewrite a branch.
+- **`gt merge` is irreversible.** It needs the same ask (or the same batch consent from its dry-run) as `gh pr merge`.
 - **No em dashes** in comments, replies, or commit messages.
 
 If the PR cannot merge, say exactly why in one plain-language line and stop. A blocked merge reported honestly is a good outcome. A merged PR that skipped a gate is not.
