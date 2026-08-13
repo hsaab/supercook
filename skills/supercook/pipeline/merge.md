@@ -89,25 +89,28 @@ Merge bottom-up. Order is enforced by the stack's dependency graph: a child neve
 
 Readiness work (comment triage, CI fixes, conflict resolution) is unchanged and still uses `gh`. Graphite only replaces the merge and restack mechanics.
 
+**Preconditions before using this path for a given stack.** The tip branch must appear in `gt log` (Graphite-tracked). If intake recorded `stacking gt` but this stack was opened with plain `git`/`gh` and never tracked, either `gt track --force` when the parent bases are clear, or walk this stack on the manual path. Also run `git worktree list` and free any stack sibling checked out in another worktree; Graphite will otherwise skip that sibling and leave it stale.
+
 1. Make the stack ready: every PR from trunk up to the merge tip must be mergeable, green, and approved. Fix issues with the loop above before asking to merge.
 2. Produce the sequence for consent:
 
 ```bash
-gt merge --dry-run
+gt merge --dry-run --no-interactive
 ```
 
-3. State that dry-run list as the batch-consent statement, in plain language: which PRs merge in which order, and that `gt merge` will restack and force-push children as each base lands. On a yes, run:
+3. State that dry-run list as the batch-consent statement, in plain language: which PRs merge in which order, and that `gt merge` will restack and force-push children as each base lands, with `gt sync && gt submit --stack` afterward for any remaining children. On a yes, run:
 
 ```bash
-gt merge
-gt sync
+gt merge --no-interactive
+gt sync --no-interactive --delete-all
+gt submit --stack --no-interactive --no-edit --update-only
 ```
 
-One yes covers the single `gt merge` and the restacks it performs. Log the consent as a ledger row.
+One yes covers the single `gt merge` and the restacks / submits it performs. Log the consent as a ledger row.
 
-The batch breaks on any surprise: a `gt merge` failure, a new conflict, a red required check, a review comment that demands a code change, or a restack that does not apply cleanly. Handle the surprise, restate what remains (re-run `gt merge --dry-run` if the tip changed), and ask again. Without a batch consent, `gt merge` asks individually as an irreversible action.
+The batch breaks on any surprise: a `gt merge` failure, a new conflict, a red required check, a review comment that demands a code change, a restack that does not apply cleanly, or a sibling stuck in another worktree. Handle the surprise, restate what remains (re-run `gt merge --dry-run --no-interactive` if the tip changed), and ask again. Without a batch consent, `gt merge` asks individually as an irreversible action.
 
-Post-merge restack details live in [delivery.md](delivery.md#the-stack-lifecycle). If someone merges mid-stack from the GitHub UI instead of through Graphite, repair with `gt sync && gt submit --stack` from this run's worktree, then continue.
+Post-merge restack details live in [delivery.md](delivery.md#the-stack-lifecycle). If someone merges mid-stack from the GitHub UI instead of through Graphite, repair with `gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only` from this run's working tree, then continue.
 
 ### Manual path (`stacking manual`)
 
@@ -147,7 +150,8 @@ This phase writes rows like any other. One per loop concern, so a context reset 
 - **No skipped checks.** Not with `--admin`, not by disabling a required check.
 - **No discarded work.** Not in a conflict resolution, not in a rebase.
 - **No merging a PR the user did not point at.** One target, or one explicit stack.
-- **`--force-with-lease` and `gt submit` rewrites are irreversible.** A batch-consented stack walk covers the rewrites it stated up front; every other force push asks individually. Consent to merge is not consent to rewrite a branch.
+- **`--force-with-lease` is irreversible** when the branch is not run-owned. Ask before each one, unless a batch-consented stack walk stated that rewrite. Consent to merge is not consent to rewrite a foreign branch.
+- **`gt submit` on run-owned stack branches** follows the reversible tier in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first). A batch-consented walk already covers those rewrites; outside a batch, still log them, and ask only when the host requires approval or the branch is not ours.
 - **`gt merge` is irreversible.** It needs the same ask (or the same batch consent from its dry-run) as `gh pr merge`.
 - **No em dashes** in comments, replies, or commit messages.
 

@@ -56,12 +56,24 @@ Record the stack order and each PR's base in the ledger. That record is what mak
 
 Use Graphite for branch creation and PR open. Independent slices still start from the default branch; dependent slices stack on the previous slice's branch.
 
+If this run already has a plain `git`/`worktree` branch (intake often creates `supercook/<slug>` that way), bring it into Graphite before stacking further children:
+
 ```bash
-gt create --all --message "<slice commit message>"   # dependent slice: stacks on the current branch
-gt submit --stack                                    # open or update PRs for the stack; bases set for you
+gt track --force --no-interactive          # parent = nearest tracked ancestor (usually trunk)
 ```
 
-If a branch was made with plain `git` (or a worktree add), bring it into Graphite with `gt track` before submitting. `gt submit` force-pushes with lease by design; treat those rewrites under the same consent rules as any other force-with-lease (covered inside a batch-consented stack walk, ask otherwise). See [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
+Then, for each dependent slice (or the first commit on a tracked run branch):
+
+```bash
+gt create --all --message "<slice commit message>" --no-interactive
+gt submit --stack --no-interactive --no-edit --publish
+# then set the house-style body (gt submit has no body flag):
+gh pr edit --body-file <path-to-three-section-body>
+```
+
+Always pass `--no-interactive` (and `--no-edit` on submit for new/updated PRs) so agent runs do not hang on prompts. Write the three-section PR body from earlier in this file via `gh pr edit` (or the repo's template flow) right after submit; do not leave Graphite's default description in place.
+
+`gt submit` force-pushes with lease by design. On branches this run owns, that is a reversible-tier write per [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run it, log it. Outside a batch-consented merge walk, ask only when the branch is not ours or the host requires approval.
 
 Each Graphite PR is an ordinary GitHub PR. Reviewers, CI, branch protection, and CODEOWNERS all stay on GitHub. The Graphite web app is optional.
 
@@ -75,14 +87,14 @@ A stack is not finished when the PRs are open. When a base PR merges, its childr
 
 ### Graphite path (`stacking gt`)
 
-After a base PR merges (or after someone merges mid-stack from the GitHub UI), restack and update remotes from **this run's worktree**:
+After a base PR merges (or after someone merges mid-stack from the GitHub UI), restack and update remotes from **this run's working tree**:
 
 ```bash
-gt sync                 # fetch trunk, retarget, restack, clean up merged branches
-gt submit --stack       # push restacked children so GitHub PRs match local
+gt sync --no-interactive --delete-all    # fetch trunk, retarget, restack, clean up merged branches
+gt submit --stack --no-interactive --no-edit --update-only
 ```
 
-That replaces the `OLD_BASE` capture, `gh pr edit --base`, ancestor test, and `git rebase --onto` sequence. Run it from the run's own worktree; gt skips branches checked out elsewhere. Consent for the force-with-lease that `gt submit` performs follows the same tiers as the manual path: covered inside a batch-consented walk, ask otherwise. See [merge.md](merge.md#stacked-prs).
+That replaces the `OLD_BASE` capture, `gh pr edit --base`, ancestor test, and `git rebase --onto` sequence. Run it from the run's working tree; gt skips branches checked out elsewhere. `--no-interactive` (and `--delete-all` on sync when cleanup is intended) keeps agent runs from hanging on delete/restack prompts. Consent for the force-with-lease that `gt submit` performs follows [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run-owned stack branches are reversible-tier; a batch-consented merge walk already covers those rewrites. See [merge.md](merge.md#stacked-prs).
 
 **Re-running checks.** A restack that changes the head SHA re-triggers checks on its own. That is the intended gate: each child is re-validated against the post-merge trunk before it can merge.
 
