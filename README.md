@@ -28,6 +28,11 @@ With agents writing code at unprecedented rates, skills to write code that are j
 - **Unlock easy reviews by effortlessly merging bite-size PRs.** Agents made 5k-line PRs effortless to produce, and that is where review breaks down: humans skim, review bots choke, and merges stall for days. Supercook plans work as slices under about 500 reviewable lines and opens one PR per slice, stacked when they depend on each other.
 - **Agent language that actually makes sense.** Left alone, agents drift into slop in both directions: "improved error handling" that says nothing, or a wall of text that says too much. Every explanation here names the function, the file, and the ROI impact, so you can judge the work in one read and catch a wrong turn while it is one commit old instead of twelve.
 - **Strict test-driven development based on user outcomes.** After a plan is created, a subagent creates tests based on what users actually do rather than a hundred random edge cases. They are committed before implementation, and the implementing agent cannot touch them. At the end of implementation, an independent fresh-context verifier runs that suite before anything ships.
+- **A supplied UI design is a contract.** Supercook resolves the exact Figma node,
+  screenshot, or layout spec before planning. `plan.md` records source-traceable
+  regions and order, structure tests pin them, and the real route is smoked before
+  its PR opens. Reusing production components does not permit deleting or
+  reordering designed regions.
 - **Confidence that long-running tasks are done according to plan.** Every phase writes to a ledger on disk, so a context reset or a new session resumes from the record instead of starting over, and no step can be skipped silently. Hours-long tasks actually finish. And when they finish, an independent auditor will compare the agent's work to the initial plan and remediate any gaps.
 
 ## When to use it, and what to expect
@@ -71,6 +76,11 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 **Test-driven, with the suite protected.** Failing tests are committed first, the implementing agent is forbidden from touching them, and the orchestrator restores any test file that gets modified anyway. That last part matters: an instruction alone does not stop an agent bending a test until it passes. ([Cursor's agent best practices](https://cursor.com/blog/agent-best-practices))
 
 **Boundaries are enforced, not requested.** Every rule that matters has a check that runs after the agent returns. Prompts express intent; the checks are what make it a control.
+
+**Designed UI is checked twice.** Semantic regions, counts, and DOM order are
+test-first. Geometry, responsive behavior, visible data, and interactions are
+checked on the rendered route. The structural verifier never claims it visually
+inspected a page it did not open.
 
 **Opinionated style choices**, with no research behind them and no pretense otherwise: surgical diffs, PRs under about 500 reviewable lines, keep going wherever host permissions allow, and no em dashes anywhere.
 
@@ -131,6 +141,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 | Worktrees | Works on the current branch, after saying so, and requires a clean tree |
 | git | Works in place, delivers a summary and the diff |
 | The plugin's agents | Roles run inline from the agent file bodies |
+| A renderer for a changed UI route | Writes a fully specified manual smoke and asks once for confirmation. A PR can disclose missing visual evidence, but never calls the route visually verified |
 
 **One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger.
 
@@ -156,7 +167,7 @@ Playbooks, routed automatically from the assessment:
 | feature | Names the data shape before the logic, tests real journeys, full pipeline |
 | investigation | Read-only, cited answer, no plan or tests or PR, and nothing written to your repo |
 | refactor | Pins current behavior with characterization tests, reroutes if behavior changes |
-| open-pr | No planning or implementation, but the diff is still verified, for work already in the tree |
+| open-pr | No planning or source implementation; existing designed UI gets retrospective structure tests, verification, and smoke |
 | merge | Drives an existing PR to merged whatever state it is in: conflicts, review comments, broken CI, stalled checks, stacks |
 
 ## Layout
@@ -169,7 +180,8 @@ skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
   models.md                   the default roster, overridden by ~/.supercook/models.md
   agents.md                   launch contracts and the parent-side guards
-  pipeline/                   nine guides for the ten phases, loaded when the phase runs
+  pipeline/                   phase guides plus the cross-cutting UI contract
+    ui.md                     cross-cutting design contract and rendered-smoke gates
   playbooks/                  one per track, merge included
 ```
 

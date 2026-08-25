@@ -7,8 +7,9 @@ Same behavior, better structure. If behavior changes, this is not a refactor.
 Copy these into the ledger verbatim.
 
 ```
-- [ ] pin current behavior with characterization tests before moving anything
-- [ ] confirm those tests pass against the code as it is today
+- [ ] pin current behavior with characterization tests or a recipe before moving anything
+- [ ] confirm that verification passes against the code as it is today
+- [ ] UI refactor only: record and smoke the current rendered behavior
 - [ ] move structure in small steps, suite green after each one
 - [ ] behavior change discovered means stop and reroute to feature
 - [ ] state what got easier, concretely, before opening the PR
@@ -30,24 +31,37 @@ This table describes standard and complex tier. A trivial refactor collapses to 
 | 7 verify | yes, plus explicit confirmation that behavior is unchanged |
 | 8 deliver | yes |
 
-## Characterization tests come first
+## Characterization verification comes first
 
-A refactor without tests pinning the current behavior is not a refactor, it is a rewrite with extra confidence.
+A refactor without tests or an executable recipe pinning current behavior is not a
+refactor, it is a rewrite with extra confidence.
 
-Characterization tests are different from feature tests. They do not describe what the code **should** do. They capture what it **does** today, including the parts that look wrong:
+Characterization assertions are different from feature assertions. They do not describe what the code **should** do. They capture what it **does** today, including the parts that look wrong:
 
 ```
 existing: a webhook with no retry record returns 200 with an empty body
 existing: an expired token passes on the first request and fails on the second
 ```
 
-Write them, run them, confirm they pass against untouched code. A characterization test that fails before you start is telling you there is a bug, which means you are on the wrong track. Stop and reroute to bugfix.
+Write them as tests or an executable recipe, run them, and confirm they pass against
+untouched code. A characterization assertion that fails before you start is telling
+you there is a bug, which means you are on the wrong track. Stop and reroute to
+bugfix.
 
 Preserve the odd behavior in the test even when it looks like a mistake. Something may depend on it. Fixing it is a separate, deliberate change with its own PR.
+
+When layout is in scope, rendered behavior is part of the characterization. Record
+the route, representative state, viewports, region order, grouping, geometry,
+responsive behavior, and interactions before moving code. A supplied design uses
+the contract in [../pipeline/ui.md](../pipeline/ui.md); any intentional change away
+from current rendered behavior reroutes to feature.
 
 ## Move in small steps
 
 Each step keeps the suite green. Extract one function, move one file, collapse one duplicated block, then run the tests.
+
+For a UI refactor, rerun the rendered smoke after the slice. The page must match the
+recorded characterization or approved design as well as keeping the suite green.
 
 This is what makes a refactor reviewable. Ten small commits that each keep the suite green are easy to follow and easy to bisect. One enormous "restructured the module" commit is neither.
 

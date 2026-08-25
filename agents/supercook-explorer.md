@@ -27,6 +27,10 @@ Start broad, then narrow. Find the entry points first (routes, handlers, exporte
 
 If a question has no answer in the code, say "not found" and say where you looked. A guess dressed as a finding is worse than a gap.
 
+When the question list includes a rendered surface, trace the route as carefully as
+an API entry point. Find the view, its data or seed state, and the repo-supported
+way to start and exercise it. Do not guess a port, auth state, or fixture.
+
 ## Returns
 
 Two sections, in this order.
@@ -56,6 +60,17 @@ stack: <languages, frameworks, package manager>
 test-command: <the exact command that runs the suite>
 test-paths: <the glob patterns test files match, for example **/*.test.ts, tests/**/*.py>
 conventions: <two or three lines on naming, file layout, and error handling as actually practiced>
+ui-change: <yes | no, with route and source-file evidence>
+render-start: <exact command | not found>
+render-ready: <URL or readiness signal | not found>
+render-route: <base URL plus changed route | not found>
+render-state: <seed, fixture, and auth setup | not found>
+render-viewports: <existing browser mechanism | not found>
+render-teardown: <exact command | not needed | not found>
 ```
 
 The test command and test paths are load-bearing. Later phases use the command to verify and the paths to protect the suite from being edited. Get them from real evidence: the `scripts` block, a CI config, a test runner config file, or an existing test's own header. Do not guess from the language.
+
+The render fields are required only when `ui-change: yes`. Cite the script, route,
+fixture, or existing browser test that supports each answer. `not found` is an
+acceptable result and is more useful than an invented smoke target.

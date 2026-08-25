@@ -12,6 +12,7 @@ Built-in `/babysit` is the no-merge version: it keeps a PR healthy but stops sho
 - [Waiting is not blocked](#waiting-is-not-blocked)
 - [Comment triage](#comment-triage)
 - [CI failures](#ci-failures)
+- [UI readiness](#ui-readiness)
 - [Merging](#merging)
 - [Stacked PRs](#stacked-prs)
 - [Ledger rows](#ledger-rows)
@@ -31,7 +32,9 @@ Then repeat until mergeable and green:
 2. **Comments**: triage per below.
 3. **Failing checks**: fix in scope, report out of scope.
 4. **Stalled or flaky checks**: re-run once with `gh run rerun <run-id> --failed`. The run id is required; without it the command needs a TTY and will fail. Get it from `gh pr checks <n>` or `gh run list --branch <branch>`.
-5. **Re-read state.** A push invalidates the previous rollup, and a PR that has been open a while accumulates base drift between passes.
+5. **UI readiness**: when a UI contract applies, recover it from the PR and confirm
+   the rendered smoke is current for the head.
+6. **Re-read state.** A push invalidates the previous rollup, and a PR that has been open a while accumulates base drift between passes.
 
 Report progress as you go, one line per meaningful change, in plain language naming files.
 
@@ -69,9 +72,24 @@ Read the actual log before touching anything. `gh run view <id> --log-failed` be
 
 A fix made here is still a diff, so it obeys the same rules as any other: surgical, explained by naming the file and the consequence, and committed with its own message.
 
+## UI readiness
+
+On a cold merge run, recover the design source, UI contract ids, approved
+deviations, contract summary, full smoke target, tested head SHA, and latest result
+from the PR body. Do not assume the untracked run ledger is available, and do not
+reconstruct a design from source code.
+
+The rendered smoke is stale when its recorded head differs from the current PR head
+or a merge-track fix changed a rendered file. Rerun the contract's route, state,
+viewports, and interactions before merge. If no renderer can load it, use the
+sanctioned manual path from [ui.md](ui.md#rendered-smoke) and disclose the missing
+evidence. A smoke that rendered and failed is a merge blocker, not a degradation.
+
 ## Merging
 
-Merge only when the PR is genuinely ready: mergeable, required checks green, required approvals present.
+Merge only when the PR is genuinely ready: mergeable, required checks green,
+required approvals present, and any required rendered smoke current and passing or
+explicitly sanctioned-blocked.
 
 ```bash
 gh pr merge <n> --squash    # or --merge / --rebase, matching the repo's default

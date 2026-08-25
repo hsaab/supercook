@@ -29,6 +29,11 @@ Judge the risk of getting it wrong, not how long it takes to type.
 
 **standard**: the common case. One area of the codebase, a handful of files, real behavior, and a wrong version would reach a user or another developer. Most bugs and most features land here.
 
+A supplied design does not make copy-only work standard. It does make any change to
+hierarchy, region membership or order, geometry, interactions, or responsive
+behavior at least standard, because that work needs the UI contract, structure
+tests, and a rendered smoke from `pipeline/ui.md`.
+
 **complex**: any one of these makes it complex.
 - Three or more distinct areas or services change together.
 - The right approach is genuinely unclear and reasonable engineers would disagree.

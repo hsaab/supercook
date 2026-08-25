@@ -9,10 +9,12 @@ Copy these into the ledger verbatim.
 ```
 - [ ] name the data shape before writing any logic
 - [ ] name the user journeys this feature has to make work
-- [ ] tests for those journeys land before the implementation
+- [ ] tests, or an executable recipe without a runner, land before implementation
+- [ ] supplied UI design is resolved into a contract and pinned by structure tests
 - [ ] implement slice by slice, each one shippable on its own
 - [ ] no opportunistic refactors in the diff
 - [ ] the feature works end to end on the real artifact, not just in unit tests
+- [ ] every changed UI route passes its rendered smoke before delivery
 ```
 
 ## Phases
@@ -43,6 +45,10 @@ Those become the tests. Then add the realistic variations: bad input at a real e
 
 Reuse what exists. Before writing a helper, check whether the codebase already has one, and match its conventions if it does. Two implementations of the same idea is the thing that makes codebases hard to change later.
 
+For a supplied UI design, reuse is a constraint on how a contracted region is
+built. It is never permission to omit the region, change its content, or copy a
+neighboring page's section order. Follow [../pipeline/ui.md](../pipeline/ui.md).
+
 Simple beats clever every time. The next reader is the customer of this code, and often it is you in three months. Prefer the boring construction that reads top to bottom.
 
 ## Surgical scope
@@ -60,3 +66,8 @@ A feature is where scope creep is most tempting, because you are already in the 
 A green unit suite is not proof the feature works. Exercise the real path: hit the endpoint, run the command, click through the flow, and read the actual output.
 
 Put what you observed in the ledger and in the PR body. "Tests pass" is weaker evidence than "a request with 101 calls in a minute came back 429 with the retry-after header set".
+
+For UI work, load each changed route in representative state and exercise the
+changed flow. A contract-level slice checks its recorded viewports, regions,
+geometry, responsive behavior, visible content, and interactions. A light slice
+checks that the route is not blank or broken.

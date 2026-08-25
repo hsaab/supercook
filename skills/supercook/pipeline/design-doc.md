@@ -19,6 +19,11 @@ The big-change flag means the work introduces or changes a data model, a public 
 
 The flag is independent of tier. A standard-tier task can be a big change, and plenty of complex work is not. Inserting this phase is a ledger mutation: add the row, then continue.
 
+This document stays architectural. A Figma URL, screenshot, or layout spec in its
+prose is an input to resolve through [ui.md](ui.md), not visual approval and not a
+section-order hint. After approval, rescan the document for UI sources and resolve
+them before planning. `plan.md` owns the UI contract.
+
 ## Ask full or lite
 
 Ask once, in one line, and say what each costs:

@@ -9,7 +9,7 @@ Four steps, in this order. The order is not cosmetic: doing them out of sequence
 
 ## 1. Probe capabilities
 
-The rest of the workflow assumes git, a remote host, worktrees, and a test suite. Check rather than assume, and record what you find. Every missing capability has a degraded path, listed at the bottom of this file.
+The rest of the workflow assumes git, a remote host, worktrees, and a test suite. UI work also needs a way to render the real route. Check rather than assume, and record what you find. Every missing capability has a degraded path, listed at the bottom of this file.
 
 ```bash
 git rev-parse --is-inside-work-tree 2>/dev/null          # git at all?
@@ -21,6 +21,8 @@ git worktree list 2>/dev/null                             # worktrees usable?
 Also determine, without a separate agent launch:
 
 - **The test command.** Look at the `scripts` block, the CI config, or a test runner config file. Do not guess from the language.
+- **UI evidence in the task.** Record whether the request changes a rendered surface and whether it supplies a Figma URL, screenshot, attachment, or layout spec. Read [ui.md](ui.md) immediately when either fact is true.
+- **The render check.** Note an available browser or computer-use tool, or an existing browser or end-to-end command in the repo. Record `none` when the route cannot be rendered yet. Recon refines the start command, route, state, and viewports. A trivial UI run that skips recon must do a minimal route, start-command, and representative-state lookup before verify.
 - **Whether the supercook agents are installed.** If they are not, every role runs inline from its agent file body. See the fallback section in [../agents.md](../agents.md).
 - **The model roster.** Read `~/.supercook/models.md` if it exists, then [../models.md](../models.md), and merge per role with the home file winning. A missing home file is the normal case: fall through to the shipped defaults without comment. Then check each uncommented slug against the models the launch tool offers in this session. A slug that is not available means inherit and log.
 
@@ -28,7 +30,11 @@ Write one capability line to the ledger header:
 
 ```
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
+ui-change: yes | ui-source: figma <canonical URL> | render-check: browser
 ```
+
+`ui-change` and `ui-source` are independent. A UI change often has no supplied
+design, and a design attached to an investigation does not authorize a UI change.
 
 ## 2. Decide the working tree
 
@@ -94,7 +100,9 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | git | No worktree, no branch, no PR. Work in place, keep the run folder in the system temp dir, deliver a summary plus the diff. |
 | GitHub, or `gh` not authenticated | Phases 0 through 7 run unchanged. Delivery stops at a pushed branch or a local commit series, with the PR body written into the run folder to paste wherever it is needed. |
 | Worktree support | Say so, require a clean tree, work on the current branch. |
-| A runnable test suite | Test-first becomes verification-first. The test designer writes an executable verification recipe into the plan, and the verifier runs that. The journey thinking survives; only the assertion mechanism changes. |
+| A runnable test suite | Test-first becomes verification-first. The test designer returns an executable recipe; the parent writes it in the run folder and records its path in `plan.md`, or the ledger on open-pr, and the verifier runs it. The journey thinking survives; only the assertion mechanism changes. |
+| A readable supplied UI source | Ask once for a screenshot, a written layout spec, or authorization to proceed without it. Record the answer before planning. Never invent the source's contents. |
+| A renderer for a changed route | Write a fully specified manual smoke row with the route, state, viewports, and checks. It is sanctioned-blocked until the user confirms it or accepts delivery with the missing visual evidence named. |
 | Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
 | The supercook agents | Roles run inline from the agent file bodies. |
 | A valid model slug | Inherit, log once, continue. |

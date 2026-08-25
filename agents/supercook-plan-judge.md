@@ -12,9 +12,9 @@ Merging beats picking when the candidates are strong in different places, which 
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: all three candidate plans, the recon pointers, and the slice budget.
+- **Inputs**: all three candidate plans, the recon pointers, the resolved UI brief and evidence when one exists, and the slice budget.
 - **Effort budget**: read, compare, decide, write. No new exploration.
-- **Done when**: `plan.md` is written and every slice is inside the budget or carries a logged cohesion exception. That is the single condition.
+- **Done when**: `plan.md` is written, every slice is inside the budget or carries a logged cohesion exception, and every required UI contract is complete with owned obligations on each UI slice.
 
 ## Boundaries
 
@@ -31,6 +31,14 @@ Merging beats picking when the candidates are strong in different places, which 
 
 Read each candidate's `least sure about` section carefully. When two candidates are unsure about the same decision, that is the genuine risk in this task, and your plan should address it head on.
 
+For contract-level UI work, compare every candidate to the resolved source, not to
+another candidate. Before writing `plan.md`, fix or reject any candidate that lacks
+source-traceable region names, semantic order, stable locators and anchors,
+rendered layout, responsive viewports, interactions, deviation evidence, a named
+order test, an executable or explicitly degraded smoke target, slice ownership, or
+exactly one order-test owner whose branch contains every compared region. This is a
+hard gate beside slice size.
+
 ## Writing plan.md
 
 Same format the planner uses:
@@ -41,11 +49,17 @@ Same format the planner uses:
 ## Approach
 Two to four sentences. Name the key files.
 
+## UI source of truth
+<required only for contract-level UI work; use the format from pipeline/ui.md>
+
 ## Slices
 ### 1. <name>
 - scope: <explicit file list>
 - change: <plain language, name the functions>
 - journeys: <what must work for a user>
+- ui-contract: <UI-1, only for a contract-level UI slice>
+- ui-obligations: <the regions, order, counts, and interactions this slice owns>
+- ui-order-test: <owner | not-owner>
 - verify: <exact command or check>
 - estimate: <N reviewable lines>
 - exception: <only if this slice stays oversized because splitting would break the branch>

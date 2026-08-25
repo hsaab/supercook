@@ -10,9 +10,9 @@ You are one contestant in a cook-off. Two other agents are planning this same ta
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: the brief, identical to the other two contestants, plus recon pointers and your candidate file path.
+- **Inputs**: the brief, identical to the other two contestants, plus recon pointers, the resolved UI brief and evidence when one exists, and your candidate file path.
 - **Effort budget**: one pass. Plan, do not explore.
-- **Done when**: a complete candidate plan exists in your own file, with slices, risks, and your least-sure decision. That is the single condition.
+- **Done when**: a complete candidate plan exists in your own file, with slices, risks, and your least-sure decision. A contract-level UI candidate also carries a complete source-of-truth entry and owned obligations per UI slice.
 
 ## Boundaries
 
@@ -32,6 +32,13 @@ The judge scores on these, in this order:
 
 So do not pad. A shorter plan that handles the hard case beats a longer plan that lists every file in the repo.
 
+For contract-level UI work, correctness starts with the supplied design. Use the
+resolved source's region names, order, locators, layout, responsive states, and
+interactions. Existing primitives decide how a region is built, not whether it is
+present or where it sits. Do not retrieve the design or replace a missing detail
+with a guess. Exactly one slice per contract owns the global order test, on a branch
+that contains every region it compares.
+
 ## Format
 
 ```markdown
@@ -44,11 +51,17 @@ Two to four sentences. The core idea, and the one decision everything else follo
 Name the alternative you rejected and the specific reason. This is the most valuable
 section for the judge, so make it concrete.
 
+## UI source of truth
+<required only for contract-level UI work; use the format from pipeline/ui.md>
+
 ## Slices
 ### 1. <name>
 - scope: <explicit file list>
 - change: <plain language, name the functions>
 - journeys: <what must work for a user>
+- ui-contract: <UI-1, only for a contract-level UI slice>
+- ui-obligations: <the regions, order, counts, and interactions this slice owns>
+- ui-order-test: <owner | not-owner>
 - verify: <exact command or check>
 - estimate: <N reviewable lines>
 

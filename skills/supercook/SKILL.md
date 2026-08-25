@@ -47,7 +47,7 @@ Rules that follow:
 4. **The ledger is the memory.** Every phase and every skip is written down. Silent skips are banned. See [pipeline/ledger.md](pipeline/ledger.md).
 5. **Own every diff.** Review each subagent's changes yourself before committing. Their summary is a claim, not evidence.
 6. **Boundaries are enforced, not requested.** Every rule that matters has a parent-side check after the agent returns.
-7. **Prove it on the real artifact.** Run the command, read the output, quote it. Never infer that tests pass.
+7. **Prove it on the real artifact.** Run the command, read the output, quote it. Never infer that tests pass. For UI work, the real artifact is the rendered route in a representative state, not only the unit suite.
 8. **DRY and simple.** Name the data shape before the logic. Prefer the boring solution the next reader will follow.
 9. **Match the codebase.** Its conventions beat your preferences. Read neighboring files first.
 
@@ -72,6 +72,10 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 - Missing credentials or access.
 - A host-required approval.
 - A genuine fork in intent where guessing would waste real work.
+- An unreadable supplied UI source that needs a screenshot, written spec, or
+  authorization to proceed without it.
+- A UI route that cannot be rendered and needs manual confirmation or explicit
+  acceptance of the missing visual evidence.
 
 **Scope modifiers are honored.** `/supercook plan only`, `no PR`, `no commits` and similar set the stop point up front. Reaching it counts as done.
 
@@ -98,11 +102,29 @@ Phases run in order. The assessor's verdict decides which ones are skipped, and 
 
 **Phase 9 is opt-in.** Absent a merge ask, phase 8 ends the run at an open PR. A PR looking mergeable is not an ask.
 
-**Tiers.** `trivial` collapses to implement plus verify, ledger still written. `standard` runs recon, one planner, tests, implement, verify, deliver. `complex` adds the arena and per-slice verification. The big-change flag inserts phase 3 at any tier, including trivial, since a small diff can still change an interface others depend on.
+**UI is a cross-cutting gate, not a phase.** Read
+[pipeline/ui.md](pipeline/ui.md) at the first UI evidence in the task, recon, or
+diff. A supplied design becomes the contract in `plan.md`; structure tests and a
+rendered smoke enforce it. Late detection reopens any skipped planning or test rows.
+
+**Tiers.** `trivial` collapses to implement plus verify, ledger still written. A
+copy-only UI change keeps that light path; a supplied-design change to hierarchy,
+order, geometry, interactions, or responsive behavior is at least standard.
+`standard` runs recon, one planner, tests, implement, verify, deliver. `complex`
+adds the arena and per-slice verification. The big-change flag inserts phase 3 at
+any tier, including trivial, since a small diff can still change an interface
+others depend on.
 
 **Precedence when they disagree.** The tier collapse wins over a playbook's phase table. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. The track still decides *what* the work is; the tier decides how much process it gets.
 
-**Phase 9 is the exception to that precedence**, in both directions. No tier collapse removes it once a merge was asked for, and no tier adds it when one was not. It answers to the ask, not to the verdict.
+**The open-pr track is a routing exception.** Work already exists, so no tier sends
+it through source implementation. It always verifies and delivers; tier only
+changes recon depth. Contract-level UI can add retrospective structure tests, but
+the implementer still does not run.
+
+**Phase 9 is a separate opt-in exception**, in both directions. No tier collapse
+removes it once a merge was asked for, and no tier adds it when one was not. It
+answers to the ask, not to the verdict.
 
 ## Playbook routing
 
@@ -129,5 +151,7 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 
 - [models.md](models.md): which model each role uses, and how to change it.
 - [agents.md](agents.md): the launch contract for all eight agents, the parent-side guard per role, and the fallback when the agents are not installed.
+- [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
+  resolution, structure-test guards, and rendered smoke.
 - `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
 - `playbooks/`: one per track, routed at assess time.
