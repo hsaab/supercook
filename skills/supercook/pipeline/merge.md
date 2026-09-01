@@ -112,14 +112,14 @@ Readiness work (comment triage, CI fixes, conflict resolution) is unchanged and 
 
 **Preconditions before using this path for a given stack.** The tip branch must appear in `gt log` (Graphite-tracked). If intake recorded `stacking gt` but this stack was opened with plain `git`/`gh` and never tracked, either `gt track --force` when the parent bases are clear, or walk this stack on the manual path. Also run `git worktree list` and free any stack sibling checked out in another worktree; Graphite will otherwise skip that sibling and leave it stale.
 
-1. Make the stack ready: every PR from trunk up to the merge tip must be mergeable, green, and approved. Fix issues with the loop above before asking to merge.
-2. Produce the sequence for consent:
+1. Make the stack ready: every PR from trunk up to the merge tip must be mergeable, green, and approved. Fix issues with the loop above before merging.
+2. Produce the sequence:
 
 ```bash
 gt merge --dry-run --no-interactive
 ```
 
-3. State that dry-run list as the batch-consent statement, in plain language: which PRs merge in which order, and that `gt merge` will restack and force-push children as each base lands, with `gt sync && gt submit --stack` afterward for any remaining children. On a yes, run:
+3. State that dry-run list as the walk statement, in plain language: which PRs merge in which order, and that `gt merge` will restack and force-push children as each base lands, with `gt sync && gt submit --stack` afterward for any remaining children. Log it as a ledger row and a progress note, then run:
 
 ```bash
 gt merge --no-interactive
@@ -127,9 +127,9 @@ gt sync --no-interactive --delete-all
 gt submit --stack --no-interactive --no-edit --update-only
 ```
 
-One yes covers the single `gt merge` and the restacks / submits it performs. Log the consent as a ledger row.
+The merge ask already given is the consent for the `gt merge` and the restacks / submits it performs. Do not wait for another yes.
 
-The batch breaks on any surprise: a `gt merge` failure, a new conflict, a red required check, a review comment that demands a code change, a restack that does not apply cleanly, or a sibling stuck in another worktree. Handle the surprise, restate what remains (re-run `gt merge --dry-run --no-interactive` if the tip changed), and ask again. Without a batch consent, `gt merge` asks individually as an irreversible action.
+A surprise mid-walk (a `gt merge` failure, a new conflict, a red required check, a review comment that demands a code change, a restack that does not apply cleanly, a sibling stuck in another worktree) gets handled with the loop above, the updated sequence gets logged (re-run `gt merge --dry-run --no-interactive` if the tip changed), and the walk continues. Without a merge ask, `gt merge` never runs at all.
 
 Post-merge restack details live in [delivery.md](delivery.md#the-stack-lifecycle). If someone merges mid-stack from the GitHub UI instead of through Graphite, repair with `gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only` from this run's working tree, then continue.
 
@@ -139,21 +139,13 @@ Merge bottom-up with `gh pr merge`, one PR at a time. After each merge, restack 
 
 State the whole sequence once, before the first merge, in plain language: which PRs merge in which order, and which branches will need a rebase and a force push afterward. On a squash-merge repo, expect every child to need one.
 
-> Merging the stack bottom-up: #412, then #413, then #414. This repo squash-merges, so after #412 I will rebase and force-push the #413 and #414 branches, and after #413 the #414 branch again. OK to run the whole sequence?
+> Merging the stack bottom-up: #412, then #413, then #414. This repo squash-merges, so after #412 I will rebase and force-push the #413 and #414 branches, and after #413 the #414 branch again.
 
-One yes covers every merge and every rewrite in that stated sequence. Log the consent as a ledger row.
+That statement is a progress note and a ledger row, not a question. The merge ask already given covers every merge and every rewrite in the stated sequence; run it to completion.
 
-The batch breaks on any deviation from the stated plan: a new conflict, a red required check, a review comment that demands a code change, or a rebase that does not apply cleanly. Handle the surprise, restate what remains, and ask again. Without a batch consent, every merge and every force push asks individually, per the tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
+A deviation from the stated plan (a new conflict, a red required check, a review comment that demands a code change, a rebase that does not apply cleanly) gets handled, the updated sequence gets logged, and the walk continues. Without a merge ask, nothing here runs at all, per the tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
 
-### Batch consent for the walk
-
-State the whole sequence once, before the first merge, in plain language: which PRs merge in which order, and which branches will need a rebase and a force push afterward. On a squash-merge repo, expect every child to need one.
-
-> Merging the stack bottom-up: #412, then #413, then #414. This repo squash-merges, so after #412 I will rebase and force-push the #413 and #414 branches, and after #413 the #414 branch again. OK to run the whole sequence?
-
-One yes covers every merge and every rewrite in that stated sequence. Log the consent as a ledger row.
-
-The batch breaks on any deviation from the stated plan: a new conflict, a red required check, a review comment that demands a code change, or a rebase that does not apply cleanly. Handle the surprise, restate what remains, and ask again. Without a batch consent, every merge and every force push asks individually, per the tiers in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first).
+### Walk mechanics
 
 **The mechanics live in one place**, [delivery.md](delivery.md#the-stack-lifecycle) under "The stack lifecycle". Follow it rather than a second copy here. Two things are worth repeating, because this phase can run in a session where phase 8 never did:
 
@@ -181,9 +173,9 @@ This phase writes rows like any other. One per loop concern, so a context reset 
 - **No skipped checks.** Not with `--admin`, not by disabling a required check.
 - **No discarded work.** Not in a conflict resolution, not in a rebase.
 - **No merging a PR the user did not point at.** One target, or one explicit stack.
-- **`--force-with-lease` is irreversible** when the branch is not run-owned. Ask before each one, unless a batch-consented stack walk stated that rewrite. Consent to merge is not consent to rewrite a foreign branch.
-- **`gt submit` on run-owned stack branches** follows the reversible tier in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first). A batch-consented walk already covers those rewrites; outside a batch, still log them, and ask only when the host requires approval or the branch is not ours.
-- **`gt merge` is irreversible.** It needs the same ask (or the same batch consent from its dry-run) as `gh pr merge`.
+- **`--force-with-lease` on a branch that is not run-owned and not part of the stated walk** asks individually. The merge ask covers the rewrites the stated sequence requires; it is not consent to rewrite an unrelated foreign branch.
+- **`gt submit` on run-owned stack branches** follows the reversible tier in [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): log it and keep going. Ask only when the host requires approval or the branch is not ours and not in the stated walk.
+- **`gt merge` runs only under a merge ask**, same as `gh pr merge`. The ask is the consent; without one, neither ever runs.
 - **No em dashes** in comments, replies, or commit messages.
 
 If the PR cannot merge, say exactly why in one plain-language line and stop. A blocked merge reported honestly is a good outcome. A merged PR that skipped a gate is not.

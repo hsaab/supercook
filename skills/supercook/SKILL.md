@@ -59,11 +59,10 @@ A skill cannot override what runs it. Cursor's mode, tool approval prompts, user
 |---|---|
 | Read-only (search, read, status, log, `gt log`, `gt merge --dry-run`) | Just run it. |
 | Reversible writes (edit, commit, branch, worktree, push a run branch, `gt create`, `gt track`, `gt sync`, `gt restack`, `gt submit` on run-owned branches) | Run it, log a ledger row. If the host asks for approval, ask once with the reason, log the answer, keep going. `gt submit` force-pushes with lease on branches the run owns; treat that as this tier when the branch is ours, irreversible when it is not. |
-| Irreversible (force-push, `gh pr merge`, `gt merge`, deploy, delete data, message other people) | Stop and ask every time. |
+| Merge under an explicit merge ask (`gh pr merge`, `gt merge`, and the stack rewrites the stated walk requires, on the PRs the ask names) | State the sequence, log it, run it. The ask was the consent; do not wait for another yes. |
+| Irreversible outside a merge ask (force-push to a branch outside the stated walk, any merge without an ask, deploy, delete data, message other people) | Stop and ask every time. |
 
-**One batched consent is allowed for a stack walk.** Phase 9 may state the full sequence of merges and branch rewrites once and take one yes for all of it; any deviation from the stated sequence re-asks. On the Graphite path, `gt merge --dry-run` is the sequence to state, and one yes covers `gt merge` plus the restacks it performs. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
-
-**One batched consent is allowed for a stack walk.** Phase 9 may state the full sequence of merges and branch rewrites once and take one yes for all of it; any deviation from the stated sequence re-asks. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
+**The merge ask is the consent for the whole walk.** Phase 9 states the full sequence of merges and branch rewrites once, as a progress note and a ledger row, then runs it to completion. On the Graphite path, `gt merge --dry-run` is the sequence to state. A surprise mid-walk (a new conflict, a red required check, a comment demanding a code change) gets handled, the updated sequence gets logged, and the walk continues without waiting. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
 
 Blocked is not the same as bypassable. Branch protection, failing required checks, and missing credentials get reported, never worked around.
 
@@ -83,7 +82,7 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 
 **Scope modifiers are honored.** `/supercook plan only`, `no PR`, `no commits` and similar set the stop point up front. Reaching it counts as done.
 
-**A merge ask extends the run instead of ending it.** `/supercook <task> and merge it` runs the pipeline through phase 9, and `/supercook merge <pr>` starts on the merge track with nothing to build. The ask also counts mid-run, after the user has seen the PR. Without it, phase 8 is the last phase. See [playbooks/merge.md](playbooks/merge.md).
+**A merge ask extends the run instead of ending it, and carries the consent.** `/supercook <task> and merge it` runs the pipeline through phase 9, and `/supercook merge <pr>` starts on the merge track with nothing to build. The ask also counts mid-run, after the user has seen the PR. Once given, supercook continues until the work is merged, without stopping to re-confirm; what still blocks is what a human has to change (branch protection, a missing required approval, a failing required check, a host approval prompt). Without an ask, phase 8 is the last phase. See [playbooks/merge.md](playbooks/merge.md).
 
 **An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips the assessor. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
 

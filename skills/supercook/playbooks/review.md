@@ -32,7 +32,7 @@ Copy these into the ledger verbatim.
 - [ ] per PR: one confirmation pass on the reviewers whose findings were implemented
 - [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), push, wait for checks
 - [ ] stack only: restack children after fixes land on a base slice, gt or manual per the ledger's stacking capability
-- [ ] merge mode only: continue into phase 9 with its consent rules, one merge row per PR
+- [ ] merge mode only: continue into phase 9 under the merge ask already given, one merge row per PR
 - [ ] review mode only: report the per-PR findings summary and stop at open PRs
 ```
 
@@ -94,7 +94,7 @@ Independent PRs (no shared stack) skip the restack and can be processed in any o
 After each PR's fixes: run the recorded tests or recipe, rerun the rendered smoke when a UI contract applies and a fix touched a rendered file, push, and wait for checks per the waiting rule in [../pipeline/merge.md](../pipeline/merge.md#waiting-is-not-blocked). A finding fixed but never verified is not fixed.
 
 - **Review mode** ends here. The final report is one short block per PR: findings found, fixed (file and consequence each), declined (with reasons), and anything the confirmation pass left open.
-- **Merge mode** continues into phase 9 exactly as the merge playbook specifies, including its consent rules: `gt merge --dry-run --no-interactive` as the batched-consent statement on `stacking gt`, the plain-language sequence on manual, and individual asks outside a batch. The merge itself is irreversible and always asks.
+- **Merge mode** continues into phase 9 exactly as the merge playbook specifies. The `review and merge` ask already carried the merge consent: state and log the sequence (`gt merge --dry-run --no-interactive` on `stacking gt`, the plain-language walk on manual), then run it to merged without waiting for another yes.
 
 ## Phases
 
@@ -117,7 +117,7 @@ Invoking this track is consent to review and to push fix commits to the run's PR
 
 - Finding fixes, pushes to run-owned PR branches, and restacks of run-owned children are reversible-tier writes: run them, log them.
 - A force push to a branch the run does not own asks individually, even for a restack.
-- Merges follow the merge playbook's rules unchanged: ask per PR, or one batched yes for a stated stack walk.
+- In merge mode, the `review and merge` ask is the merge consent: follow the merge playbook's stated-walk rules and continue to merged without re-asking.
 - In review mode no merge happens, full stop. Not even for a PR that ends the review green and approved.
 
 ## The ledger is not optional here
