@@ -119,6 +119,7 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 - **Boundaries**: never edit, add, or delete a test file or verification recipe. Never touch a path outside the scope list. Something outside scope that looks wrong gets reported, not fixed.
 - **Done when**: the recorded verification passes and no file outside the scope list is modified. Contract-level UI also requires the evidence to be consumed before a view edit and all owned obligations to match it.
 - **Returns**: changed paths, the command it ran with its result, `design-evidence` for contract-level UI, and anything it wanted to change but did not.
+- **Review-track variant**: one launch per slice PR, on the `review-implementer` model instead of `implementer`. Inputs swap the failing tests for the triaged findings list (file, claim, surviving evidence per finding); the scope list is the union of files the findings name, and the PR's recorded test command is the verification. Boundaries, done-when, returns, and the parent-side guard are unchanged. See [playbooks/review.md](playbooks/review.md).
 
 ### supercook-verifier
 

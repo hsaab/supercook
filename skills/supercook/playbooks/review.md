@@ -27,7 +27,8 @@ Copy these into the ledger verbatim.
 ```
 - [ ] resolve targets: named PRs or the current branch's PR and its stack; record bottom-up order and each PR's base
 - [ ] per PR: check out the branch, launch bugbot, security-review, and both thermo reviewers in parallel, scoped to this PR's base
-- [ ] per PR: dedupe and triage findings; fix real in-scope ones as one-commit diffs, decline the rest with a stated reason
+- [ ] per PR: dedupe and triage findings; decline the rest with a stated reason
+- [ ] per PR: one supercook-implementer launch (review-implementer model) fixes all in-scope findings as one-commit diffs
 - [ ] per PR: one confirmation pass on the reviewers whose findings were implemented
 - [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), push, wait for checks
 - [ ] stack only: restack children after fixes land on a base slice, gt or manual per the ledger's stacking capability
@@ -64,7 +65,13 @@ Dedupe findings across the four reviewers first: overlapping findings merge into
 - **Wrong about the code**: decline, naming the file and line that disproves it.
 - **Out of scope for this slice**: note it as a follow-up, keep it out of this diff.
 
-**Fixes are delegated to `supercook-implementer` on the `review-implementer` model.** Launch it per the contract in [../agents.md](../agents.md): the objective is the triaged findings to fix, the scope list is the files those findings name, and the boundaries are unchanged (never a test file, never a path outside the scope list). The parent keeps triage, declines, the confirmation-pass decision, and the review of the returned diff. Small single-file fixes may be made inline by the parent instead, but a launch that does happen uses this role's model.
+**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. Launch after all four reviewers have returned and triage is done, per the contract in [../agents.md](../agents.md), carrying:
+
+- the full deduped in-scope findings list, one entry per finding with the file, the claim, and the evidence that survived triage
+- the scope list: the union of files those findings name
+- the PR's recorded test command as the verification
+
+Boundaries are unchanged: never a test file, never a path outside the scope list. The parent keeps triage, declines, the confirmation-pass decision, and reads the returned diff itself before committing. If the confirmation pass produces new in-scope findings, that is a second implementer launch for this PR (still capped by the no-third-pass rule), not an inline patch.
 
 Every fix is still a diff under the normal rules: change only what the finding needs, no opportunistic cleanup, one commit per atomic change, and an explanation naming the file and the real consequence. Record each decline in the ledger and in the PR (a comment or the findings summary), so the judgment survives a context reset.
 
@@ -120,7 +127,8 @@ Same reasoning as the merge track: this track changes the repo and can span sess
 ```
 - [ ] review (PR #412, base main)
   - [x] reviewers: bugbot 2 findings, security-review 0, thermo review 1, thermo quality 3 (15:04)
-  - [x] triage: 3 fixed, 2 declined as style, 1 follow-up noted (15:22)
+  - [x] triage: 3 in scope, 2 declined as style, 1 follow-up noted (15:12)
+  - [x] implementer: one launch, 3 findings fixed across src/queue/worker.ts and src/api/webhook.ts, diff read (15:22)
   - [x] confirmation pass: bugbot and thermo quality rerun, no new findings (15:31)
   - [x] verify: pnpm vitest run green, pushed, checks green (15:40)
   - [~] merge: skip: review-only ask
