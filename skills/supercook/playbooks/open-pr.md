@@ -8,7 +8,10 @@ Copy these into the ledger verbatim.
 
 ```
 - [ ] read the full diff and understand every change before writing anything
-- [ ] confirm the suite passes, or report exactly what does not
+- [ ] inventory the preexisting diff as the verifier's scope baseline
+- [ ] supplied UI design is reconstructed as a ledger contract
+- [ ] confirm the recorded tests or recipe pass, or report exactly what does not
+- [ ] changed UI routes pass rendered smoke before the PR opens
 - [ ] size the diff: reviewable and raw
 - [ ] split into coherent PRs if it is oversized
 - [ ] write the PR body from the diff, in plain language
@@ -17,7 +20,7 @@ Copy these into the ledger verbatim.
 
 ## Phases
 
-This track skips planning and implementation entirely, but it is not delivery alone: the diff is still verified and the suite is still run.
+This track skips planning and source implementation entirely, but it is not delivery alone: the diff is still verified and its recorded tests or recipe still run. This routing wins at every tier, including trivial. `open-pr` never enters phase 6 just because tier collapse normally says implement plus verify.
 
 | Phase | Runs? |
 |---|---|
@@ -26,9 +29,9 @@ This track skips planning and implementation entirely, but it is not delivery al
 | 2 recon | only enough to understand unfamiliar changed files |
 | 3 design doc | no |
 | 4 plan | no |
-| 5 test-first | no, though a missing test for new behavior gets reported |
+| 5 test-first | only in retrospective mode for a supplied UI contract whose structural verification is missing |
 | 6 implement | no |
-| 7 verify | yes, the diff still gets checked and the suite still gets run |
+| 7 verify | yes, the diff and recorded verification still run |
 | 8 deliver | yes, this is the whole job |
 | 9 merge | only when the user asked for the PR merged too |
 
@@ -38,13 +41,36 @@ Read everything: `git diff`, `git log`, and the files themselves where the diff 
 
 Anything you genuinely cannot explain gets asked about rather than guessed at. One question naming the specific hunk is cheap. A confident wrong PR body is expensive.
 
+Before the test designer or any other allowed write, record `open-pr scope` in the
+ledger: the user's task, current head SHA, every preexisting changed and untracked
+path from the target-base diff and worktree, and a one-line purpose for each diff
+unit. Deliberate retrospective test files are appended to that inventory when they
+land. The verifier treats this baseline, not nonexistent plan slices, as the
+authorized scope.
+
 ## Verify before opening
 
-The work not being yours does not exempt it from the gate. Run the suite and report honestly.
+The work not being yours does not exempt it from the gate. Run the recorded tests
+or recipe and report honestly.
 
 Failing tests before you touched anything are worth reporting rather than fixing: they may be why the work is unfinished. Say which tests fail and why, then ask whether to fix them in this PR or note them.
 
 Missing tests for new behavior also get reported. Offer to add them, but do not silently expand the diff.
+
+For contract-level UI work, missing structural assertions are not optional PR notes.
+Resolve the supplied design, reconstruct the `UI source of truth` entry in the
+ledger using [../pipeline/ui.md](../pipeline/ui.md), and send its obligations to the
+test designer in retrospective mode. The tests or recipe run after the existing
+source, so they report pass or gap rather than claiming a red-first failure. Record
+that this is retrospective evidence.
+
+Pre-edit design evidence is not required because the work already exists. The
+parent still compares the diff to the contract, the verifier receives the ledger
+contract in place of `plan.md`, and every changed route must pass rendered smoke
+before delivery. Wrong order, missing regions, or failed smoke stops the PR and
+requires the user to approve and record a material deviation or authorize a
+source-fix run. An approved deviation updates the ledger contract and its
+verification before smoke runs again.
 
 ## Sizing and splitting
 

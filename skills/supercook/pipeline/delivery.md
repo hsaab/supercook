@@ -5,6 +5,7 @@ One PR per slice, opened as each slice closes. Not one batch at the end.
 ## Contents
 
 - [PR body format](#pr-body-format)
+- [UI delivery guard](#ui-delivery-guard)
 - [Branching and stacking](#branching-and-stacking)
 - [The stack lifecycle](#the-stack-lifecycle)
 - [Splitting as a backstop](#splitting-as-a-backstop)
@@ -38,6 +39,45 @@ Not this:
 **When the repo has a PR template**, treat these three sections as the minimum content and fit them into the template's fields. Do not overwrite a template the team relies on.
 
 No em dashes, here or anywhere.
+
+When a UI contract applies, fit these facts into `What the outcome is` and
+`Operational tasks`:
+
+```text
+UI source: <canonical design URL or artifact citation>
+UI contracts: <UI-1, UI-2>
+Approved deviations: <each one, or none>
+Contract summary: <semantic order, rendered layout, responsive behavior, interactions>
+Rendered smoke:
+  head: <tested git SHA>
+  start/readiness: <commands or signals>
+  route/state: <path, seed or fixture, auth>
+  viewports: <sizes>
+  interactions/checks: <everything exercised and compared>
+  result/time: <pass or sanctioned-blocked, timestamp>
+```
+
+This evidence is durable on the PR. A cold merge run cannot depend on the untracked
+ledger still existing.
+
+When an executable recipe replaces a test runner, include the exact recipe or a
+durable repository link plus its expected checksum in `Operational tasks`. The
+run-folder copy is not available to a cold merge session.
+
+## UI delivery guard
+
+Before creating or pushing a PR for a UI slice, read its rendered-smoke row from the
+ledger.
+
+- `pass`: delivery may continue.
+- sanctioned-blocked because no renderer could load the target: delivery may
+  continue only when the PR names the missing evidence and the manual checks.
+- open or `fail`: do not create the PR. A failure returns to implementation through
+  the gap loop in [verification.md](verification.md#the-gap-loop).
+
+Run the same guard against the final composed-page smoke before declaring the run
+done. After it runs, update the affected open PR bodies with the composed result and
+tested head. A ledger row by itself is not enforcement; refusing delivery is.
 
 ## Branching and stacking
 

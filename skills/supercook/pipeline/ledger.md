@@ -28,6 +28,7 @@ started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (a
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
 models: arena-b gpt-5.6-sol-max ok | arena-c claude-opus-5-thinking-high ok | rest inherit
 test-paths: **/*.test.ts
+ui-change: no | ui-source: none | render-check: none
 done: every public route rejects a 101st request in a minute with a 429, and the suite is green
 
 ## Phases
@@ -60,6 +61,33 @@ done: every public route rejects a 101st request in a minute with a 429, and the
   re-anchored to slice 2
 ```
 
+For a contract-level UI run, the same header and phase list include:
+
+```markdown
+ui-change: yes | ui-source: figma https://figma.com/design/example?node-id=26-2
+render-check: browser
+
+- [ ] verify
+  - [x] structural UI-1: verifier returned ui-contract ok (10:31)
+  - [ ] rendered smoke UI-1: /insights/analyst at 1440x900 and 900x900, record head SHA
+  - [ ] rendered smoke composed: /insights/analyst with dashboard and rail
+
+## Log
+- 09:26 UI source resolved: Figma node 26:2, screenshot retained in run artifacts,
+  semantic order copied into plan.md
+- 09:45 UI deviation approved: Open workflow stays static because community users
+  cannot enter licensed Insights
+```
+
+An open-pr run also records its pre-write scope baseline:
+
+```markdown
+open-pr scope: task <quoted task> | base <sha> | head <sha>
+- existing path: src/report.ts | purpose: add CSV export
+- retrospective test: src/report.test.ts | purpose: pin the supplied UI contract
+verification recipe: verification-report.md | sha256 <digest>
+```
+
 ## Row states
 
 | Marker | Meaning |
@@ -70,6 +98,12 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 | `[!]` | Blocked, with the blocker and what would unblock it. |
 
 A blocked row still counts as open unless the blocker is a sanctioned pause, in which case say which one.
+
+A rendered-smoke row can be `[!]` only when no renderer can load the target. Name
+the route, attempted command, manual checks, and the user's answer. That
+sanctioned-blocked row may proceed to delivery with the missing evidence disclosed,
+but it never means visually verified. A route that rendered incorrectly is a
+failure gap, not a sanctioned block.
 
 ## Resuming
 

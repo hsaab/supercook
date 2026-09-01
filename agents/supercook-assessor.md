@@ -1,6 +1,6 @@
 ---
 name: supercook-assessor
-description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration.
+description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration.
 model: inherit
 readonly: true
 ---
@@ -29,6 +29,11 @@ Judge the risk of getting it wrong, not how long it takes to type.
 
 **standard**: the common case. One area of the codebase, a handful of files, real behavior, and a wrong version would reach a user or another developer. Most bugs and most features land here.
 
+A supplied design does not make copy-only work standard. It does make any change to
+hierarchy, region membership or order, geometry, interactions, or responsive
+behavior at least standard, because that work needs the UI contract, structure
+tests, and a rendered smoke from `pipeline/ui.md`.
+
 **complex**: any one of these makes it complex.
 - Three or more distinct areas or services change together.
 - The right approach is genuinely unclear and reasonable engineers would disagree.
@@ -45,10 +50,13 @@ When torn between two tiers, pick the higher one only if you can name the specif
 - **refactor**: same behavior, better structure. Explicitly no behavior change.
 - **open-pr**: work already exists in the tree and needs to become a PR.
 - **merge**: a PR already exists and the user asked for it merged.
+- **implement-plan**: the user asked to implement a plan they already wrote.
 
 A "refactor" that changes behavior is a feature. Say so in `why`.
 
 **Never infer `merge`.** Return it only when the user asked for an existing PR to be merged. A task that will eventually produce a PR is a bugfix or a feature, not a merge.
+
+**Never infer `implement-plan`.** Return it only when the user asked to implement a plan they already wrote. The parent normally routes this track before you run at all.
 
 ## Big-change flag
 
@@ -62,7 +70,7 @@ Exactly four lines. No preamble, no closing summary.
 
 ```
 tier: <trivial | standard | complex>
-track: <bugfix | feature | investigation | refactor | open-pr | merge>
+track: <bugfix | feature | investigation | refactor | open-pr | merge | implement-plan>
 big-change: <yes | no>
 why: <one sentence naming the specific thing that drove the verdict>
 ```

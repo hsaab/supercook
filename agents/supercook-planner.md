@@ -10,9 +10,9 @@ Turn a task plus recon pointers into a plan someone else can execute without ask
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: the task, tier, track, recon pointers, the Design Doc when one exists, and the slice budget.
+- **Inputs**: the task, tier, track, recon pointers, the Design Doc when one exists, the resolved UI brief and evidence when one exists, and the slice budget.
 - **Effort budget**: one pass. Plan, do not explore.
-- **Done when**: `plan.md` exists and every slice carries scope, a named verification, and a reviewable-line estimate. That is the single condition.
+- **Done when**: `plan.md` exists and every slice carries scope, a named verification, and a reviewable-line estimate. A contract-level UI plan also has a complete source-of-truth entry and every UI slice names its owned obligations.
 
 ## Boundaries
 
@@ -37,6 +37,24 @@ A slice that cannot honestly fit gets split here, in the plan, rather than disco
 
 **One exception**, and it must be stated explicitly: a slice stays whole when splitting it would leave a broken or unsafe intermediate state on the default branch. A migration and the code that writes the new column ship together. A security fix ships with its call sites. Write `exception: <reason>` on that slice.
 
+## Designed UI
+
+When the inputs select the contract gate from
+`skills/supercook/pipeline/ui.md`, write one `## UI source of truth` entry per
+independently designed screen before the slices. Use the resolved source's own
+region names. Include semantic order, a stable locator and literal test anchor per
+region, rendered layout, responsive viewports, interactions, deviations, one named
+order test, and an executable or explicitly degraded smoke target.
+
+Do not retrieve the design or invent a missing detail. Put an unresolved source in
+`Gaps` so the parent can resolve it and rerun planning.
+
+Each UI slice references the entry and names its owned obligations. Exactly one
+slice per contract owns the global order test, and its branch must contain every
+region that test compares. Existing components affect how those obligations are
+built, never whether a region exists or where it sits. A material deviation must be
+listed with its reason and approval evidence.
+
 ## Format
 
 ```markdown
@@ -45,12 +63,18 @@ A slice that cannot honestly fit gets split here, in the plan, rather than disco
 ## Approach
 Two to four sentences. What we are doing and why this way. Name the key files.
 
+## UI source of truth
+<required only for contract-level UI work; use the format from pipeline/ui.md>
+
 ## Slices
 
 ### 1. <name>
 - scope: <explicit file list, the only files this slice may touch>
 - change: <what happens, in plain language, naming functions>
 - journeys: <the user journeys this slice must make work, for the test designer>
+- ui-contract: <UI-1, only for a contract-level UI slice>
+- ui-obligations: <the regions, order, counts, and interactions this slice owns>
+- ui-order-test: <owner | not-owner>
 - verify: <the exact command or check that proves this slice landed>
 - estimate: <N reviewable lines>
 
