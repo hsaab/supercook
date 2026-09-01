@@ -71,7 +71,7 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 
 **Progressive disclosure.** `SKILL.md` stays lean and links one level deep, so a phase guide only enters context when that phase runs. ([Anthropic on Agent Skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills))
 
-**Action-risk tiers.** Read-only actions run, reversible writes run and get logged, irreversible ones ask every time. ([OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf))
+**Action-risk tiers.** Read-only actions run, reversible writes run and get logged, irreversible ones ask, with one exception: a merge you explicitly asked for is its own consent and runs to merged without re-asking. ([OpenAI's practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf))
 
 **Test-driven, with the suite protected.** Failing tests are committed first, the implementing agent is forbidden from touching them, and the orchestrator restores any test file that gets modified anyway. That last part matters: an instruction alone does not stop an agent bending a test until it passes. ([Cursor's agent best practices](https://cursor.com/blog/agent-best-practices))
 
@@ -161,7 +161,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook review and merge               # the same review pass, then merge the stack bottom-up
 ```
 
-Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask.
+Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask. Once you have asked, the ask is the consent: supercook states and logs the merge sequence and continues until the work is merged, stopping only for things it may never bypass (branch protection, missing required approvals, failing required checks).
 
 After plan mode, `/supercook use this plan` in the same chat is enough. No path needed. Name a file only when you want a different plan than the one in this conversation.
 

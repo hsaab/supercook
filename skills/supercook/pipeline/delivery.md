@@ -113,7 +113,7 @@ gh pr edit --body-file <path-to-three-section-body>
 
 Always pass `--no-interactive` (and `--no-edit` on submit for new/updated PRs) so agent runs do not hang on prompts. Write the three-section PR body from earlier in this file via `gh pr edit` (or the repo's template flow) right after submit; do not leave Graphite's default description in place.
 
-`gt submit` force-pushes with lease by design. On branches this run owns, that is a reversible-tier write per [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run it, log it. Outside a batch-consented merge walk, ask only when the branch is not ours or the host requires approval.
+`gt submit` force-pushes with lease by design. On branches this run owns, that is a reversible-tier write per [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run it, log it. Outside a merge-ask walk, ask only when the branch is not ours or the host requires approval.
 
 Each Graphite PR is an ordinary GitHub PR. Reviewers, CI, branch protection, and CODEOWNERS all stay on GitHub. The Graphite web app is optional.
 
@@ -134,7 +134,7 @@ gt sync --no-interactive --delete-all    # fetch trunk, retarget, restack, clean
 gt submit --stack --no-interactive --no-edit --update-only
 ```
 
-That replaces the `OLD_BASE` capture, `gh pr edit --base`, ancestor test, and `git rebase --onto` sequence. Run it from the run's working tree; gt skips branches checked out elsewhere. `--no-interactive` (and `--delete-all` on sync when cleanup is intended) keeps agent runs from hanging on delete/restack prompts. Consent for the force-with-lease that `gt submit` performs follows [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run-owned stack branches are reversible-tier; a batch-consented merge walk already covers those rewrites. See [merge.md](merge.md#stacked-prs).
+That replaces the `OLD_BASE` capture, `gh pr edit --base`, ancestor test, and `git rebase --onto` sequence. Run it from the run's working tree; gt skips branches checked out elsewhere. `--no-interactive` (and `--delete-all` on sync when cleanup is intended) keeps agent runs from hanging on delete/restack prompts. Consent for the force-with-lease that `gt submit` performs follows [../SKILL.md](../SKILL.md#autonomy-host-permissions-first): run-owned stack branches are reversible-tier; a merge-ask walk already covers those rewrites. See [merge.md](merge.md#stacked-prs).
 
 **Re-running checks.** A restack that changes the head SHA re-triggers checks on its own. That is the intended gate: each child is re-validated against the post-merge trunk before it can merge.
 
@@ -167,7 +167,7 @@ fi
 
 **Why the two branches differ.** After a true merge commit, the child's commits are already contained in the new base, so the ancestor test passes, a retarget alone is correct, and a rebase would only churn history. After a squash or a rebase merge, the base's commits exist in a different form under different SHAs, the ancestor test fails, and the child must be replayed or its PR will show the base's changes as its own.
 
-**`push --force-with-lease` is irreversible**, per the irreversible tier in `SKILL.md`. Ask before each one, unless a batch-consented stack walk is in progress and this rewrite was part of the stated sequence: see [merge.md](merge.md#stacked-prs). Outside a batch, consent to merge a stack is not consent to rewrite each branch in it.
+**`push --force-with-lease` is irreversible**, per the irreversible tier in `SKILL.md`. Ask before each one, unless a merge-ask walk is in progress and this rewrite is part of the stated sequence: see [merge.md](merge.md#stacked-prs). Outside a stated walk, a merge ask is not consent to rewrite an unrelated branch.
 
 **Re-running checks.** A rebase and force-push re-triggers checks on its own, since the head SHA changed. A bare retarget does not, because nothing about the child's commits moved, so trigger them explicitly when the child's checks matter:
 
