@@ -87,7 +87,7 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 
 **An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips the assessor. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
 
-**A review ask is user-selected too.** `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR and implements the triaged findings without merging anything. `/supercook review and merge` is the same work plus the standard merge ask appended, so it continues into phase 9. A review that ends green is never an implied merge ask. See [playbooks/review.md](playbooks/review.md).
+**A review ask is user-selected too.** `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR and implements the triaged findings without merging anything. `/supercook review and merge` is the same work plus the standard merge ask appended, so it continues into phase 9. A review that ends green is never an implied merge ask. The `reviewer` and `review-implementer` roles in [models.md](models.md) pick the models for the review launches and the finding fixes. See [playbooks/review.md](playbooks/review.md).
 
 **`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
 
