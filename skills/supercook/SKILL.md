@@ -1,6 +1,6 @@
 ---
 name: supercook
-description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
+description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
 disable-model-invocation: true
 ---
 
@@ -76,16 +76,20 @@ Blocked is not the same as bypassable. Branch protection, failing required check
   authorization to proceed without it.
 - A UI route that cannot be rendered and needs manual confirmation or explicit
   acceptance of the missing visual evidence.
+- Implement-plan intake that cannot pin a plan (none found, or several recent
+  plan files with no clear match to this conversation).
 
 **Scope modifiers are honored.** `/supercook plan only`, `no PR`, `no commits` and similar set the stop point up front. Reaching it counts as done.
 
 **A merge ask extends the run instead of ending it.** `/supercook <task> and merge it` runs the pipeline through phase 9, and `/supercook merge <pr>` starts on the merge track with nothing to build. The ask also counts mid-run, after the user has seen the PR. Without it, phase 8 is the last phase. See [playbooks/merge.md](playbooks/merge.md).
 
+**An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips the assessor. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
+
 **`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
 
 ## The pipeline
 
-Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more.
+Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`) route before the assessor runs.
 
 | # | Phase | Guide |
 |---|---|---|
@@ -93,7 +97,7 @@ Phases run in order. The assessor's verdict decides which ones are skipped, and 
 | 1 | Assess: tier, track, big-change flag | [agents.md](agents.md) |
 | 2 | Recon: broad map, then targeted deep-dives, test paths and test command | [pipeline/recon.md](pipeline/recon.md) |
 | 3 | Design Doc, big changes only | [pipeline/design-doc.md](pipeline/design-doc.md) |
-| 4 | Plan: single planner, or arena plus judge on complex work. Slices sized for review | [pipeline/planning.md](pipeline/planning.md) |
+| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | [pipeline/planning.md](pipeline/planning.md) |
 | 5 | Test-first: user-journey tests, committed before implementation | [pipeline/implementation.md](pipeline/implementation.md) |
 | 6 | Implement: surgical chunks, parent guards, line accounting | [pipeline/implementation.md](pipeline/implementation.md) |
 | 7 | Verify: fresh-context audit that runs the suite | [pipeline/verification.md](pipeline/verification.md) |
@@ -122,13 +126,21 @@ it through source implementation. It always verifies and delivers; tier only
 changes recon depth. Contract-level UI can add retrospective structure tests, but
 the implementer still does not run.
 
+**The implement-plan track is a routing exception.** The user supplied a plan, so
+the assessor does not run and the arena does not run. Process is standard-shaped:
+recon scoped to the plan, the optimizer writes `plan.md`, then tests, implement,
+verify, deliver. Tier collapse does not drop this to implement plus verify. Phase 3
+is skipped; the supplied plan is the alignment. Optimizer dissent is reported, never
+silently escalated to an arena.
+
 **Phase 9 is a separate opt-in exception**, in both directions. No tier collapse
 removes it once a merge was asked for, and no tier adds it when one was not. It
 answers to the ask, not to the verdict.
 
 ## Playbook routing
 
-Route on the assessor's `track`. Copy the playbook's steps verbatim into the ledger.
+Route on the assessor's `track`, except `merge` and `implement-plan`, which the user
+selects directly. Copy the playbook's steps verbatim into the ledger.
 
 | Track | When | Playbook |
 |---|---|---|
@@ -138,6 +150,7 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 | refactor | Same behavior, better structure | [playbooks/refactor.md](playbooks/refactor.md) |
 | open-pr | Ship what is already in the tree | [playbooks/open-pr.md](playbooks/open-pr.md) |
 | merge | A PR exists and the user asked for it merged | [playbooks/merge.md](playbooks/merge.md) |
+| implement-plan | The user supplies a plan they already wrote | [playbooks/implement-plan.md](playbooks/implement-plan.md) |
 
 ## Continuation protocol
 
@@ -150,8 +163,8 @@ Route on the assessor's `track`. Copy the playbook's steps verbatim into the led
 ## Reference files
 
 - [models.md](models.md): which model each role uses, and how to change it.
-- [agents.md](agents.md): the launch contract for all eight agents, the parent-side guard per role, and the fallback when the agents are not installed.
+- [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the fallback when the agents are not installed.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
   resolution, structure-test guards, and rendered smoke.
 - `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
-- `playbooks/`: one per track, routed at assess time.
+- `playbooks/`: one per track. Most are routed at assess time. `merge` and `implement-plan` are user-selected.

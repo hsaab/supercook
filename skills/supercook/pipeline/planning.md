@@ -6,6 +6,7 @@ The plan is a contract. Slices are PRs. Sizing happens here, because a finished 
 
 - [Standard tier: one planner](#standard-tier-one-planner)
 - [Complex tier: the arena](#complex-tier-the-arena)
+- [Supplied plan: the optimizer](#supplied-plan-the-optimizer)
 - [UI contract gate](#ui-contract-gate)
 - [Slices are PRs](#slices-are-prs)
 - [Notify and continue](#notify-and-continue)
@@ -37,10 +38,21 @@ Then `supercook-plan-judge` reads all three and writes `plan.md`. Merging is com
 
 The judge enforces slice sizing as a hard gate, so an oversized plan cannot survive the arena.
 
+## Supplied plan: the optimizer
+
+The `implement-plan` track does not use the planner or the arena. The user already wrote the approach. Launch `supercook-plan-optimizer` with `user-plan.md`, the recon pointers, the resolved UI brief when one exists, and the slice budget. It writes `plan.md`.
+
+**Tighten only.** Keep the user's approach and decisions. Correct stale paths against recon, fill missing slice fields, and split anything that cannot honestly fit the budget. A materially better architecture belongs in the optimizer's `dissent` return, not in `plan.md`, and the parent reports it rather than escalating to an arena.
+
+`plan.md` uses the same format as the planner, plus `## Changes from your plan`. `no changes beyond slicing` is a valid section body.
+
+The UI contract gate and the slice budget still apply. An oversized or incomplete contract plan does not survive the optimizer any more than it would survive the judge.
+
 ## UI contract gate
 
-When [ui.md](ui.md) selects the contract level, every planner receives the same
-resolved brief, source locators, retained visual evidence, and render setup.
+When [ui.md](ui.md) selects the contract level, every planner and the plan optimizer
+receives the same resolved brief, source locators, retained visual evidence, and
+render setup.
 `plan.md` includes one `## UI source of truth` entry per independently designed
 screen, using the format in [ui.md](ui.md#the-ui-contract).
 
@@ -110,7 +122,7 @@ When `plan.md` lands:
 1. Append every slice to the ledger under `implement`.
 2. Add one rendered-smoke ledger row per UI contract slice and one for the final
    composed page.
-3. Send the user a short summary: the approach in a sentence, the slice list, the total estimate.
+3. Send the user a short summary: the approach in a sentence, the slice list, the total estimate. On `implement-plan`, also include the optimizer's changes list (or `no changes beyond slicing`) and any dissent line.
 4. Keep working.
 
 Do not stop and wait for approval on the plan. The summary is a notification, not a

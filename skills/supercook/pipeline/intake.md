@@ -76,6 +76,8 @@ Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.
 
 **The merge track does not get the investigation exception.** It changes the repo and it can span sessions while checks run, so it needs the record more than most runs, not less. Seed the ledger, with the target PR number in the header.
 
+**On `implement-plan`, pin the supplied plan next.** Once the run folder exists, copy the resolved plan source verbatim to `user-plan.md` in that folder and echo the plan title. Later phases read that file, not chat scrollback. See [../playbooks/implement-plan.md](../playbooks/implement-plan.md).
+
 Keep the run folder out of git without touching `.gitignore`:
 
 ```bash

@@ -45,7 +45,7 @@ One command does not mean one heavyweight process. Supercook classifies the task
 - **Standard.** Targeted exploration, a short plan, tests for the real user journeys, surgical implementation, an independent verification pass, and usually one reviewable PR. Most work lands here.
 - **Complex.** Everything above plus a broad codebase map, architecture alignment when the approach needs sign-off, three models planning in parallel with a judge picking or merging, tests committed per slice, verification before every PR, and multiple coherent PRs.
 
-Tracks skip what does not apply. An investigation stays read-only and produces an answer rather than a PR, and it writes nothing to your repo at all. `open-pr` skips planning and implementation, but still verifies the diff and runs the suite before opening. A refactor starts by pinning current behavior with tests.
+Tracks skip what does not apply. An investigation stays read-only and produces an answer rather than a PR, and it writes nothing to your repo at all. `open-pr` skips planning and implementation, but still verifies the diff and runs the suite before opening. A refactor starts by pinning current behavior with tests. `implement-plan` takes a plan you already wrote (often the one just created in this chat), tightens it against the code, and then runs the standard pipeline with no arena.
 
 > Use Supercook for anything development-related. Tell it the outcome you want; it decides how much process the work deserves. Small tasks stay small. Normal changes get a focused plan, implementation, verification, and usually one reviewable PR. Large or risky changes add architecture alignment, deeper exploration, test-first development, independent review, and multiple coherent PRs. You can expect visible progress in the ledger, no silently skipped work, and a short outcome-focused handoff.
 
@@ -105,7 +105,7 @@ git clone https://github.com/hsaab/supercook.git ~/Apps/supercook
 ln -s ~/Apps/supercook ~/.cursor/plugins/local/supercook
 ```
 
-Either way, reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`).
+Either way, reload the window, then confirm you see one skill (`supercook`) and nine agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`).
 
 If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
 
@@ -115,7 +115,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Seven roles, one line each: the assessor group, the three arena contestants, the plan judge, the implementer, and the explorer. Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
+Eight roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, and the explorer. Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
 
 Put your choices in `~/.supercook/models.md`, not in the plugin. A marketplace install lives in a commit-pinned cache directory that the next update replaces wholesale, so edits made inside the plugin do not survive `plugin marketplace update`. The home file does, and it applies to every repo you run in.
 
@@ -149,6 +149,8 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 
 ```
 /supercook <what you want>
+/supercook use this plan                  # implement the plan just created in this chat
+/supercook implement .cursor/plans/rate-limiting.md
 /supercook plan only <what you want>      # stop after the plan
 /supercook no PR <what you want>          # implement and verify, do not open a PR
 /supercook no commits <what you want>     # leave the changes uncommitted
@@ -159,7 +161,9 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 
 Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask.
 
-Playbooks, routed automatically from the assessment:
+After plan mode, `/supercook use this plan` in the same chat is enough. No path needed. Name a file only when you want a different plan than the one in this conversation.
+
+Playbooks, routed automatically from the assessment, except `merge` and `implement-plan`, which you select:
 
 | Track | What it does differently |
 |---|---|
@@ -169,12 +173,13 @@ Playbooks, routed automatically from the assessment:
 | refactor | Pins current behavior with characterization tests, reroutes if behavior changes |
 | open-pr | No planning or source implementation; existing designed UI gets retrospective structure tests, verification, and smoke |
 | merge | Drives an existing PR to merged whatever state it is in: conflicts, review comments, broken CI, stalled checks, stacks |
+| implement-plan | Tightens a plan you already wrote, then the standard pipeline with no arena |
 
 ## Layout
 
 ```
 .cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
-agents/                       eight discoverable subagents, all supercook- prefixed
+agents/                       nine discoverable subagents, all supercook- prefixed
 assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
@@ -182,7 +187,7 @@ skills/supercook/
   agents.md                   launch contracts and the parent-side guards
   pipeline/                   phase guides plus the cross-cutting UI contract
     ui.md                     cross-cutting design contract and rendered-smoke gates
-  playbooks/                  one per track, merge included
+  playbooks/                  one per track, including merge and implement-plan
 ```
 
 ## License

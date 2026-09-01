@@ -12,7 +12,15 @@ Scale the number of explorers to the shape of the task, not to its importance.
 | One area, several files | 1 broad, then 1 targeted |
 | Several areas or services | 1 broad, then 3 to 5 targeted, launched in parallel |
 
-**Always start with the broad launch** on anything past trivial. It returns the stack, the layout, the conventions, the test command, and the test path patterns. For UI work it also returns the route and render setup. The targeted launches then go deep on each area the work touches, and they run in parallel because they do not depend on each other.
+**Always start with the broad launch** on anything past trivial, except `implement-plan`.
+It returns the stack, the layout, the conventions, the test command, and the test path
+patterns. For UI work it also returns the route and render setup. The targeted launches
+then go deep on each area the work touches, and they run in parallel because they do
+not depend on each other.
+
+On `implement-plan`, skip the repo-wide broad map. Launch explorers against the files,
+functions, and areas `user-plan.md` names. The test command and test path patterns
+still have to come back from evidence. See [../playbooks/implement-plan.md](../playbooks/implement-plan.md).
 
 Give each explorer a **question list**, not a topic. "Understand the auth system" produces a wandering essay. These produce pointers:
 
@@ -73,4 +81,4 @@ On the investigation track, recon **is** the work. There is no plan, no test, an
 
 ## When recon is not enough
 
-If the planner or an arena runner comes back needing to explore, recon was too thin. Do not let the planning phase turn into an investigation. Launch another targeted explorer for the specific gap, log it, and re-run planning.
+If the planner, an arena runner, or the plan optimizer comes back needing to explore, recon was too thin. Do not let the planning phase turn into an investigation. Launch another targeted explorer for the specific gap, log it, and re-run planning.

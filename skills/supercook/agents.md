@@ -1,6 +1,6 @@
 # Agent launch contracts
 
-The eight agents live at the plugin root in `agents/`, not in this skill folder. That is where Cursor discovers them, so they show up as real delegatable subagents. Every name is prefixed `supercook-` so a public install cannot collide with someone's own `implementer` or `verifier`.
+The nine agents live at the plugin root in `agents/`, not in this skill folder. That is where Cursor discovers them, so they show up as real delegatable subagents. Every name is prefixed `supercook-` so a public install cannot collide with someone's own `implementer` or `verifier`.
 
 This file is the launch contract: what the parent passes in, when the job is done, what comes back, and what the parent checks afterwards. The prompt itself lives in the agent file.
 
@@ -21,6 +21,7 @@ This file is the launch contract: what the parent passes in, when the job is don
 | `supercook-planner` | standard | `plan.md` only | 4 |
 | `supercook-arena-runner` | arena-a, arena-b, arena-c | Its own candidate plan only | 4 |
 | `supercook-plan-judge` | plan-judge | `plan.md` only | 4 |
+| `supercook-plan-optimizer` | plan-optimizer | `plan.md` only | 4 |
 | `supercook-test-designer` | standard | Test files only | 5 |
 | `supercook-implementer` | implementer | Source, never tests | 6 |
 | `supercook-verifier` | standard | No source edits, runs commands | 7 |
@@ -30,7 +31,7 @@ This file is the launch contract: what the parent passes in, when the job is don
 Pass these on every launch, without exception:
 
 - **The objective**, in one sentence, specific to this run.
-- **The run folder path**, so the agent can read `plan.md` and `design-doc.md` when relevant. Never ask an agent to write the ledger.
+- **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
@@ -50,11 +51,12 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 - **Returns**, exactly 4 lines:
   ```
   tier: trivial | standard | complex
-  track: bugfix | feature | investigation | refactor | open-pr | merge
+  track: bugfix | feature | investigation | refactor | open-pr | merge | implement-plan
   big-change: yes | no
   why: <one sentence naming what drove the verdict>
   ```
 - **`merge` is user-selected, never inferred.** Return it only when the user asked for an existing PR to be merged. A task that will produce a PR is not a merge request.
+- **`implement-plan` is user-selected, never inferred.** Return it only when the user asked to implement a plan they already wrote. The parent normally routes this track before the assessor runs at all.
 
 ### supercook-explorer
 
@@ -88,6 +90,14 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 - **Done when**: `plan.md` is written, every slice is inside the budget or carries a logged cohesion exception, and any required UI contract is complete with explicit slice ownership and one reachable order-test owner.
 - **Judging criteria**, in order: correctness against code and supplied design, slice sizing and independence, surgical scope, risk named honestly.
 - **Returns**: which plans contributed to which slices, and the strongest idea it rejected plus why.
+
+### supercook-plan-optimizer
+
+- **Inputs**: `user-plan.md` in the run folder, recon pointers, the resolved UI brief and evidence when one exists, the slice budget.
+- **Effort budget**: one pass. Read the supplied plan and the recon pointers. Do not explore.
+- **Boundaries**: honor the user's approach and decisions. Write only `plan.md`. Never invent a different approach; a materially better idea goes in `dissent`, not the plan.
+- **Done when**: `plan.md` exists with numbered slices, each carrying scope, a named verification, and a reviewable-line estimate, plus `## Changes from your plan`. Contract-level UI also has complete source-of-truth entries, owned obligations on each UI slice, and exactly one reachable order-test owner per contract.
+- **Returns**: the slice list with estimates, the total, the changes list (or `no changes beyond slicing`), and `dissent`.
 
 ### supercook-test-designer
 
@@ -125,6 +135,7 @@ A boundary written in a prompt is a request. These checks are what make it a con
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
 | `supercook-planner` / `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception. For contract UI, run the plan-completeness guard in `pipeline/ui.md`. |
+| `supercook-plan-optimizer` | Same slice-budget and UI plan-completeness check as planner and judge. Also confirm `## Changes from your plan` exists, and that every change line references something real: a recon pointer or the user's plan text. `no changes beyond slicing` is a valid section body. |
 | `supercook-test-designer` | Confirm the selected tests or recipe fail for the intended reason, except labeled open-pr retrospective verification. Run the anchor and order guard in `pipeline/implementation.md`. |
 | `supercook-implementer` | Run recipe-checksum, test-integrity, and scope guards. Contract UI also requires a valid `design-evidence` return. Run before committing. |
 | `supercook-verifier` | Confirm fresh test or recipe output is quoted and any recipe checksum matched. Contract UI requires `ui-contract: ok`, and any visual claim is rejected. |

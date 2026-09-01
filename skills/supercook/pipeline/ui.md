@@ -294,5 +294,8 @@ tested head SHA, and latest result so a cold merge run can recover and rerun it.
   work that already existed.
 - **Merge**: recover the contract and smoke evidence from the PR body. Require
   current smoke evidence when UI changed after the last recorded check.
+- **Implement-plan**: same contract, structure tests, and rendered smoke as feature.
+  Resolve the design before the optimizer runs. The optimizer completes contract
+  fields from the resolved brief; it does not invent missing design detail.
 - **Investigation**: report design mismatches with evidence, but create no gate or
   files.

@@ -32,6 +32,7 @@ arena-a:      inherit    # suggested: claude-fable-5-thinking-max
 arena-b:      inherit    # suggested: gpt-5.6-sol-max
 arena-c:      inherit    # suggested: claude-opus-5-thinking-high
 plan-judge:   inherit    # suggested: claude-opus-5-thinking-high
+plan-optimizer: inherit  # suggested: claude-opus-5-thinking-high
 implementer:  inherit    # suggested: cursor-grok-4.5-high-fast
 explorer:     inherit
 ```

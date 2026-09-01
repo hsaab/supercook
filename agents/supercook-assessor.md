@@ -1,6 +1,6 @@
 ---
 name: supercook-assessor
-description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration.
+description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration.
 model: inherit
 readonly: true
 ---
@@ -50,10 +50,13 @@ When torn between two tiers, pick the higher one only if you can name the specif
 - **refactor**: same behavior, better structure. Explicitly no behavior change.
 - **open-pr**: work already exists in the tree and needs to become a PR.
 - **merge**: a PR already exists and the user asked for it merged.
+- **implement-plan**: the user asked to implement a plan they already wrote.
 
 A "refactor" that changes behavior is a feature. Say so in `why`.
 
 **Never infer `merge`.** Return it only when the user asked for an existing PR to be merged. A task that will eventually produce a PR is a bugfix or a feature, not a merge.
+
+**Never infer `implement-plan`.** Return it only when the user asked to implement a plan they already wrote. The parent normally routes this track before you run at all.
 
 ## Big-change flag
 
@@ -67,7 +70,7 @@ Exactly four lines. No preamble, no closing summary.
 
 ```
 tier: <trivial | standard | complex>
-track: <bugfix | feature | investigation | refactor | open-pr | merge>
+track: <bugfix | feature | investigation | refactor | open-pr | merge | implement-plan>
 big-change: <yes | no>
 why: <one sentence naming the specific thing that drove the verdict>
 ```
