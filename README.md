@@ -157,13 +157,15 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook keep ledger <what you want>    # commit the ledger so another machine can resume
 /supercook <what you want> and merge it   # carry on through the merge
 /supercook merge PR 412                   # drive an existing PR to merged, nothing to build
+/supercook review                         # run Bugbot, security, and Thermos reviews on each slice PR and fix the real findings
+/supercook review and merge               # the same review pass, then merge the stack bottom-up
 ```
 
 Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask.
 
 After plan mode, `/supercook use this plan` in the same chat is enough. No path needed. Name a file only when you want a different plan than the one in this conversation.
 
-Playbooks, routed automatically from the assessment, except `merge` and `implement-plan`, which you select:
+Playbooks, routed automatically from the assessment, except `merge`, `implement-plan`, and `review`, which you select:
 
 | Track | What it does differently |
 |---|---|
@@ -174,6 +176,7 @@ Playbooks, routed automatically from the assessment, except `merge` and `impleme
 | open-pr | No planning or source implementation; existing designed UI gets retrospective structure tests, verification, and smoke |
 | merge | Drives an existing PR to merged whatever state it is in: conflicts, review comments, broken CI, stalled checks, stacks |
 | implement-plan | Tightens a plan you already wrote, then the standard pipeline with no arena |
+| review | Runs Bugbot, security, and Thermos reviewers on each slice PR, implements the triaged findings, and merges only when you asked for that too |
 
 ## Layout
 

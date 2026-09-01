@@ -1,6 +1,6 @@
 ---
 name: supercook
-description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
+description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode, reviewing slice PRs with external reviewers and fixing the findings) when the user invokes /supercook. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
 disable-model-invocation: true
 ---
 
@@ -87,11 +87,13 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 
 **An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips the assessor. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
 
+**A review ask is user-selected too.** `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR and implements the triaged findings without merging anything. `/supercook review and merge` is the same work plus the standard merge ask appended, so it continues into phase 9. A review that ends green is never an implied merge ask. See [playbooks/review.md](playbooks/review.md).
+
 **`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
 
 ## The pipeline
 
-Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`) route before the assessor runs.
+Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before the assessor runs.
 
 | # | Phase | Guide |
 |---|---|---|
@@ -141,8 +143,8 @@ answers to the ask, not to the verdict.
 
 ## Playbook routing
 
-Route on the assessor's `track`, except `merge` and `implement-plan`, which the user
-selects directly. Copy the playbook's steps verbatim into the ledger.
+Route on the assessor's `track`, except `merge`, `implement-plan`, and `review`,
+which the user selects directly. Copy the playbook's steps verbatim into the ledger.
 
 | Track | When | Playbook |
 |---|---|---|
@@ -153,6 +155,7 @@ selects directly. Copy the playbook's steps verbatim into the ledger.
 | open-pr | Ship what is already in the tree | [playbooks/open-pr.md](playbooks/open-pr.md) |
 | merge | A PR exists and the user asked for it merged | [playbooks/merge.md](playbooks/merge.md) |
 | implement-plan | The user supplies a plan they already wrote | [playbooks/implement-plan.md](playbooks/implement-plan.md) |
+| review | Slice PRs exist and the user asked for a review pass, with or without a merge | [playbooks/review.md](playbooks/review.md) |
 
 ## Continuation protocol
 
@@ -169,4 +172,4 @@ selects directly. Copy the playbook's steps verbatim into the ledger.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
   resolution, structure-test guards, and rendered smoke.
 - `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
-- `playbooks/`: one per track. Most are routed at assess time. `merge` and `implement-plan` are user-selected.
+- `playbooks/`: one per track. Most are routed at assess time. `merge`, `implement-plan`, and `review` are user-selected.
