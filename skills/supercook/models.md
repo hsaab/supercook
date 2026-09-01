@@ -35,7 +35,11 @@ plan-judge:   inherit    # suggested: claude-opus-5-thinking-high
 plan-optimizer: inherit  # suggested: claude-opus-5-thinking-high
 implementer:  inherit    # suggested: cursor-grok-4.5-high-fast
 explorer:     inherit
+reviewer:     inherit    # suggested: claude-opus-5-thinking-high   (bugbot, security-review, both thermo reviewers on the review track)
+review-implementer: inherit  # suggested: cursor-grok-4.5-high-fast (finding fixes on the review track)
 ```
+
+The two review-track roles are independent of the rest, like every role here: `reviewer` covers the four external reviewer launches on the review track, `review-implementer` covers the finding-fix launches there, and leaving either on `inherit` does not fall through to `implementer` or `standard`.
 
 Every suggested slug above was checked against a real model list rather than guessed. That matters here more than it looks: this file's entire argument is that an unresolvable slug costs you a silent fallback, so shipping a plausible-looking slug that does not exist would undercut the point.
 

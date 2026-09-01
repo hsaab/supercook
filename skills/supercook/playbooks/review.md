@@ -11,7 +11,7 @@ Slice PRs exist. Run the external reviewers on each one, implement the real find
 - `review`: review, fix, verify, and stop at healthy open PRs with a findings summary per PR.
 - `review and merge`: the same work, then continue into phase 9 per [merge.md](merge.md) and [../pipeline/merge.md](../pipeline/merge.md).
 
-A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong.
+A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong. Record the two resolved model slugs beside it (`models: reviewer <slug or inherit> | review-implementer <slug or inherit>`), resolved once at intake per [../models.md](../models.md), so a resume launches with the same models instead of re-resolving.
 
 **Entry: continue a run if one exists, otherwise open one.**
 
@@ -37,7 +37,7 @@ Copy these into the ledger verbatim.
 
 ## The reviewer fan-out
 
-Four reviewers per PR, launched in parallel in one message, each with a fresh context. These are host subagents with their own fixed contracts, not supercook agents, so `models.md` does not apply to them.
+Four reviewers per PR, launched in parallel in one message, each with a fresh context. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on all four launches, including the confirmation pass. `inherit` means omit the model field, same as every other role.
 
 First check out the PR's branch (`gh pr checkout <n>`), because the diff-computing reviewers read the working tree.
 
@@ -63,6 +63,8 @@ Dedupe findings across the four reviewers first: overlapping findings merge into
 - **A style preference the repo does not enforce**: decline, with the reason recorded.
 - **Wrong about the code**: decline, naming the file and line that disproves it.
 - **Out of scope for this slice**: note it as a follow-up, keep it out of this diff.
+
+**Fixes are delegated to `supercook-implementer` on the `review-implementer` model.** Launch it per the contract in [../agents.md](../agents.md): the objective is the triaged findings to fix, the scope list is the files those findings name, and the boundaries are unchanged (never a test file, never a path outside the scope list). The parent keeps triage, declines, the confirmation-pass decision, and the review of the returned diff. Small single-file fixes may be made inline by the parent instead, but a launch that does happen uses this role's model.
 
 Every fix is still a diff under the normal rules: change only what the finding needs, no opportunistic cleanup, one commit per atomic change, and an explanation naming the file and the real consequence. Record each decline in the ledger and in the PR (a comment or the findings summary), so the judgment survives a context reset.
 

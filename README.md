@@ -115,7 +115,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Eight roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, and the explorer. Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
+Ten roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, the explorer, the reviewer (the four external review subagents on the review track), and the review implementer (the agent that fixes triaged findings there). Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
 
 Put your choices in `~/.supercook/models.md`, not in the plugin. A marketplace install lives in a commit-pinned cache directory that the next update replaces wholesale, so edits made inside the plugin do not survive `plugin marketplace update`. The home file does, and it applies to every repo you run in.
 
