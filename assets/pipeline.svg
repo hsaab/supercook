@@ -137,8 +137,8 @@
   <path d="M1330,1120 h240 v95 q-60,26 -120,0 q-60,-26 -120,0 z" fill="#fff9db" stroke="#d9a800" stroke-width="2"/>
   <text x="1450" y="1148" font-size="14" font-weight="600" fill="#5c4a00" text-anchor="middle">models.md</text>
   <text x="1450" y="1167" font-size="11.5" fill="#5c4a00" text-anchor="middle">maps each role to a model.</text>
-  <text x="1450" y="1183" font-size="11.5" fill="#5c4a00" text-anchor="middle">Ships as inherit. Change two</text>
-  <text x="1450" y="1199" font-size="11.5" fill="#5c4a00" text-anchor="middle">lines to diversify the arena</text>
+  <text x="1450" y="1183" font-size="11.5" fill="#5c4a00" text-anchor="middle">Ships a model per role;</text>
+  <text x="1450" y="1199" font-size="11.5" fill="#5c4a00" text-anchor="middle">unavailable ones inherit</text>
 
   <!-- flow lines -->
   <path d="M220,560 H264" fill="none" stroke="#4a4a44" stroke-width="2.25" marker-end="url(#aDark)"/>

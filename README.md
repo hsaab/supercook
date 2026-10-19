@@ -115,7 +115,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Ten roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, the explorer, the reviewer (the four external review subagents on the review track), and the review implementer (the agent that fixes triaged findings there). Every role ships as `inherit`, meaning it uses whatever model is driving your session, with suggested slugs commented next to each role in [skills/supercook/models.md](skills/supercook/models.md).
+Ten roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, the explorer, the reviewer (the four external review subagents on the review track), and the review implementer (the agent that fixes triaged findings there). Every role but the explorer ships with a model set in [skills/supercook/models.md](skills/supercook/models.md). The explorer ships as `inherit`, meaning it uses whatever model is driving your session.
 
 Put your choices in `~/.supercook/models.md`, not in the plugin. A marketplace install lives in a commit-pinned cache directory that the next update replaces wholesale, so edits made inside the plugin do not survive `plugin marketplace update`. The home file does, and it applies to every repo you run in.
 
@@ -124,11 +124,11 @@ mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-Then uncomment the roles you want. Roles you leave alone fall back to the shipped default, so a home file that sets two arena slots and nothing else changes exactly those two.
+Then change the roles you want and delete the rest. Roles the home file does not name fall back to the shipped default, so a home file that sets two arena slots and nothing else changes exactly those two. Write `inherit` on a role to put it on your session model.
 
 At the start of every run the orchestrator merges the two files, validates each slug against the models your session actually offers, and falls back to inherit with a note in the ledger if your plan does not carry one. Nothing breaks and nothing is guessed.
 
-**The one edit worth making:** get three different model families into the arena. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off. Setting `arena-b` and `arena-c` to two other families is enough, since `arena-a` left on `inherit` contributes whatever model is already driving your session.
+**Keep the arena diverse:** the shipped arena already puts three different models on the three contestants. If you override them, keep them different. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off.
 
 ## What it needs, and what happens without it
 

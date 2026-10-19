@@ -26,7 +26,7 @@ run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
-models: arena-b gpt-5.6-sol-max ok | arena-c claude-opus-5-thinking-high ok | rest inherit
+models: shipped defaults ok | explorer inherit
 test-paths: **/*.test.ts
 ui-change: no | ui-source: none | render-check: none
 done: every public route rejects a 101st request in a minute with a 429, and the suite is green
