@@ -33,10 +33,10 @@ arena-b:      gpt-5.6-sol-max
 arena-c:      claude-opus-5-5-high
 plan-judge:   claude-opus-5-5-high
 plan-optimizer: claude-opus-5-5-high
-implementer:  cursor-grok-4.6-xhigh-fast
+implementer:  grok-4.7-xhigh
 explorer:     grok-4.7-xhigh
 reviewer:     claude-opus-5-5-high   # bugbot, security-review, both thermo reviewers on the review track
-review-implementer: cursor-grok-4.6-xhigh-fast   # finding fixes on the review track
+review-implementer: cursor-grok-4.7-xhigh   # finding fixes on the review track
 ```
 
 The two review-track roles are independent of the rest, like every role here: `reviewer` covers the four external reviewer launches on the review track, `review-implementer` covers the finding-fix launches there, and leaving either on `inherit` does not fall through to `implementer` or `standard`.
