@@ -9,7 +9,7 @@ Two files can define the roster, and the parent reads both:
 | File | Purpose |
 |---|---|
 | `~/.supercook/models.md` | Your choices. Applies to every repo. Wins wherever it names a role. |
-| this file | The shipped default. A model for every role but `explorer`. |
+| this file | The shipped default. A model for every role. |
 
 **Edit the home file, not this one**, unless you cloned the repo and symlinked it into `~/.cursor/plugins/local/`. A marketplace install lives in a commit-pinned cache directory that the next plugin update replaces with a fresh one, so an edit made there is stranded the moment a new version lands. The home file is outside all of that.
 
@@ -27,14 +27,14 @@ Do not confuse `~/.supercook/` with the `.supercook/` folder inside a repo. The 
 ## The roster
 
 ```
-standard:     claude-fable-5-1-thinking-high   # assessor, planner, test-designer, verifier
+standard:     claude-opus-5-5-high   # assessor, planner, test-designer, verifier
 arena-a:      claude-fable-5-1-thinking-high
 arena-b:      gpt-5.6-sol-max
 arena-c:      claude-opus-5-5-high
 plan-judge:   claude-opus-5-5-high
 plan-optimizer: claude-opus-5-5-high
 implementer:  cursor-grok-4.6-xhigh-fast
-explorer:     inherit
+explorer:     grok-4.7-xhigh
 reviewer:     claude-opus-5-5-high   # bugbot, security-review, both thermo reviewers on the review track
 review-implementer: cursor-grok-4.6-xhigh-fast   # finding fixes on the review track
 ```
