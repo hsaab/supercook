@@ -123,6 +123,12 @@ class LaunchDecisionTests(HookTestCase):
             *(Case(n, arena_b, OMIT, "supercook-arena-runner", OMITTED_DENY, ((LEDGER, t),) if t else ()) for n, t in ledgers.items()),
         ])
 
+    def test_supercook_launch_with_role_but_no_run_is_denied(self):
+        self.check([
+            Case("role without run", tags("explorer", run=None), "home-explorer", "supercook-explorer", ("deny", "supercook-run")),
+            Case("foreign role without run stays allowed", tags("explorer", run=None), "home-explorer", "explore", ALLOW),
+        ])
+
 
 class RosterSourceTests(HookTestCase):
     def test_repository_roster_beats_home_and_home_beats_shipped(self):
@@ -145,7 +151,7 @@ class RosterSourceTests(HookTestCase):
         self.check([
             *match_and_mismatch("run in second root", tags("explorer"), "supercook-explorer", "repo-explorer", "first-explorer", files, roots),
             *match_and_mismatch("run outside every root", tags("explorer", "{root}/elsewhere/run"), "supercook-explorer", "first-explorer", "repo-explorer", files, roots),
-            *match_and_mismatch("no run tag", tags("explorer", None), "supercook-explorer", "first-explorer", "repo-explorer", files, roots),
+            *match_and_mismatch("no run tag", tags("explorer", None), "explore", "first-explorer", "repo-explorer", files, roots),
             Case("relative run resolves against first root", tags("arena-b", ".supercook/rel-run"), OMIT, "supercook-arena-runner", ALLOW, relative_ledger, roots),
         ])
 
@@ -160,7 +166,7 @@ class TagParsingTests(HookTestCase):
             Case("later run tag is ignored", two_runs.format("{root}/repo/other", "{run}"), OMIT, "supercook-arena-runner", OMITTED_DENY, FALLBACK),
             *match_and_mismatch("custom instructions role", BUGBOT + tags("explorer"), "security-review", "home-explorer", "home-reviewer"),
             Case("empty role line does not take the next line", "supercook-role:\nexplorer\nsupercook-run: {run}\n", "home-explorer", "supercook-explorer", ("deny",)),
-            Case("empty run line does not take the next line", "supercook-role: arena-b\nsupercook-run:\n{run}\n", OMIT, "supercook-arena-runner", OMITTED_DENY, FALLBACK),
+            Case("empty run line does not take the next line", "supercook-role: arena-b\nsupercook-run:\n{run}\n", OMIT, "supercook-arena-runner", ("deny", "supercook-run"), FALLBACK),
         ])
 
 
