@@ -4,7 +4,7 @@ Slice PRs exist. Run the external reviewers on each one, implement the real find
 
 ## Trigger and entry
 
-**Trigger: an explicit review ask, whenever it arrives.** `/supercook review`, `/supercook review PR 412`, or `/supercook review and merge`, in the invocation or mid-run after phase 8 opened the slice PRs. Nothing else selects this track. The assessor never routes here on its own.
+**Trigger: an explicit review ask, whenever it arrives.** `/supercook review`, `/supercook review PR 412`, or `/supercook review and merge`, in the invocation or mid-run after phase 8 opened the slice PRs. Nothing else selects this track. The assessor never routes here on its own, and **phase 1 does not run**: the parent routes review before assessor per [../SKILL.md](../SKILL.md#user-selected-track-routing).
 
 **The ask decides the mode, and the mode is fixed at intake.**
 
@@ -22,22 +22,38 @@ Stacking mechanics follow the `stacking gt | manual` capability intake records. 
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. On a **stack**, treat the block below as **one nested checklist per PR** (bottom-up), not one flattened list for the whole stack.
 
 ```
-- [ ] resolve targets: named PRs or the current branch's PR and its stack; record bottom-up order and each PR's base
-- [ ] per PR: check out the branch; resolve each of bugbot and security-review to `hosted`, `local`, or `pending` against the PR head per "Reuse hosted Bugbot and security review"
-- [ ] per PR: launch both thermo reviewers plus every `local` reviewer in one parallel batch, scoped to this PR's base; collect `hosted` findings from the PR
-- [ ] per PR: once every reviewer has reported (each `pending` one resolved, then collected or launched locally), dedupe and triage findings; decline the rest with a stated reason
-- [ ] per PR: one supercook-implementer launch (review-implementer model) fixes all in-scope findings as one-commit diffs
-- [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), then push
-- [ ] per PR: one confirmation pass on the reviewers whose findings were implemented, sources resolved again against the pushed head; the row stays open until each of them has reported
-- [ ] per PR, only when the confirmation pass found in-scope findings: one more implementer launch, run the recorded tests, push; no confirmation pass after it
-- [ ] per PR: wait for CI checks only; review-bot checks are covered by the source decision and the confirmation pass
-- [ ] stack only: restack children after fixes land on a base slice, gt or manual per the ledger's stacking capability
-- [ ] merge mode only: continue into phase 9 under the merge ask already given, one merge row per PR
-- [ ] review mode only: report the per-PR findings summary and stop at open PRs
+- [ ] resolve targets: named PRs or the current branch's PR and its stack; record bottom-up order and each PR's base (see Multi-PR stacks)
+- [ ] stack walk (bottom-up): for each PR in order, nest one ledger block and run every row below inside it before opening the next PR's block
+  - [ ] PR #___ (base ___): check out the branch; resolve each of bugbot and security-review to `hosted`, `local`, or `pending` against the PR head per "Reuse hosted Bugbot and security review"
+  - [ ] PR #___: launch both thermo reviewers plus every `local` reviewer in one parallel batch, scoped to this PR's base; collect `hosted` findings from the PR
+  - [ ] PR #___: once every reviewer has reported (each `pending` one resolved, then collected or launched locally), dedupe and triage findings; decline the rest with a stated reason
+  - [ ] PR #___: one supercook-implementer launch (review-implementer model) fixes all in-scope findings as one-commit diffs
+  - [ ] PR #___: run the recorded tests (and rendered smoke on a UI contract), then push
+  - [ ] PR #___: one confirmation pass on the reviewers whose findings were implemented, sources resolved again against the pushed head; the row stays open until each of them has reported
+  - [ ] PR #___, only when the confirmation pass found in-scope findings: one more implementer launch, run the recorded tests, push; no confirmation pass after it
+  - [ ] PR #___: wait for CI checks only; review-bot checks are covered by the source decision and the confirmation pass
+  - [ ] PR #___, merge mode only: merge **this PR only** via phase 9 after every review row above for this PR is checked (never bulk-merge the stack before lower PRs complete review)
+  - [ ] PR #___, after merge or review-only fixes on a base slice: restack children (gt or manual per the ledger's stacking capability), then continue to the next PR up
+- [ ] review mode only (all PR blocks done): report the per-PR findings summary and stop at open PRs
 ```
+
+## Multi-PR stacks, ledger, and merge mode
+
+**Resolve the full stack at intake** before any reviewer launches. Named PR numbers in the ask, or the current branch's PR plus every open PR stacked on it (`gh pr list` and each PR's base branch to build the chain). Record **bottom-up order** and each PR's base in the ledger header and in one **nested block per PR** (see [The ledger is not optional here](#the-ledger-is-not-optional-here)).
+
+**Bottom-up, one PR at a time.** Finish the full fan-out, triage, implementer, verify, confirmation pass, and CI wait for PR *N* before starting PR *N+1*. Fixes on a base slice change what children sit on; reviewing or merging children first wastes work and skips the playbook on the wrong diff.
+
+**Merge mode (`review and merge`) merges one PR per cycle, not the whole stack at once.**
+
+1. Complete every review row for the bottom open PR.
+2. Run phase 9 for **that PR only** ([merge.md](merge.md) loop: comments, CI, conflicts, merge).
+3. Restack children ([Order on a stack](#order-on-a-stack)).
+4. Open the next PR's nested ledger block and repeat from step 1.
+
+Never call `gt merge` / bulk `gh pr merge` on the full stack, and never jump to the tip because "the stack was already reviewed at the tip." Each PR gets its own reviewer batch scoped to **its** base branch.
 
 ## Reuse hosted Bugbot and security review
 
@@ -146,10 +162,10 @@ After the fixes are pushed, re-run only the reviewers whose findings were implem
 
 ## Order on a stack
 
-Bottom-up, one PR at a time. Fixes pushed to a base slice change what every child sits on, so a child reviewed before its parent settles gets reviewed against code that is about to move.
+Bottom-up, one PR at a time. Fixes pushed to a base slice change what every child sits on, so a child reviewed before its parent settles gets reviewed against code that is about to move. See [Multi-PR stacks, ledger, and merge mode](#multi-pr-stacks-ledger-and-merge-mode) for ledger nesting and merge-mode pacing.
 
-1. Review, fix, and verify the bottom open PR.
-2. In merge mode, merge it per phase 9, which restacks the children as part of the walk.
+1. Review, fix, verify, confirmation pass, and CI wait for the bottom open PR (full playbook for that PR).
+2. In merge mode, merge **only that PR** per phase 9, then restack the children as part of the walk before the next PR's review block starts.
 3. In review mode, restack the children now: `gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only` on `stacking gt`, or the manual retarget-and-rebase lifecycle in [../pipeline/delivery.md](../pipeline/delivery.md#the-stack-lifecycle). Then move to the next PR up.
 
 Independent PRs (no shared stack) skip the restack and can be processed in any order, still one at a time.
@@ -161,14 +177,14 @@ After each PR's fixes: run the recorded tests or recipe, rerun the rendered smok
 **The wait covers CI and test checks only.** Review-bot check runs on the PR (Cursor Bugbot, security review) are covered by the source decision and the confirmation pass, so none of them holds the verify row open. In merge mode, GitHub's merge API still enforces anything the repo marks as a *required* check, so a required review-bot check stays a readiness gate per [../pipeline/merge.md](../pipeline/merge.md#merging): reported if it blocks, never bypassed.
 
 - **Review mode** ends here. The final report is one short block per PR: findings found, fixed (file and consequence each), declined (with reasons), and anything the confirmation pass left open.
-- **Merge mode** continues into phase 9 exactly as the merge playbook specifies. The `review and merge` ask already carried the merge consent: state and log the sequence (`gt merge --dry-run --no-interactive` on `stacking gt`, the plain-language walk on manual), then run it to merged without waiting for another yes.
+- **Merge mode** continues into phase 9 **per PR**, only after that PR's review rows are complete. Merge one PR, restack, then review the next. The `review and merge` ask carried merge consent for each merge in that walk; state and log the next step (`gt merge --dry-run --no-interactive` on `stacking gt` when it applies, or the plain-language walk on manual), then run **that PR's** merge without waiting for another yes. Do not bulk-merge the stack ahead of unfinished review blocks.
 
 ## Phases
 
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight. No worktree and no new branch, the PR branches exist. Ledger seeded with the mode and the stack order |
-| 1 assess | only to confirm the target PRs and their stack relationship |
+| 1 assess | no. Review track routes before the assessor; stack targets are fixed at intake |
 | 2 recon | only enough to judge a finding against the code it points at |
 | 3 design doc | no |
 | 4 plan | no |

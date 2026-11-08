@@ -2,6 +2,8 @@
 
 A PR already exists. Drive it to merged.
 
+**Cold `merge` skips external reviewer fan-out.** This track handles mergeability, human and bot **comments on the PR**, CI, conflicts, restacks, and the merge walk. It does **not** run the review playbook: no parallel Bugbot / security / Thermo launch, no review-implementer finding fixes, no confirmation pass, no per-PR verify gate from [review.md](review.md). If the user wanted that pass, they should invoke **`/supercook review`** or **`/supercook review and merge`** (review track, full fan-out on each PR bottom-up). For stack review plus merge, see [review.md](review.md#order-on-a-stack) and [review.md](review.md#multi-pr-stacks-ledger-and-merge-mode).
+
 ## Trigger and entry
 
 **Trigger: an explicit merge ask, whenever it arrives.** In the invocation (`/supercook merge PR 412`), mid-run after the user sees the PR, or cold on a PR from last week. Nothing else selects this track. The assessor never routes here on its own, and phase 8 still ends a normal run at an open PR.

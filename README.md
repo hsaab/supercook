@@ -170,14 +170,15 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook <what you want> and merge it   # carry on through the merge
 /supercook merge PR 412                   # drive an existing PR to merged, nothing to build
 /supercook review                         # run Bugbot, security, and Thermos reviews on each slice PR and fix the real findings
-/supercook review and merge               # the same review pass, then merge the stack bottom-up
+/supercook review and merge               # full external review on each PR bottom-up, then merge one PR at a time (not bulk merge before reviews)
 ```
 
 Merging never happens unless you ask for it. Without that ask a run ends at an open PR, and a PR that looks mergeable is not an ask. Once you have asked, the ask is the consent: supercook states and logs the merge sequence and continues until the work is merged, stopping only for things it may never bypass (branch protection, missing required approvals, failing required checks).
 
 After plan mode, `/supercook use this plan` in the same chat is enough. No path needed. Name a file only when you want a different plan than the one in this conversation.
 
-Playbooks, routed automatically from the assessment, except `merge`, `implement-plan`, and `review`, which you select:
+`review and merge` stays on the **review** track (full reviewer fan-out per PR), not the merge-only track. Playbooks route from assessment except `merge`, `implement-plan`, and `review`, which you select at intake (review before assessor):
+
 
 | Track | What it does differently |
 |---|---|

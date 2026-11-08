@@ -86,9 +86,30 @@ Blocked is not the same as bypassable. Branch protection, failing required check
 
 **An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips the assessor. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
 
-**A review ask is user-selected too.** `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR, reusing hosted Bugbot and security review results on the PR's current head instead of launching those two locally, and implements the triaged findings without merging anything. `/supercook review and merge` is the same work plus the standard merge ask appended, so it continues into phase 9. A review that ends green is never an implied merge ask. The `reviewer` and `review-implementer` roles in [models.md](models.md) pick the models for the review launches and the finding fixes. See [playbooks/review.md](playbooks/review.md).
+**A review ask is user-selected too.** Routing rules live in [User-selected track routing](#user-selected-track-routing). `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR, reusing hosted Bugbot and security review results on the PR's current head instead of launching those two locally, and implements the triaged findings without merging anything. `/supercook review and merge` is the same work plus merge consent on the **review** track: full per-PR review bottom-up, then phase 9 merges **one PR at a time** after that PR's review rows complete (not bulk merge before reviews). A review that ends green is never an implied merge ask. The `reviewer` and `review-implementer` roles in [models.md](models.md) pick the models for the review launches and the finding fixes. See [playbooks/review.md](playbooks/review.md).
 
 **`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
+
+## User-selected track routing
+
+The parent parses the user's ask **before phase 1**. `merge`, `implement-plan`, and `review` never wait on the assessor. Wrong routing here is how a stack gets merged without per-PR reviewer fan-out.
+
+**Parse order (first match wins on the primary ask):**
+
+| User text | Track | Notes |
+|---|---|---|
+| `review and merge`, or `review` as the primary ask (`review PR …`, cold or mid-run) | **review** | Set ledger `mode: review+merge` or `mode: review`. **Never** the merge track, even when the ask names multiple PRs or a whole stack. |
+| `merge` alone, with no leading review ask (`merge PR 412`, `/supercook merge …`) | **merge** | Phase 9 / merge playbook only. **No** external reviewer fan-out (Bugbot, security, Thermos). |
+| `implement-plan` / `use this plan` / `implement <path>` | **implement-plan** | Assessor skipped per [playbooks/implement-plan.md](playbooks/implement-plan.md). |
+| Everything else | Assessor (phase 1) | Routed playbook from `track` in the verdict. |
+
+**`review and merge` is review track, not merge track.** Classification, intake, and playbook copy all say **review**. The merge consent rides on that track into phase 9 **after** each PR's full review playbook completes (bottom-up on a stack), not as a substitute for it.
+
+**Mid-run merge on a non-review run** (`and merge it` after a feature run, or "merge it" after phase 8): append **phase 9 only** to the existing track. Do not reclassify as merge track and do not skip work already done.
+
+**Merge track does not substitute for the review playbook.** Comments, CI, conflicts, and restacks on merge track are not reviewer fan-out, implementer finding fixes, confirmation pass, or per-PR verify. If the user wanted that pass, they needed `review` or `review and merge`, not cold `merge`.
+
+Orchestrators: never treat "stack" plus "merge" in the invocation as permission to bulk-merge before every PR has completed its review rows ([playbooks/review.md](playbooks/review.md)).
 
 ## The pipeline
 
@@ -135,6 +156,12 @@ recon scoped to the plan, the optimizer writes `plan.md`, then tests, implement,
 verify, deliver. Tier collapse does not drop this to implement plus verify. Phase 3
 is skipped; the supplied plan is the alignment. Optimizer dissent is reported, never
 silently escalated to an arena.
+
+**The review track is a routing exception.** The user asked for a review pass, so
+the assessor does not run. Route **review**, never **merge**, when the primary ask
+includes `review` (including `review and merge`). On a stack, run the full review
+playbook on each PR bottom-up before any merge row for that PR. Merge track comment
+and CI handling does not replace reviewer fan-out.
 
 **Phase 9 is a separate opt-in exception**, in both directions. No tier collapse
 removes it once a merge was asked for, and no tier adds it when one was not. It
