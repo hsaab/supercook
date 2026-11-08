@@ -174,11 +174,37 @@ UI controls live in two places rather than being copied here:
 
 ## Fallback when the agents are not installed
 
-The skill still works without the plugin's agents, for instance when someone copies the skill folder alone or discovery is off. When subagents still run through Task, roster tags and model resolution still apply if the host enforces them; inline fallback without those tools may omit tags and model fields. Detect it during the intake probe, then for each role:
+The skill still works when typed `supercook-*` subagents are missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. **Fallback means delegated launches, not a parent implementing alone.** On **standard** or **complex** tier, phases 1, 2, 4, 6, and 7 each require a **launched** worker row in the ledger (assessor output may be inline only where the contract below says so). The parent orchestrates, guards, and commits; it does not replace implementer, explorer, planner, or verifier with its own edits.
 
-1. Read `agents/supercook-<role>.md` and use its body as the prompt.
-2. Launch `generalPurpose`, or `explore` for recon work.
-3. Keep the same inputs, done-when, returns shape, and guards.
-4. Log one ledger row noting the degraded path.
+When the host offers any subagent spawn (`CreateAgent`, `Task`, `Subagent`, or equivalent), roster tags and model resolution from intake still apply when the host enforces them.
 
-The assessor is small enough that the parent can simply classify inline instead of launching anything.
+### Phase map (same contract, any spawn tool)
+
+| Phase | Agent file | Typical spawn when typed agent missing |
+|---|---|---|
+| 1 assess | `agents/supercook-assessor.md` | `CreateAgent` / `Task` / `Subagent` with `generalPurpose`, or parent inline classify per assessor contract only |
+| 2 recon | `agents/supercook-explorer.md` | `explore` or `generalPurpose` with explorer body |
+| 4 plan | `agents/supercook-planner.md` (or arena/judge/optimizer roles) | `generalPurpose` with matching agent body |
+| 5 test-first | `agents/supercook-test-designer.md` | `generalPurpose` with test-designer body |
+| 6 implement | `agents/supercook-implementer.md` | `generalPurpose` with implementer body; **never parent solo** on standard/complex |
+| 7 verify | `agents/supercook-verifier.md` | `generalPurpose` with verifier body; fresh context, **never parent solo** on standard/complex |
+
+For each launch:
+
+1. Read `agents/supercook-<role>.md` and use its body as the prompt (prepend `supercook-role:` and `supercook-run:` when the host supports tags).
+2. Pass `model` from the ledger `models-resolved:` map when the tool accepts it; omit only for `inherit`.
+3. Keep the same inputs, done-when, returns shape, and parent-side guards from this file.
+4. Log one ledger row with spawn tool name and model slug (or `inherit`).
+
+### Forbidden skips
+
+On standard or complex tier, these ledger reasons are **invalid** unless assessor approved **trivial** tier collapse:
+
+- `skip: agents not installed`
+- `skip: user checklist`
+- `skip: coordinator spec`
+- `skip: plan included in kickoff`
+
+A Project or cloud assignment that pastes the implementation is still intake + assessor first. Checklist text does not waive explorer, planner, implementer delegation, or verifier.
+
+The assessor is small enough that the parent may classify inline **only** for phase 1 when no spawn tool is available; that inline pass still produces the four-line verdict and a ledger assess row, and it is not permission to skip phases 2, 4, 6, or 7 on standard/complex.

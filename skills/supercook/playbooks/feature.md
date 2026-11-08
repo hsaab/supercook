@@ -21,6 +21,10 @@ Copy these into the ledger verbatim.
 
 Every phase runs at standard and complex tier. Phase 3 depends on the big-change flag, and phase 4 uses the arena only on complex tier. A trivial feature collapses to implement plus verify, per the precedence rule in `SKILL.md`.
 
+## CI, workflows, and test harness work
+
+Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **feature** track at **standard** tier by default: recon, plan, implement, and verify still run. The kickoff may name workflow files; that naming is not a shortcut past assessor or planner. Only assessor **trivial** collapse may drop recon and plan.
+
 ## Name the data shape first
 
 Before any logic, decide what the data looks like: the types, the schema, the payload, what is required and what is optional, what owns it.
