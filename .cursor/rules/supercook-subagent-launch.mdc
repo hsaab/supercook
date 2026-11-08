@@ -1,0 +1,16 @@
+---
+description: Pre-flight supercook subagent launches (Task and CreateAgent) before CallDynamicTool.
+globs: .cursor/supercook/**, .supercook/**
+alwaysApply: false
+---
+
+# Supercook subagent launch
+
+Full wire format and commands: [.cursor/supercook/subagent-launch.md](../supercook/subagent-launch.md).
+
+Before each launch, run `python3 <repo>/scripts/validate_subagent_launch.py` via the `task` or `create-agent` subcommand (long prompts: `.supercook/prompts/<phase>-<role>.md` plus `task --prompt-file`).
+
+- **task**: `description`, `subagent_type`, and `prompt` only under `arguments`.
+- **create-agent**: `description`, `subagent_type`, and `prompt` at the top level, never under `arguments`.
+
+A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch; log the exact error, then run the role yourself. Never silently parent-implement instead of launching the subagent.
