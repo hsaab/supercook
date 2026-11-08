@@ -12,16 +12,8 @@ import roster
 SHIPPED_MODELS_PATH = Path(__file__).resolve().parent.parent / "skills/supercook/models.md"
 
 ROSTER_KEYS = {
-    "standard",
-    "arena-a",
-    "arena-b",
-    "arena-c",
-    "plan-judge",
-    "plan-optimizer",
-    "implementer",
-    "explorer",
-    "reviewer",
-    "review-implementer",
+    "standard", "arena-a", "arena-b", "arena-c", "plan-judge",
+    "plan-optimizer", "implementer", "explorer", "reviewer", "review-implementer",
 }
 
 
@@ -47,10 +39,23 @@ SHIPPED_FIXTURE_ROSTER = {
     "reviewer": "shipped-reviewer",
 }
 
+THIS_RUN_MODELS_HEADER = (
+    "models: standard claude-opus-5-5-high | arena-a claude-fable-5-1-thinking-high"
+    " | arena-b inherit (unavailable gpt-5.6-sol-max) | arena-c claude-opus-5-5-high"
+    " | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high"
+    " | implementer composer-2.5 | explorer composer-2.5 | reviewer claude-opus-5-5-high"
+    " | review-implementer composer-2.5\n"
+)
+
 
 def is_announced_fallback(entry):
     """An entry is an announced fallback when the ledger names a rejected slug."""
     return entry.rejected_slug is not None
+
+
+def ledger_summary(parsed):
+    """Reduce parsed ledger entries to {role: (slug, rejected_slug)} for whole-mapping asserts."""
+    return {role: (entry.slug, entry.rejected_slug) for role, entry in parsed.items()}
 
 
 class RosterTiersTestCase(unittest.TestCase):
@@ -75,96 +80,61 @@ class RosterTiersTestCase(unittest.TestCase):
         return roster.load_roster(repo_path, self.home_path, self.shipped_path)
 
 
-class ThreeTierPrecedenceTests(RosterTiersTestCase):
-    def test_role_set_in_all_three_files_takes_the_repository_value(self):
-        self.write(self.home_path, models_file("arena-a: home-arena-a"))
+class RosterPrecedenceTests(RosterTiersTestCase):
+    def test_each_role_takes_the_highest_tier_that_names_it(self):
+        self.write(self.home_path, models_file("arena-a: home-arena-a", "arena-b: home-arena-b"))
         self.write(self.repo_path, models_file("arena-a: repo-arena-a"))
 
-        self.assertEqual(self.load()["arena-a"], "repo-arena-a")
-
-    def test_role_set_only_in_system_and_shipped_files_takes_the_system_value(self):
-        self.write(self.home_path, models_file("arena-b: home-arena-b"))
-        self.write(self.repo_path, models_file("arena-a: repo-arena-a"))
-
-        self.assertEqual(self.load()["arena-b"], "home-arena-b")
-
-    def test_role_named_nowhere_above_shipped_keeps_the_shipped_value(self):
-        self.write(self.home_path, models_file("arena-b: home-arena-b"))
-        self.write(self.repo_path, models_file("arena-a: repo-arena-a"))
-
-        self.assertEqual(self.load()["explorer"], "shipped-explorer")
-
-
-class SingleRoleOverrideTests(RosterTiersTestCase):
-    def test_repository_file_naming_one_role_changes_exactly_that_role(self):
-        self.write(self.repo_path, models_file("explorer: repo-explorer"))
-        expected = dict(SHIPPED_FIXTURE_ROSTER, explorer="repo-explorer")
-
+        expected = dict(SHIPPED_FIXTURE_ROSTER, **{"arena-a": "repo-arena-a", "arena-b": "home-arena-b"})
         self.assertEqual(self.load(), expected)
 
-    def test_system_file_naming_one_role_changes_exactly_that_role(self):
-        self.write(self.home_path, models_file("reviewer: home-reviewer"))
-        expected = dict(SHIPPED_FIXTURE_ROSTER, reviewer="home-reviewer")
+    def test_an_override_file_naming_one_role_changes_exactly_that_role(self):
+        for tier, path in (("repository", self.repo_path), ("system", self.home_path)):
+            with self.subTest(tier=tier):
+                self.write(path, models_file("explorer: override-explorer"))
+                try:
+                    self.assertEqual(self.load(), dict(SHIPPED_FIXTURE_ROSTER, explorer="override-explorer"))
+                finally:
+                    path.unlink()
 
-        self.assertEqual(self.load(), expected)
-
-
-class InheritValueTests(RosterTiersTestCase):
-    def test_repository_inherit_beats_a_real_slug_below_it(self):
-        self.write(self.home_path, models_file("arena-a: home-arena-a"))
+    def test_inherit_survives_as_a_value_at_every_tier(self):
+        self.write(self.shipped_path, models_file("standard: inherit", "arena-a: shipped-a", "explorer: shipped-e"))
+        self.write(self.home_path, models_file("arena-a: home-a", "explorer:   inherit   # session model"))
         self.write(self.repo_path, models_file("arena-a: inherit"))
 
-        self.assertEqual(self.load()["arena-a"], "inherit")
-
-    def test_system_inherit_beats_the_shipped_slug(self):
-        self.write(self.home_path, models_file("explorer:   inherit   # back to the session model"))
-
-        self.assertEqual(self.load()["explorer"], "inherit")
-
-    def test_shipped_inherit_survives_when_no_override_names_the_role(self):
-        self.write(self.shipped_path, models_file("standard: inherit", "explorer: shipped-explorer"))
-
-        self.assertEqual(self.load()["standard"], "inherit")
+        self.assertEqual(self.load(), {"standard": "inherit", "arena-a": "inherit", "explorer": "inherit"})
 
 
 class MissingOverrideFileTests(RosterTiersTestCase):
-    def test_missing_repository_file_falls_through_to_system_then_shipped(self):
+    def test_missing_repository_file_or_no_repository_falls_through_to_system_then_shipped(self):
         self.write(self.home_path, models_file("arena-a: home-arena-a"))
-        result = self.load()
+        expected = dict(SHIPPED_FIXTURE_ROSTER, **{"arena-a": "home-arena-a"})
 
-        self.assertEqual(result["arena-a"], "home-arena-a")
-        self.assertEqual(result["arena-b"], "shipped-arena-b")
 
-    def test_no_repository_root_falls_through_to_system_then_shipped(self):
-        self.write(self.home_path, models_file("arena-a: home-arena-a"))
-        result = self.load(repo_path=None)
-
-        self.assertEqual(result["arena-a"], "home-arena-a")
-        self.assertEqual(result["arena-b"], "shipped-arena-b")
+        for repo_path in (self.repo_path, None):
+            with self.subTest(repo_path=repo_path):
+                self.assertEqual(self.load(repo_path=repo_path), expected)
 
     def test_missing_repository_and_system_files_yield_the_shipped_roster(self):
-        self.assertEqual(self.load(), SHIPPED_FIXTURE_ROSTER)
-        self.assertEqual(self.load(repo_path=None), SHIPPED_FIXTURE_ROSTER)
+        for repo_path in (self.repo_path, None):
+            with self.subTest(repo_path=repo_path):
+                self.assertEqual(self.load(repo_path=repo_path), SHIPPED_FIXTURE_ROSTER)
 
     def test_override_file_without_a_roster_block_leaves_lower_tiers_in_charge(self):
         self.write(self.repo_path, "# My notes\n\narena-a: repo-arena-a\n")
 
-        self.assertEqual(self.load()["arena-a"], "shipped-arena-a")
+        self.assertEqual(self.load(), SHIPPED_FIXTURE_ROSTER)
 
 
 class RosterLineGrammarTests(unittest.TestCase):
-    def test_trailing_comment_yields_the_bare_slug(self):
-        parsed = roster.parse_roster(models_file("reviewer: claude-opus-5-5-high   # bugbot, security-review"))
-
-        self.assertEqual(parsed, {"reviewer": "claude-opus-5-5-high"})
-
-    def test_variable_spacing_after_the_colon_is_tolerated(self):
+    def test_comments_are_stripped_and_spacing_after_the_colon_is_tolerated(self):
         parsed = roster.parse_roster(
             models_file(
                 "standard:claude-opus-5-5-high",
-                "arena-a:      claude-fable-5-1-thinking-high",
+                "arena-a:   inherit   # session model is the third family",
                 "plan-optimizer: claude-opus-5-5-high",
                 "implementer:\tcursor-grok-4.6-xhigh-fast   ",
+                "reviewer:      claude-opus-5-5-high   # bugbot, security-review",
             )
         )
 
@@ -172,16 +142,12 @@ class RosterLineGrammarTests(unittest.TestCase):
             parsed,
             {
                 "standard": "claude-opus-5-5-high",
-                "arena-a": "claude-fable-5-1-thinking-high",
+                "arena-a": "inherit",
                 "plan-optimizer": "claude-opus-5-5-high",
                 "implementer": "cursor-grok-4.6-xhigh-fast",
+                "reviewer": "claude-opus-5-5-high",
             },
         )
-
-    def test_inherit_with_a_comment_stays_inherit(self):
-        parsed = roster.parse_roster(models_file("arena-a:   inherit   # session model is the third family"))
-
-        self.assertEqual(parsed, {"arena-a": "inherit"})
 
     def test_colon_lines_outside_the_roster_block_are_ignored(self):
         preamble = (
@@ -195,11 +161,10 @@ class RosterLineGrammarTests(unittest.TestCase):
         self.assertEqual(parsed, {"explorer": "composer-2.5"})
 
     def test_text_without_a_roster_section_yields_nothing(self):
-        self.assertEqual(roster.parse_roster("# Model preferences\n\nNo roster here.\n"), {})
-        self.assertEqual(roster.parse_roster(""), {})
+        for text in ("# Model preferences\n\nNo roster here.\n", ""):
+            with self.subTest(text=text):
+                self.assertEqual(roster.parse_roster(text), {})
 
-
-class ShippedModelsFileTests(unittest.TestCase):
     def test_shipped_models_file_defines_every_roster_role(self):
         parsed = roster.parse_roster(SHIPPED_MODELS_PATH.read_text(encoding="utf-8"))
 
@@ -209,71 +174,54 @@ class ShippedModelsFileTests(unittest.TestCase):
 
 
 class LedgerModelsHeaderTests(unittest.TestCase):
-    HEADER = (
-        "# Ledger: example run\n"
-        "run-id: 2026-11-07-example\n"
-        "models: standard claude-opus-5-5-high | arena-b inherit (unavailable gpt-5.6-sol-max)"
-        " | explorer composer-2.5 | arena-a inherit\n"
-        "ui-change: no\n"
-    )
+    def test_each_header_entry_form_is_read_with_its_fallback_status(self):
+        cases = [
+            ("arena-b inherit (unavailable gpt-5.6-sol-max)", "arena-b", ("inherit", "gpt-5.6-sol-max"), True),
+            ("explorer composer-2.5", "explorer", ("composer-2.5", None), False),
+            ("arena-a inherit", "arena-a", ("inherit", None), False),
+        ]
+        for entry_text, role, expected, fallback in cases:
+            with self.subTest(entry=entry_text):
+                parsed = roster.parse_ledger_models(f"# Ledger\nrun-id: x\nmodels: {entry_text}\nui-change: no\n")
 
-    def test_unavailable_role_is_read_as_an_announced_fallback(self):
-        entry = roster.parse_ledger_models(self.HEADER)["arena-b"]
-
-        self.assertTrue(is_announced_fallback(entry))
-        self.assertEqual(entry.slug, "inherit")
-        self.assertEqual(entry.rejected_slug, "gpt-5.6-sol-max")
-
-    def test_normally_resolved_role_is_not_a_fallback(self):
-        entry = roster.parse_ledger_models(self.HEADER)["explorer"]
-
-        self.assertFalse(is_announced_fallback(entry))
-        self.assertEqual(entry.slug, "composer-2.5")
-
-    def test_plain_inherit_without_a_rejected_slug_is_not_a_fallback(self):
-        entry = roster.parse_ledger_models(self.HEADER)["arena-a"]
-
-        self.assertFalse(is_announced_fallback(entry))
-        self.assertEqual(entry.slug, "inherit")
+                self.assertEqual(ledger_summary(parsed), {role: expected})
+                self.assertIs(is_announced_fallback(parsed[role]), fallback)
 
     def test_this_runs_own_ledger_header_marks_only_arena_b_as_fallback(self):
-        ledger_text = (
-            "models: standard claude-opus-5-5-high | arena-a claude-fable-5-1-thinking-high"
-            " | arena-b inherit (unavailable gpt-5.6-sol-max) | arena-c claude-opus-5-5-high"
-            " | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high"
-            " | implementer composer-2.5 | explorer composer-2.5 | reviewer claude-opus-5-5-high"
-            " | review-implementer composer-2.5\n"
-        )
-        parsed = roster.parse_ledger_models(ledger_text)
+        parsed = roster.parse_ledger_models(THIS_RUN_MODELS_HEADER)
 
         self.assertEqual(set(parsed), ROSTER_KEYS)
         fallbacks = {role for role, entry in parsed.items() if is_announced_fallback(entry)}
         self.assertEqual(fallbacks, {"arena-b"})
+        self.assertEqual(ledger_summary(parsed)["explorer"], ("composer-2.5", None))
 
 
 class MalformedLedgerTests(unittest.TestCase):
-    def test_ledger_without_a_models_line_yields_no_entries(self):
-        self.assertEqual(roster.parse_ledger_models("# Ledger\nrun-id: x\n## Log\n"), {})
-        self.assertEqual(roster.parse_ledger_models(""), {})
+    def test_ledger_without_a_models_header_yields_no_entries(self):
+        cases = {
+            "no models line": "# Ledger\nrun-id: x\n## Log\n",
+            "empty text": "",
+            "models word inside the log": "# Ledger\n## Log\n- 19:46 model fallback: models: arena-b inherit (unavailable x)\n",
+        }
+        for name, text in cases.items():
+            with self.subTest(name):
+                self.assertEqual(roster.parse_ledger_models(text), {})
 
-    def test_old_style_header_yields_a_partial_result_without_fallbacks(self):
-        parsed = roster.parse_ledger_models("models: shipped defaults ok | explorer inherit\n")
+    def test_malformed_entries_yield_a_partial_result_without_fallbacks(self):
+        cases = {
+            "old style header": ("models: shipped defaults ok | explorer inherit\n", "explorer", "inherit"),
+            "truncated fallback": (
+                "models: arena-b inherit (unavailable | explorer composer-2.5 | | garbage\n",
+                "explorer",
+                "composer-2.5",
+            ),
+        }
+        for name, (text, valid_role, valid_slug) in cases.items():
+            with self.subTest(name):
+                parsed = roster.parse_ledger_models(text)
 
-        self.assertEqual(parsed["explorer"].slug, "inherit")
-        self.assertFalse(any(is_announced_fallback(entry) for entry in parsed.values()))
-
-    def test_truncated_fallback_entry_is_not_an_announced_fallback(self):
-        parsed = roster.parse_ledger_models(
-            "models: arena-b inherit (unavailable | explorer composer-2.5 | | garbage\n"
-        )
-
-        self.assertEqual(parsed["explorer"].slug, "composer-2.5")
-        self.assertFalse(any(is_announced_fallback(entry) for entry in parsed.values()))
-
-    def test_models_word_inside_the_log_is_not_read_as_the_header(self):
-        ledger_text = "# Ledger\n## Log\n- 19:46 model fallback: models: arena-b inherit (unavailable x)\n"
-
-        self.assertEqual(roster.parse_ledger_models(ledger_text), {})
+                self.assertEqual(parsed[valid_role].slug, valid_slug)
+                self.assertFalse(any(is_announced_fallback(entry) for entry in parsed.values()))
 
 
 if __name__ == "__main__":
