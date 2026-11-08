@@ -165,7 +165,7 @@ UI controls live in two places rather than being copied here:
 
 ## Fallback when the agents are not installed
 
-The skill still works without the plugin's agents, for instance when someone copies the skill folder alone or discovery is off. Detect it during the intake probe, then for each role:
+The skill still works without the plugin's agents, for instance when someone copies the skill folder alone or discovery is off. When subagents still run through Task, roster tags and model resolution still apply if the host enforces them; inline fallback without those tools may omit tags and model fields. Detect it during the intake probe, then for each role:
 
 1. Read `agents/supercook-<role>.md` and use its body as the prompt.
 2. Launch `generalPurpose`, or `explore` for recon work.

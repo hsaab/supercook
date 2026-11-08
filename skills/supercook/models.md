@@ -21,7 +21,7 @@ mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for everyone working in it.
+The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`, which is checkout-local and often git-excluded, so it is not automatically shared with other clones unless you commit or copy it on purpose.
 
 Then change the roles you want and delete the lines you do not. Any role a higher file does not name falls through to the next tier, so a home file naming two roles changes exactly those two. Write `inherit` on a role to put it back on the session model.
 
@@ -58,6 +58,12 @@ A slug written inside an agent file is not reliable. The model only takes effect
 6. **Never block a run on a model name.**
 
 The shipped slugs are defaults, not requirements. A plan that does not carry one loses that role to the session model after the one-time announcement and header entry.
+
+### Ledger header vs roster hook
+
+The ledger `models:` line and `enforce_roster` answer different questions. The three-tier roster files (repository, home, shipped) set the **expected slug** for each role on every launch. The hook merges those tiers the same way intake does and compares the launch's model field against that expectation.
+
+The ledger header is the run's resume and audit record. List every roster key there with either a positive `<role> <slug>` or `<role> inherit (unavailable <slug>)`. Positive entries document what intake resolved; they do not replace the file merge on a fresh launch unless you rely on them only for human context. Entries marked `inherit (unavailable ...)` are what the hook consults when the model field is omitted: they allow an omitted model for that role only after intake announced the fallback. For roles with a positive slug on the header, the hook still resolves the expected slug from the three-tier files unless that inherit form appears for the role.
 
 ## Tags on every launch
 

@@ -11,7 +11,7 @@ Slice PRs exist. Run the external reviewers on each one, implement the real find
 - `review`: review, fix, verify, and stop at healthy open PRs with a findings summary per PR.
 - `review and merge`: the same work, then continue into phase 9 per [merge.md](merge.md) and [../pipeline/merge.md](../pipeline/merge.md).
 
-A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong. Record resolved slugs on the `models:` header line beside it, one entry per roster key used on this track, using the same forms as every run: `reviewer <slug>`, `review-implementer <slug>`, or after intake announced an unavailable slug, `reviewer inherit (unavailable <slug>)` / `review-implementer inherit (unavailable <slug>)`. Resolve once at intake per [../models.md](../models.md) so a resume launches with the same models instead of re-resolving.
+A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong. On the same header, write `models:` as one ` | `-separated line listing **every** roster key with its resolved form, the same rule as [../pipeline/intake.md](../pipeline/intake.md) and [../pipeline/ledger.md](../pipeline/ledger.md): `<role> <slug>` when the slug will be passed, or `<role> inherit (unavailable <slug>)` when intake announced a fallback. Resolve once at intake per [../models.md](../models.md) so a resume launches with the same models instead of re-resolving.
 
 **Entry: continue a run if one exists, otherwise open one.**
 
