@@ -109,6 +109,16 @@ def decide(
             ),
         )
 
+    if subagent_type.startswith("supercook-") and parse_tag(prompt, "supercook-run") is None:
+        return Decision(
+            "deny",
+            agent_message=(
+                "This supercook launch is missing supercook-run. "
+                "Tell the parent to add line-anchored supercook-run: "
+                "<run folder> to the prompt."
+            ),
+        )
+
     expected = roster.get(role, "")
 
     if expected == "inherit":
@@ -183,8 +193,7 @@ def main() -> None:
 
         run_folder, repo_override = resolve_paths(workspace_roots, run_tag)
         home_models = Path.home() / ".supercook" / "models.md"
-        repo_path = repo_override if repo_override is not None else None
-        roster = load_roster(repo_path, home_models, _SHIPPED_ROSTER)
+        roster = load_roster(repo_override, home_models, _SHIPPED_ROSTER)
 
         ledger_models: dict[str, LedgerModel] = {}
         if run_folder is not None:
