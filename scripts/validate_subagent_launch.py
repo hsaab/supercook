@@ -124,6 +124,7 @@ def validate_task_envelope(envelope: dict[str, Any]) -> list[str]:
 
     for key in ("namespace", "toolName"):
         if key not in envelope:
+            errors.append(f"{key}: missing required field")
             continue
         expected = TASK_NAMESPACE if key == "namespace" else TASK_TOOL_NAME
         if envelope[key] != expected:
