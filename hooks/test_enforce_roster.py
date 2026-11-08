@@ -119,7 +119,7 @@ class LaunchDecisionTests(HookTestCase):
         arena_b = tags("arena-b")
         self.check([
             Case("announced fallback", arena_b, OMIT, "supercook-arena-runner", ALLOW, FALLBACK),
-            Case("fallback but wrong model", arena_b, "composer-2.5", "supercook-arena-runner", ("deny", SHIPPED["arena-b"]), FALLBACK),
+            Case("fallback but wrong model", arena_b, "gpt-5.6-sol-max", "supercook-arena-runner", ("deny", SHIPPED["arena-b"]), FALLBACK),
             *(Case(n, arena_b, OMIT, "supercook-arena-runner", OMITTED_DENY, ((LEDGER, t),) if t else ()) for n, t in ledgers.items()),
         ])
 

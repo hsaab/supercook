@@ -30,16 +30,16 @@ Do not confuse `~/.supercook/` with the `.supercook/` folder inside a repo. The 
 ## The roster
 
 ```
-standard:     claude-opus-5-5-high        # assessor, planner, test-designer, verifier; e.g. claude-opus-5-5-high
-arena-a:      inherit                     # third arena family = session model; or pin e.g. claude-fable-5-1-thinking-max
-arena-b:      gpt-5.6-sol-max             # e.g. gpt-5.6-sol-max
-arena-c:      claude-opus-5-5-high        # e.g. claude-opus-5-5-high
-plan-judge:   claude-opus-5-5-high        # e.g. claude-opus-5-5-high
-plan-optimizer: claude-opus-5-5-high
-implementer:  grok-4.7-xhigh              # e.g. grok-4.7-xhigh
-explorer:     composer-2.5                # e.g. composer-2.5
-reviewer:     claude-opus-5-5-high        # bugbot, security-review, both thermo reviewers on the review track
-review-implementer: grok-4.7-xhigh        # finding fixes on the review track
+standard:           grok-4.7-high        # assessor, planner, test-designer, verifier
+arena-a:            grok-4.7-high        # simplest viable plan
+arena-b:            composer-2.5         # implementation-first plan
+arena-c:            grok-4.7-high        # challenge assumptions and failure cases
+plan-judge:         grok-4.7-high
+plan-optimizer:     grok-4.7-medium
+implementer:        composer-2.5
+explorer:           composer-2.5
+reviewer:           grok-4.7-high        # bugbot, security-review, both thermo reviewers
+review-implementer: composer-2.5         # finding fixes on the review track
 ```
 
 The two review-track roles are independent of the rest, like every role here: `reviewer` covers the external reviewer launches on the review track (up to four per PR, fewer when hosted results are reused), `review-implementer` covers the finding-fix launches there, and leaving either on `inherit` does not fall through to `implementer` or `standard`.

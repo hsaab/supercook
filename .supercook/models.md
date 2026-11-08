@@ -5,14 +5,14 @@ Repository roster for cloud agents and other shared checkouts. Cloud VMs typical
 ## The roster
 
 ```
-standard:     claude-opus-5-5-high        # assessor, planner, test-designer, verifier
-arena-a:      claude-fable-5-1-thinking-high
-arena-b:      inherit                     # session model when gpt-5.6-sol-max is unavailable
-arena-c:      claude-opus-5-5-high
-plan-judge:   claude-opus-5-5-high
-plan-optimizer: claude-opus-5-5-high
-implementer:  grok-4.7-xhigh
-explorer:     composer-2.5
-reviewer:     composer-2.5                # bugbot, security-review, thermo reviewers on the review track
-review-implementer: grok-4.7-xhigh
+standard:           grok-4.7-high        # assessor, planner, test-designer, verifier
+arena-a:            grok-4.7-high        # simplest viable plan
+arena-b:            composer-2.5         # implementation-first plan
+arena-c:            grok-4.7-high        # challenge assumptions and failure cases
+plan-judge:         grok-4.7-high
+plan-optimizer:     grok-4.7-medium
+implementer:        composer-2.5
+explorer:           composer-2.5
+reviewer:           grok-4.7-high        # bugbot, security-review, both thermo reviewers
+review-implementer: composer-2.5         # finding fixes on the review track
 ```

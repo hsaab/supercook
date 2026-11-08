@@ -185,8 +185,8 @@ class RosterLineGrammarTests(unittest.TestCase):
         parsed = roster.parse_roster(SHIPPED_MODELS_PATH.read_text(encoding="utf-8"))
 
         self.assertEqual(set(parsed), ROSTER_KEYS)
-        self.assertEqual(parsed["arena-b"], "gpt-5.6-sol-max")
-        self.assertEqual(parsed["standard"], "claude-opus-5-5-high")
+        self.assertEqual(parsed["arena-b"], "composer-2.5")
+        self.assertEqual(parsed["standard"], "grok-4.7-high")
 
 
 class LedgerModelsHeaderTests(unittest.TestCase):
