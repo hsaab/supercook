@@ -61,6 +61,8 @@ Unrelated uncommitted or unpushed work is the case worktrees exist for. Do not s
 
 **The merge track skips this decision.** The PR's branch already exists, so there is nothing to create: check it out with `gh pr checkout <n>` and work there. No worktree and no new branch. See [../playbooks/merge.md](../playbooks/merge.md).
 
+**The review track checks out per PR.** Start on the bottom PR's branch after stack resolution ([Review track, cold start](#4-seed-the-ledger) above). No new run branch; slice branches already exist.
+
 **Merge track plus Graphite.** Still check out the PR branch in place. Before `gt sync` / `gt submit` / `gt merge`, run `git worktree list` and confirm no other worktree has a stack sibling checked out. Graphite skips those branches, so a sibling parked in another worktree would be left stale. Free that checkout, or fall back to the manual restack for the affected children.
 
 ```bash
@@ -87,6 +89,15 @@ Resume depends entirely on this, so write it down before anything else happens.
 Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
 
 **The merge track does not get the investigation exception.** It changes the repo and it can span sessions while checks run, so it needs the record more than most runs, not less. Seed the ledger, with the target PR number in the header.
+
+**Review track, cold start.** Route **review**, never **merge**, when the primary ask is `review` or `review and merge` (see [../SKILL.md](../SKILL.md#user-selected-track-routing)). Before any reviewer launch:
+
+1. **Resolve the full stack.** PR numbers named in the ask, or the current branch's open PR plus every open PR stacked on it (`gh pr view` / `gh pr list`, each PR's `baseRefName` to build the dependency chain).
+2. **Order bottom-up** (trunk-facing PR first, tip last).
+3. **Record in the ledger header** the ordered PR list, each PR's base branch, and `mode: review` or `mode: review+merge`.
+4. **Seed one nested ledger block per PR** with the review playbook rows (fan-out, triage, implementer, verify, confirmation pass, CI) before checking out the first branch.
+
+Assessor (phase 1) does not run on this track.
 
 **On `implement-plan`, pin the supplied plan next.** Once the run folder exists, copy the resolved plan source verbatim to `user-plan.md` in that folder and echo the plan title. Later phases read that file, not chat scrollback. See [../playbooks/implement-plan.md](../playbooks/implement-plan.md).
 

@@ -106,6 +106,12 @@ Delete the branch after merge when that is the repo's habit, but **on a manual s
 
 Merge bottom-up. Order is enforced by the stack's dependency graph: a child never merges before its parent. After each base merges, children need restacking (Graphite path) or retarget plus possible rebase (manual path).
 
+### After the review track on a stack
+
+When phase 9 runs because **`review and merge`** completed the review playbook for a PR (or the next PR in a bottom-up walk), **external review for that PR is already done.** Do not skip phase 9 or shorten the merge loop because "the stack was already reviewed at the tip" or because a sibling PR had reviewers. For **this** PR, run the normal [loop](#the-loop) (comments, CI, conflicts, UI readiness, merge). Do not re-run Bugbot / Thermo fan-out unless the review ledger for this PR is open or the head moved outside that playbook. Cold **`merge`** without a prior review track still has no external reviewer fan-out ([../playbooks/merge.md](../playbooks/merge.md)).
+
+On review track merge mode, merge **one PR per review cycle** (that PR's review rows complete, then this loop, then restack, then the next PR's review block). Do not bulk-merge every open PR before lower slices finish review ([../playbooks/review.md](../playbooks/review.md#multi-pr-stacks-ledger-and-merge-mode)).
+
 ### Graphite path (`stacking gt`)
 
 Readiness work (comment triage, CI fixes, conflict resolution) is unchanged and still uses `gh`. Graphite only replaces the merge and restack mechanics.

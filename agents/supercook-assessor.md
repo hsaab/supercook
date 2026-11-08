@@ -1,6 +1,6 @@
 ---
 name: supercook-assessor
-description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration.
+description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration. Never launch on the review track; the parent routes review before assessor runs.
 model: inherit
 readonly: true
 ---
@@ -54,9 +54,13 @@ When torn between two tiers, pick the higher one only if you can name the specif
 
 A "refactor" that changes behavior is a feature. Say so in `why`.
 
-**Never infer `merge`.** Return it only when the user asked for an existing PR to be merged. A task that will eventually produce a PR is a bugfix or a feature, not a merge.
+**Never infer `merge`.** Return it only when the user asked for an existing PR to be merged, with **no** `review` in the primary ask. A task that will eventually produce a PR is a bugfix or a feature, not a merge.
+
+**`review and merge` is not merge track.** When the user's primary ask includes `review` (`review`, `review and merge`, `review PR …`), the parent routes **review** before you run. Do not return `merge` for classification; merge consent on that ask is handled on the review playbook, not here.
 
 **Never infer `implement-plan`.** Return it only when the user asked to implement a plan they already wrote. The parent normally routes this track before you run at all.
+
+**Review track: you do not run.** The parent selects review at intake and skips phase 1 entirely. If you are launched anyway, return `why: parent should have routed review track before assessor` and do not guess a track from stack or merge wording.
 
 ## Big-change flag
 

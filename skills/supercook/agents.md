@@ -23,7 +23,7 @@ When a Project or cloud coordinator delegates work, every `supercook-*` launch m
 
 | Agent | Role in models.md | Writes files? | Phase |
 |---|---|---|---|
-| `supercook-assessor` | standard | No | 1 |
+| `supercook-assessor` | standard | No | 1 (skipped on `merge`, `implement-plan`, and `review` tracks) |
 | `supercook-explorer` | explorer | No | 2 |
 | `supercook-planner` | standard | `plan.md` only | 4 |
 | `supercook-arena-runner` | arena-a, arena-b, arena-c | Its own candidate plan only | 4 |
@@ -65,8 +65,10 @@ Do not paste the whole conversation, prior agent output, or file contents that t
   big-change: yes | no
   why: <one sentence naming what drove the verdict>
   ```
-- **`merge` is user-selected, never inferred.** Return it only when the user asked for an existing PR to be merged. A task that will produce a PR is not a merge request.
+- **`merge` is user-selected, never inferred.** Return it only when the user asked for an existing PR to be merged, with **no** `review` in the primary ask. A task that will produce a PR is not a merge request.
+- **`review` is user-selected, never inferred.** The parent routes `review` and `review and merge` before the assessor runs. **`review and merge` is review track for classification**, not `merge`. Never return `merge` when the primary ask includes `review`.
 - **`implement-plan` is user-selected, never inferred.** Return it only when the user asked to implement a plan they already wrote. The parent normally routes this track before the assessor runs at all.
+- **Do not launch the assessor on the review track.** Stack resolution and bottom-up review are intake plus [playbooks/review.md](playbooks/review.md), not an assessor pass.
 
 ### supercook-explorer
 
