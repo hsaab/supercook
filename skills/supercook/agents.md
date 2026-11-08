@@ -26,7 +26,7 @@ This file is the launch contract: what the parent passes in, when the job is don
 | `supercook-implementer` | implementer (`review-implementer` when launched from the review playbook) | Source, never tests | 6 |
 | `supercook-verifier` | standard | No source edits, runs commands | 7 |
 
-The review track also launches up to four host reviewer subagents (`bugbot`, `security-review`, and the two thermo reviewers) that are not supercook agents; `bugbot` and `security-review` are skipped when their hosted versions already ran on the PR head. Their model is the `reviewer` role in [models.md](models.md); everything else about them is fixed by their own contracts. See [playbooks/review.md](playbooks/review.md).
+The review track also launches up to four host reviewer subagents (`bugbot`, `security-review`, and the two thermo reviewers) that are not supercook agents; `bugbot` and `security-review` are skipped when a usable hosted run of theirs exists on the PR head, per the source table in the playbook. Their model is the `reviewer` role in [models.md](models.md); everything else about them is fixed by their own contracts. See [playbooks/review.md](playbooks/review.md).
 
 ## What every launch includes
 

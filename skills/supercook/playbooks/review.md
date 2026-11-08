@@ -26,12 +26,13 @@ Copy these into the ledger verbatim.
 
 ```
 - [ ] resolve targets: named PRs or the current branch's PR and its stack; record bottom-up order and each PR's base
-- [ ] per PR: check out the branch; resolve each of bugbot and security-review to `hosted` or `local` against the PR head per "Reuse hosted Bugbot and security review"
+- [ ] per PR: check out the branch; resolve each of bugbot and security-review to `hosted`, `local`, or `pending` against the PR head per "Reuse hosted Bugbot and security review"
 - [ ] per PR: launch both thermo reviewers plus every `local` reviewer in one parallel batch, scoped to this PR's base; collect `hosted` findings from the PR
-- [ ] per PR: dedupe and triage findings; decline the rest with a stated reason
+- [ ] per PR: once every reviewer has reported (each `pending` one resolved, then collected or launched locally), dedupe and triage findings; decline the rest with a stated reason
 - [ ] per PR: one supercook-implementer launch (review-implementer model) fixes all in-scope findings as one-commit diffs
 - [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), then push
 - [ ] per PR: one confirmation pass on the reviewers whose findings were implemented, sources resolved again against the pushed head; the row stays open until each of them has reported
+- [ ] per PR, only when the confirmation pass found in-scope findings: one more implementer launch, run the recorded tests, push; no confirmation pass after it
 - [ ] per PR: wait for CI checks only; review-bot checks are covered by the source decision and the confirmation pass
 - [ ] stack only: restack children after fixes land on a base slice, gt or manual per the ledger's stacking capability
 - [ ] merge mode only: continue into phase 9 under the merge ask already given, one merge row per PR
@@ -42,7 +43,7 @@ Copy these into the ledger verbatim.
 
 Bugbot and security review often already ran on the PR as hosted review bots. When one did, its findings are the review: read them from the PR instead of paying for the same review twice. The thermo reviewers have no hosted form and always run locally.
 
-Resolve each of the two reviewers to `hosted` or `local` against the PR's current head commit. List the head's check runs:
+Resolve each of the two reviewers to `hosted`, `local`, or `pending` against the PR's current head commit. List the head's check runs:
 
 ```bash
 HEAD_SHA=$(gh pr view <n> --json headRefOid --jq .headRefOid)
@@ -50,45 +51,54 @@ gh api --paginate "repos/{owner}/{repo}/commits/$HEAD_SHA/check-runs" \
   --jq '.check_runs[] | {name, app: .app.slug, status, conclusion, started_at, output}'
 ```
 
-Only check runs from the `cursor` app count, so a third-party check with a similar name never stands in for a review. Bugbot's check is named exactly `Cursor Bugbot`; `Cursor Bugbot Autofix` is a different check and never counts. Security review's check is the `cursor` app check whose name contains `Security`. When one name has several runs on the head, the latest `started_at` wins. Take the first row that matches:
+Only check runs from the `cursor` app count, so a third-party check with a similar name never stands in for a review. Bugbot's check is named exactly `Cursor Bugbot`; `Cursor Bugbot Autofix` is a different check and never counts. Security review has no confirmed hosted check name yet, so it always resolves to `local`. Once its exact check name is known, add it here the same way, never as a partial match: the `cursor` app also posts user-named checks such as `Cursor Approval Agent: <name>`. When one name has several runs on the head, the latest `started_at` wins. Take the first row that matches:
 
 | That reviewer's check run on the head | Source |
 |---|---|
-| completed with conclusion `success` (clean) or `neutral` (found issues) | `hosted` |
-| completed with any other conclusion (`failure`, `cancelled`, `skipped`, `timed_out`, `stale`, `action_required`) | `local`, because a crashed or skipped bot is not a review |
-| queued or in progress, started less than 30 minutes ago | pending |
-| none yet, and the head was pushed less than 10 minutes ago | pending, since hosted bots take a moment to start |
-| none, or still running after 30 minutes | `local`; a run that only exists on an older commit missed the code pushed since |
+| completed, conclusion `success` or `neutral`, and `output.summary` says `completed review` | `hosted` |
+| completed any other way, including `neutral` without `completed review` (the `cursor` app also reports `neutral` for a run that failed to start) | `local`, because a crashed or skipped bot is not a review |
+| not completed yet (queued, waiting, requested, or in progress), started less than 30 minutes ago | `pending` |
+| none yet, and the head was pushed less than 10 minutes ago | `pending`, since hosted bots take a moment to start |
+| none, or still not completed after 30 minutes | `local`; a run that only exists on an older commit missed the code pushed since |
 
-**A pending run never holds the fan-out.** Launch the local batch right away and collect the pending run's findings when it completes. If it ends any way other than `success` or `neutral`, or crosses its time limit, it becomes `local` and that reviewer launches then. That late launch is the one exception to the single batch.
+The push time is known when this run pushed the head itself. On a cold start, use the head commit's committer date; when that is older than the real push, the only cost is a local review that a hosted one would have covered.
 
-Hosted findings come from three places, each filtered to the Cursor bot as author (`cursor[bot]` in REST, `cursor` in GraphQL and `gh pr view`), so nobody else's comment passes as a finding:
+**A pending run never holds the fan-out.** Launch the local batch right away and keep resolving the pending reviewer against the table until it lands on `hosted` or `local`. If it lands on `local`, launch that reviewer then, and ignore any hosted result that arrives later for this head, so each reviewer has one source of truth. Triage waits until every pending reviewer has resolved and reported.
+
+Hosted findings come from three places, each filtered to the Cursor bot as author (login `cursor`) and to the head commit, so neither someone else's comment nor a finding left on an older commit passes as a new one:
 
 - the check run's `output` (title, summary, text) from the command above
-- review bodies on the head commit: `gh pr view <n> --json reviews`
-- review threads that are neither resolved nor outdated. REST does not expose either flag, so use GraphQL:
+- review bodies left on the head commit:
 
 ```bash
-gh api graphql -F owner=<owner> -F repo=<repo> -F n=<n> -f query='
-  query($owner: String!, $repo: String!, $n: Int!) {
+gh pr view <n> --json reviews \
+  --jq "[.reviews[] | select(.author.login == \"cursor\" and .commit.oid == \"$HEAD_SHA\") | .body]"
+```
+
+- review threads whose first comment's `originalCommit` is the head commit and that are neither resolved nor outdated. REST does not expose either flag, so use GraphQL:
+
+```bash
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F n=<n> -f query='
+  query($owner: String!, $repo: String!, $n: Int!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
       pullRequest(number: $n) {
-        reviewThreads(first: 100) {
+        reviewThreads(first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
           nodes { isResolved isOutdated path line
-            comments(first: 1) { nodes { author { login } body } } }
+            comments(first: 1) { nodes { author { login } originalCommit { oid } body } } }
         }
       }
     }
   }'
 ```
 
-Record each reviewer's source, the head SHA it was judged against, and the check run's conclusion in the ledger. Hosted findings go through the same dedupe and triage as local ones; being on the PR earns them no extra trust.
+Record each reviewer's source (`pending` until it resolves), the head SHA it was judged against, and the check run's conclusion in the ledger. Hosted findings go through the same dedupe and triage as local ones; being on the PR earns them no extra trust.
 
 ## The reviewer fan-out
 
 Up to four reviewers per PR, launched in parallel in one message, each with a fresh context: both thermo reviewers always, plus `bugbot` and `security-review` when their source is `local`. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on every launch, including the confirmation pass. `inherit` means omit the model field, same as every other role. A `hosted` reviewer runs on its own service, so no model applies.
 
-**Parallel means one batch, without exception.** All local reviewer launches go out as a single batch of Task calls. Never launch one reviewer, wait for it, then launch the next; none of them depends on another's output, so a sequential fan-out multiplies the wall time for nothing. The confirmation pass follows the same rule: every reviewer being rerun locally launches in one batch. Parallelism stays within one PR because the diff-computing reviewers read the checked-out working tree and only one PR branch can be checked out at a time, so it is one PR at a time, all local reviewers at once within it.
+**Parallel means one batch.** All local reviewer launches go out as a single batch of Task calls; the one exception is a pending hosted reviewer that falls back to `local` after the batch went out. Never launch one reviewer, wait for it, then launch the next; none of them depends on another's output, so a sequential fan-out multiplies the wall time for nothing. The confirmation pass follows the same rule: every reviewer being rerun locally launches in one batch. Parallelism stays within one PR because the diff-computing reviewers read the checked-out working tree and only one PR branch can be checked out at a time, so it is one PR at a time, all local reviewers at once within it.
 
 First check out the PR's branch (`gh pr checkout <n>`), because the diff-computing reviewers read the working tree.
 
