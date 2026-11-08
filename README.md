@@ -176,7 +176,7 @@ Playbooks, routed automatically from the assessment, except `merge`, `implement-
 | open-pr | No planning or source implementation; existing designed UI gets retrospective structure tests, verification, and smoke |
 | merge | Drives an existing PR to merged whatever state it is in: conflicts, review comments, broken CI, stalled checks, stacks |
 | implement-plan | Tightens a plan you already wrote, then the standard pipeline with no arena |
-| review | Runs Bugbot, security, and Thermos reviewers on each slice PR (reusing Bugbot and security results already on the PR), implements the triaged findings, and merges only when you asked for that too |
+| review | Runs Bugbot, security, and Thermos reviewers on each slice PR (reusing Bugbot and security review results already on the PR's current head), implements the triaged findings, and merges only when you asked for that too |
 
 ## Layout
 
