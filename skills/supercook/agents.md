@@ -6,11 +6,18 @@ This file is the launch contract: what the parent passes in, when the job is don
 
 ## Contents
 
+- [Launch mechanism](#launch-mechanism)
 - [The roster](#the-roster)
 - [What every launch includes](#what-every-launch-includes)
 - [Per-role contracts](#per-role-contracts)
 - [Parent-side guards](#parent-side-guards)
 - [Fallback when the agents are not installed](#fallback-when-the-agents-are-not-installed)
+
+## Launch mechanism
+
+When a Project or cloud coordinator delegates work, every `supercook-*` launch must go through **`CreateAgent`** (or the host's equivalent subagent spawn, such as the **`Task`** tool) with an explicit **`model`** argument. Take the slug from the intake **`models-resolved:`** ledger line (or the same map you just validated at intake) for that agent's roster key in [models.md](models.md). **Omit `model` only when that role resolved to `inherit`.** The `model: inherit` frontmatter in an agent file does not select a model; the parent must pass it on the launch call or the session default runs and the roster hook may deny the launch.
+
+**Arena (complex tier):** launch three `supercook-arena-runner` subagents in parallel in one message. Pass `arena-a`, `arena-b`, and `arena-c` models respectively (omit `model` only for a role that resolved to `inherit`).
 
 ## The roster
 
@@ -39,7 +46,7 @@ Pass these on every launch, without exception:
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
   owns rendered smoke.
-- **The model**, taken from the roster intake resolved (see [models.md](models.md)), or nothing when the role is `inherit`. Resolve once at intake, not per launch.
+- **The model**, taken from the ledger `models-resolved:` map (see [models.md](models.md) and [pipeline/intake.md](pipeline/intake.md)), passed on every `CreateAgent` / `Task` launch, or omitted only when that role is `inherit`. Resolve once at intake, then reuse the ledger line on resume; do not re-guess per launch.
 - **The plain-language rule**: its returns must name files and real consequences, and must not contain em dashes.
 
 Do not paste the whole conversation, prior agent output, or file contents that the agent can read itself. A clean context window is the reason to delegate at all.
