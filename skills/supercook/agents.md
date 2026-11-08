@@ -32,6 +32,7 @@ The review track also launches up to four host reviewer subagents (`bugbot`, `se
 
 Pass these on every launch, without exception:
 
+- **`supercook-role:` and `supercook-run:` tags**, line-anchored in the prompt body. Use the roster key from the table above (`standard` for assessor, planner, test-designer, and verifier; `explorer`, `implementer`, `arena-a`, and the rest map one to one). The run tag is this run's folder path (absolute, or relative to the workspace). Host reviewers on the review track follow [playbooks/review.md](playbooks/review.md) for placement inside fixed prompt shapes.
 - **The objective**, in one sentence, specific to this run.
 - **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
@@ -135,6 +136,7 @@ A boundary written in a prompt is a request. These checks are what make it a con
 
 | After | Guard |
 |---|---|
+| Any launch | The roster hook enforces the model for tagged launches. Log the model slug actually passed on every launch row in the ledger (or `inherit` when omitted). |
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
 | `supercook-planner` / `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception. For contract UI, run the plan-completeness guard in `pipeline/ui.md`. |
