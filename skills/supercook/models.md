@@ -23,7 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/superco
 
 The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`, which is checkout-local and often git-excluded, so it is not automatically shared with other clones unless you commit or copy it on purpose.
 
-Then change the roles you want and delete the lines you do not. Any role a higher file does not name falls through to the next tier, so a home file naming two roles changes exactly those two. Write `inherit` on a role to put it back on the session model.
+Then change the roles you want and delete the lines you do not. Any role a higher file does not name falls through to the next tier, so a home file naming two roles changes exactly those two only when the repository file does not name those roles. Write `inherit` on a role to put it back on the session model.
 
 Do not confuse `~/.supercook/` with the `.supercook/` folder inside a repo. The home one holds your personal model choices. The repo `.supercook/` folder holds run artifacts for that checkout **and** may hold an optional `models.md` override that wins over home and shipped for roles it names.
 
