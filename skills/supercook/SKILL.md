@@ -166,7 +166,7 @@ which the user selects directly. Copy the playbook's steps verbatim into the led
 
 ## Reference files
 
-- [models.md](models.md): which model each role uses, and how to change it.
+- [models.md](models.md): which model each role uses, and how to change it. The preToolUse hook denies a launch that does not match that roster.
 - [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the fallback when the agents are not installed.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
   resolution, structure-test guards, and rendered smoke.
