@@ -13,6 +13,7 @@ disable-model-invocation: true
 - [Autonomy: host permissions first](#autonomy-host-permissions-first)
 - [The pipeline](#the-pipeline)
 - [Playbook routing](#playbook-routing)
+- [Coordinator spec is not a plan](#coordinator-spec-is-not-a-plan)
 - [Continuation protocol](#continuation-protocol)
 - [Reference files](#reference-files)
 
@@ -111,6 +112,16 @@ The parent parses the user's ask **before phase 1**. `merge`, `implement-plan`, 
 
 Orchestrators: never treat "stack" plus "merge" in the invocation as permission to bulk-merge before every PR has completed its review rows ([playbooks/review.md](playbooks/review.md)).
 
+## Coordinator spec is not a plan
+
+A long kickoff is not permission to skip the pipeline. That rule applies to **every parent**: Cursor chat, Project worker, Cloud Agent, or any other host that loaded this skill.
+
+A coordinator brief, worker assignment, or user message may include file paths, YAML, pytest snippets, or a step list. Treat that material as **spec pointers**, not as a finished `plan.md`, not as recon, and not as assessor output. The parent still runs phase 0 and phase 1 before editing the product repo, opening PRs, or changing CI and workflows. Delivery helpers (`ship-pr`, one-pass "just implement") stay off limits until intake and assessor (or a user-selected track that legitimately skips assessor) complete.
+
+CI, GitHub Actions, and pytest harness work are **not trivial by default**. Classify them in assessor phase 1; the feature playbook then runs recon through verify unless tier collapse says otherwise.
+
+Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
+
 ## The pipeline
 
 Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before the assessor runs.
@@ -193,6 +204,7 @@ which the user selects directly. Copy the playbook's steps verbatim into the led
 
 ## Reference files
 
+- [references/coordinator-kickoff.md](references/coordinator-kickoff.md): good vs bad kickoff copy, per-host spawn notes, and parent invariants (intake + assessor before edits, checklist is not a plan).
 - [models.md](models.md): which model each role uses, and how to change it. The preToolUse hook denies a launch that does not match that roster.
 - [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the fallback when the agents are not installed.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design

@@ -18,6 +18,19 @@ The ledger is the run's memory and its audit trail. It is the thing that makes a
 4. **No silent skips.** Work that is not done gets `skip: <reason>`. An unexplained missing row is a defect.
 5. **Plain language, no em dashes.** Every row names files and real consequences, the same as any other output.
 
+### Invalid skip reasons
+
+These reasons are never valid on **standard** or **complex** tier unless assessor already returned **trivial** and tier collapse applies:
+
+| Reason (or close variant) | Why invalid |
+|---|---|
+| `user checklist` / `coordinator spec` | A pasted task list is not assessor, recon, or `plan.md`. |
+| `agents not installed` | Fallback still launches phase workers; see [../agents.md](../agents.md). |
+| `plan in kickoff` | Spec pointers do not replace planner or arena output. |
+| `worker assignment` | Project and cloud briefs still run the pipeline. |
+
+Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
+
 ## Format
 
 ```markdown
