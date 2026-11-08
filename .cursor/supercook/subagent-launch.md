@@ -18,6 +18,8 @@ Read this before every `CallDynamicTool` with `toolName: Task` or a `CreateAgent
 Task envelope: `{"namespace": "cursor", "toolName": "Task", "arguments": { ... }}`. For Task, every launch field goes only under `arguments`. CreateAgent and Subagent: same launch field names at the top level, never under `arguments`.
 
 Do not set `model` together with `resume`. Omit `model` when the roster resolves that role to `inherit`.
+`model` must be the slug from the run ledger's `models-resolved:` line for that role (resolved at intake from repo `.supercook/models.md`, then `~/.supercook/models.md`, then the shipped roster), because the roster hook denies any other slug.
+The model values in the examples below come from one run's roster and differ per machine; a cloud VM without your home roster resolves to the shipped defaults.
 
 ## Platform error (PR #148)
 
