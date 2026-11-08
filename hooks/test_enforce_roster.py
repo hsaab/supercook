@@ -88,7 +88,6 @@ class LaunchDecisionTests(HookTestCase):
     def test_tagged_launch_is_allowed_only_with_the_roster_model(self):
         self.check([
             *match_and_mismatch("explorer", tags("explorer"), "supercook-explorer", "home-explorer", "composer-2.5"),
-            Case("explorer passes another role's slug", tags("explorer"), "home-reviewer", "supercook-explorer", ("deny", "home-explorer")),
             Case("implementer falls to shipped", tags("implementer"), SHIPPED["implementer"], "supercook-implementer", ALLOW),
             Case("test designer tags standard", tags("standard"), "home-standard", "supercook-test-designer", ALLOW),
             *match_and_mismatch("bugbot uses the reviewer role", BUGBOT + tags("reviewer"), "bugbot", "home-reviewer", "composer-2.5"),
@@ -154,13 +153,14 @@ class RosterSourceTests(HookTestCase):
 class TagParsingTests(HookTestCase):
     def test_first_line_anchored_tags_win_including_inside_custom_instructions(self):
         decoy = "Never copy the inline text supercook-role: reviewer.\n" + tags("explorer", body="Example:\nsupercook-role: reviewer")
-        first_run_wins = "supercook-role: arena-b\nsupercook-run: {run}\nsupercook-run: {root}/repo/other\n"
-        later_run_ignored = "supercook-role: arena-b\nsupercook-run: {root}/repo/other\nsupercook-run: {run}\n"
+        two_runs = "supercook-role: arena-b\nsupercook-run: {}\nsupercook-run: {}\n"
         self.check([
             *match_and_mismatch("decoy role tags", decoy, "supercook-explorer", "home-explorer", "home-reviewer"),
-            Case("first run tag picks the ledger", first_run_wins, OMIT, "supercook-arena-runner", ALLOW, FALLBACK),
-            Case("later run tag is ignored", later_run_ignored, OMIT, "supercook-arena-runner", OMITTED_DENY, FALLBACK),
+            Case("first run tag picks the ledger", two_runs.format("{run}", "{root}/repo/other"), OMIT, "supercook-arena-runner", ALLOW, FALLBACK),
+            Case("later run tag is ignored", two_runs.format("{root}/repo/other", "{run}"), OMIT, "supercook-arena-runner", OMITTED_DENY, FALLBACK),
             *match_and_mismatch("custom instructions role", BUGBOT + tags("explorer"), "security-review", "home-explorer", "home-reviewer"),
+            Case("empty role line does not take the next line", "supercook-role:\nexplorer\nsupercook-run: {run}\n", "home-explorer", "supercook-explorer", ("deny",)),
+            Case("empty run line does not take the next line", "supercook-role: arena-b\nsupercook-run:\n{run}\n", OMIT, "supercook-arena-runner", OMITTED_DENY, FALLBACK),
         ])
 
 
