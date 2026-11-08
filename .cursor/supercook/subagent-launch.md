@@ -18,7 +18,7 @@ Read this before every `CallDynamicTool` with `toolName: Task` or a `CreateAgent
 Task envelope: `{"namespace": "cursor", "toolName": "Task", "arguments": { ... }}`. For Task, every launch field goes only under `arguments`. CreateAgent and Subagent: same launch field names at the top level, never under `arguments`.
 
 Do not set `model` together with `resume`. Omit `model` when the roster resolves that role to `inherit`.
-`model` must be the slug from the run ledger's `models:` line for that role (resolved at intake from repo `.supercook/models.md`, then `~/.supercook/models.md`, then the shipped roster), because the roster hook denies any other slug.
+Pass `model` as the slug resolved from the three-tier roster files at intake: repository `.supercook/models.md`, then `~/.supercook/models.md`, then the shipped roster. Intake records that slug on the run ledger's `models:` line for resume only; the roster hook compares `model` against the merged roster files, not the ledger, except when `model` is omitted and the ledger has `inherit (unavailable …)`.
 An entry `<role> inherit (unavailable <slug>)` means omit `model`.
 The model values in the examples below come from one run's roster and differ per machine; a cloud VM without your home roster resolves to the shipped defaults.
 
@@ -120,4 +120,4 @@ printf '%s' '{"namespace":"cursor","toolName":"Task","arguments":{"description":
 
 ## On failure
 
-A validator rejection means fix and re-run, never run the role inline. Only when the host rejects an already validated launch after a retry may the parent log `degraded: parent inline` with the exact error and run the role itself. Never silently parent-implement instead of launching the subagent.
+A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch; log the exact error, then run the role yourself. Never silently parent-implement instead of launching the subagent.
