@@ -125,18 +125,20 @@ Ten roster keys, one line each in the fenced block: `standard` (assessor, planne
 | 2 | `~/.supercook/models.md` your choices across repos |
 | 3 | shipped `skills/supercook/models.md` |
 
-Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. The `.supercook/` folder inside a repo is excluded locally (via git's exclude file, not your `.gitignore`), so run artifacts and an optional repository `models.md` stay on that machine unless you copy them yourself. Do not assume a repository override travels with git.
+Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. Run artifacts under `.supercook/` stay untracked in git (see this repo's `.gitignore`); only an optional `models.md` there is meant to be committed when you want the roster to travel with the checkout.
+
+**Cloud agents and other clones without a home file** should commit and maintain `<workspace-root>/.supercook/models.md` so tier 1 resolves on every VM. Use the same fenced roster shape as the shipped file; merge rules and hook behavior are documented in [skills/supercook/models.md](skills/supercook/models.md).
 
 ```bash
 mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-Optionally create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin specific roles. Then change the roles you want and delete the rest. Any role a higher file does not name falls through to the next tier. Write `inherit` on a role to use your session model (omit the model field on launch).
+On a machine with a home roster, you can still add `<workspace-root>/.supercook/models.md` when this checkout should pin specific roles. Change the roles you want and delete the rest. Any role a higher file does not name falls through to the next tier. Write `inherit` on a role to use your session model (omit the model field on launch).
 
 At intake the orchestrator resolves all three files, validates each slug against the models your session offers (the same catalog `CreateAgent` or `Task` accepts), announces once which roles fell back, and writes **`models-resolved:`** on the run ledger (every roster key to slug or `inherit`). It also writes **`models:`** for hook and audit; unavailable slugs use `arena-b inherit (unavailable gpt-5.6-sol-max)` so later launches can omit the model without guesswork. Project and cloud coordinators must pass `model` on every `supercook-*` launch from `models-resolved:`; shipped agent frontmatter does not do that for you.
 
-Example slugs from the shipped roster (validate on your plan): `claude-opus-5-5-high`, `claude-fable-5-1-thinking-max`, `gpt-5.6-sol-max`, `cursor-grok-4.6-high-fast`. Shipped defaults pin `arena-a` to `inherit` so the session model can be the third arena family alongside `gpt-5.6-sol-max` and `claude-opus-5-5-high`.
+Example slugs from the shipped roster (validate on your plan): `claude-opus-5-5-high`, `claude-fable-5-1-thinking-max`, `gpt-5.6-sol-max`, `grok-4.7-xhigh`, `composer-2.5`. Shipped defaults pin `arena-a` to `inherit` so the session model can be the third arena family alongside `gpt-5.6-sol-max` and `claude-opus-5-5-high`.
 
 **Tags and hook.** Every supercook subagent launch carries `supercook-role: <roster-key>` and `supercook-run: <run folder>` in the prompt. The plugin's `preToolUse` hook (`hooks/enforce_roster.py`) reads the same three-tier roster and the ledger header. It **denies** mismatched models or missing tags on `supercook-*` launches; it does not rewrite prompts or models. If the hook script errors or the hook command fails, the launch **fails open** and proceeds so unrelated work is not blocked. Details live in [skills/supercook/models.md](skills/supercook/models.md).
 

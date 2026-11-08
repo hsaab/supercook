@@ -21,7 +21,7 @@ mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`, which is checkout-local and often git-excluded, so it is not automatically shared with other clones unless you commit or copy it on purpose.
+The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`; run artifacts there stay untracked, but you can commit `models.md` so cloud agents and other clones pick up tier 1 without a home file.
 
 Then change the roles you want and delete the lines you do not. Any role a higher file does not name falls through to the next tier, so a home file naming two roles changes exactly those two only when the repository file does not name those roles. Write `inherit` on a role to put it back on the session model.
 
@@ -36,10 +36,10 @@ arena-b:      gpt-5.6-sol-max             # e.g. gpt-5.6-sol-max
 arena-c:      claude-opus-5-5-high        # e.g. claude-opus-5-5-high
 plan-judge:   claude-opus-5-5-high        # e.g. claude-opus-5-5-high
 plan-optimizer: claude-opus-5-5-high
-implementer:  cursor-grok-4.6-high-fast   # e.g. cursor-grok-4.6-high-fast
-explorer:     cursor-grok-4.6-high-fast   # e.g. cursor-grok-4.6-high-fast
+implementer:  grok-4.7-xhigh              # e.g. grok-4.7-xhigh
+explorer:     composer-2.5                # e.g. composer-2.5
 reviewer:     claude-opus-5-5-high        # bugbot, security-review, both thermo reviewers on the review track
-review-implementer: cursor-grok-4.6-high-fast   # finding fixes on the review track
+review-implementer: grok-4.7-xhigh        # finding fixes on the review track
 ```
 
 The two review-track roles are independent of the rest, like every role here: `reviewer` covers the external reviewer launches on the review track (up to four per PR, fewer when hosted results are reused), `review-implementer` covers the finding-fix launches there, and leaving either on `inherit` does not fall through to `implementer` or `standard`.
