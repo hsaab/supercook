@@ -30,16 +30,16 @@ Do not confuse `~/.supercook/` with the `.supercook/` folder inside a repo. The 
 ## The roster
 
 ```
-standard:     claude-opus-5-5-high   # assessor, planner, test-designer, verifier
-arena-a:      claude-fable-5-1-thinking-high
-arena-b:      gpt-5.6-sol-max
-arena-c:      claude-opus-5-5-high
-plan-judge:   claude-opus-5-5-high
+standard:     claude-opus-5-5-high        # assessor, planner, test-designer, verifier; e.g. claude-opus-5-5-high
+arena-a:      inherit                     # third arena family = session model; or pin e.g. claude-fable-5-1-thinking-max
+arena-b:      gpt-5.6-sol-max             # e.g. gpt-5.6-sol-max
+arena-c:      claude-opus-5-5-high        # e.g. claude-opus-5-5-high
+plan-judge:   claude-opus-5-5-high        # e.g. claude-opus-5-5-high
 plan-optimizer: claude-opus-5-5-high
-implementer:  grok-4.7-xhigh
-explorer:     grok-4.7-xhigh
-reviewer:     claude-opus-5-5-high   # bugbot, security-review, both thermo reviewers on the review track
-review-implementer: grok-4.7-xhigh   # finding fixes on the review track
+implementer:  cursor-grok-4.6-high-fast   # e.g. cursor-grok-4.6-high-fast
+explorer:     cursor-grok-4.6-high-fast   # e.g. cursor-grok-4.6-high-fast
+reviewer:     claude-opus-5-5-high        # bugbot, security-review, both thermo reviewers on the review track
+review-implementer: cursor-grok-4.6-high-fast   # finding fixes on the review track
 ```
 
 The two review-track roles are independent of the rest, like every role here: `reviewer` covers the external reviewer launches on the review track (up to four per PR, fewer when hosted results are reused), `review-implementer` covers the finding-fix launches there, and leaving either on `inherit` does not fall through to `implementer` or `standard`.
@@ -63,7 +63,7 @@ The shipped slugs are defaults, not requirements. A plan that does not carry one
 
 The ledger `models:` line and `enforce_roster` answer different questions. The three-tier roster files (repository, home, shipped) set the **expected slug** for each role on every launch. The hook merges those tiers the same way intake does and compares the launch's model field against that expectation.
 
-The ledger header is the run's resume and audit record. List every roster key there with either a positive `<role> <slug>` or `<role> inherit (unavailable <slug>)`. Positive entries document what intake resolved; they do not replace the file merge on a fresh launch unless you rely on them only for human context. Entries marked `inherit (unavailable ...)` are what the hook consults when the model field is omitted: they allow an omitted model for that role only after intake announced the fallback. For roles with a positive slug on the header, the hook still resolves the expected slug from the three-tier files unless that inherit form appears for the role.
+The ledger header is the run's resume and audit record. **`models-resolved:`** is the map coordinators read for launch: every roster key to either a validated slug or plain `inherit`. **`models:`** carries the same resolution for the roster hook, using `<role> inherit (unavailable <slug>)` when intake announced a fallback. List every roster key on both lines. Positive entries document what intake resolved; they do not replace the file merge on a fresh launch unless you rely on them only for human context. Entries marked `inherit (unavailable ...)` on `models:` are what the hook consults when the model field is omitted: they allow an omitted model for that role only after intake announced the fallback. For roles with a positive slug on the header, the hook still resolves the expected slug from the three-tier files unless that inherit form appears for the role.
 
 ## Tags on every launch
 

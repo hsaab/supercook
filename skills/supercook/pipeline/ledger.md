@@ -26,7 +26,8 @@ run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
-models: standard claude-opus-5-5-high | arena-a claude-fable-5-1-thinking-high | arena-b inherit (unavailable gpt-5.6-sol-max) | arena-c claude-opus-5-5-high | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high | implementer cursor-grok-4.6-xhigh-fast | explorer grok-4.7-xhigh | reviewer claude-opus-5-5-high | review-implementer cursor-grok-4.6-xhigh-fast
+models-resolved: standard claude-opus-5-5-high | arena-a inherit | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-high | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high | implementer cursor-grok-4.6-high-fast | explorer cursor-grok-4.6-high-fast | reviewer claude-opus-5-5-high | review-implementer cursor-grok-4.6-high-fast
+models: standard claude-opus-5-5-high | arena-a inherit | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-high | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high | implementer cursor-grok-4.6-high-fast | explorer cursor-grok-4.6-high-fast | reviewer claude-opus-5-5-high | review-implementer cursor-grok-4.6-high-fast
 test-paths: **/*.test.ts
 ui-change: no | ui-source: none | render-check: none
 done: every public route rejects a 101st request in a minute with a 429, and the suite is green
