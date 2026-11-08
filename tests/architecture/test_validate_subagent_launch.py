@@ -103,6 +103,22 @@ class TaskEnvelopeTests(ValidatorTestCase):
         self.assert_rejected(done, "arguments.prompt", "missing required field")
         self.assert_reported(done.stderr.splitlines(), "prompt", "Task field at top level")
 
+    def test_envelope_missing_namespace_or_tool_name_is_rejected(self):
+        cases = {
+            "only arguments": ({"arguments": VALID_ENVELOPE["arguments"]}, ("namespace", "toolName")),
+            "missing namespace": ({key: value for key, value in VALID_ENVELOPE.items() if key != "namespace"}, ("namespace",)),
+            "missing toolName": ({key: value for key, value in VALID_ENVELOPE.items() if key != "toolName"}, ("toolName",)),
+        }
+        for name, (envelope, missing_keys) in cases.items():
+            with self.subTest(name):
+                errors = self.validator.validate_task_payload(envelope)
+                for key in missing_keys:
+                    self.assert_reported(errors, key, "missing required field")
+        with tempfile.TemporaryDirectory() as temp:
+            done = run_cli(temp, "task", stdin_text=json.dumps({"arguments": VALID_ENVELOPE["arguments"]}))
+        self.assert_rejected(done, "namespace", "missing required field")
+        self.assert_reported(done.stderr.splitlines(), "toolName", "missing required field")
+
     def test_bare_arguments_missing_prompt_is_rejected(self):
         arguments = {key: value for key, value in BASE_ARGUMENTS.items() if key != "prompt"}
         errors = self.validator.validate_task_payload(arguments)
