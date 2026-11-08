@@ -1,8 +1,6 @@
 ---
 description: Pre-flight supercook subagent launches (Task and CreateAgent) before CallDynamicTool.
-globs:
-  - .cursor/supercook/**
-  - .supercook/**
+globs: .cursor/supercook/**, .supercook/**
 alwaysApply: false
 ---
 
@@ -15,4 +13,4 @@ Before each launch, run `python3 <repo>/scripts/validate_subagent_launch.py` via
 - **task**: `description`, `subagent_type`, and `prompt` only under `arguments`.
 - **create-agent**: `description`, `subagent_type`, and `prompt` at the top level, never under `arguments`.
 
-On validation or host failure: fix and retry; if still blocked, log `degraded: parent inline` with the exact error before implementing in the parent (never silently skip the subagent).
+A validator rejection means fix and re-run, never run the role inline. Only when the host rejects an already validated launch after a retry may the parent log `degraded: parent inline` with the exact error and run the role itself. Never silently parent-implement instead of launching the subagent.
