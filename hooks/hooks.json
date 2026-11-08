@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/hooks/enforce_roster.py\"",
+        "matcher": "Subagent",
+        "timeout": 5
+      },
+      {
+        "command": "python3 \"${CURSOR_PLUGIN_ROOT}/hooks/enforce_roster.py\"",
+        "matcher": "Task",
+        "timeout": 5
+      }
+    ]
+  }
+}
