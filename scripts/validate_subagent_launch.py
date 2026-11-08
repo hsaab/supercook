@@ -174,10 +174,10 @@ def read_prompt_file(path_text: str) -> tuple[str | None, list[str]]:
         return None, [f"--prompt-file: file not found: {path_text}"]
     try:
         raw = path.read_bytes()
-    except OSError:
-        return None, [f"--prompt-file: file not found: {path_text}"]
+    except OSError as err:
+        return None, [f"--prompt-file: cannot read: {path_text} ({err})"]
     try:
-        text = raw.decode("utf-8")
+        text = raw.decode("utf-8-sig")
     except UnicodeDecodeError:
         return None, ["--prompt-file: not valid UTF-8"]
     if not text.strip():
@@ -213,6 +213,20 @@ def _run_validate(validate_fn, stdin_text: str) -> int:
         return _emit_errors(errors)
     print("ok")
     return 0
+
+
+def _non_empty_str(value: object | None) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _builder_flag_is_set(ns: argparse.Namespace, name: str) -> bool:
+    if name == "run_in_background":
+        return bool(ns.run_in_background)
+    return _non_empty_str(getattr(ns, name, None))
+
+
+def _required_builder_fields_present(ns: argparse.Namespace) -> bool:
+    return all(_non_empty_str(getattr(ns, name)) for name in ("description", "subagent_type", "prompt_file"))
 
 
 def _task_build_ns(ns: argparse.Namespace) -> int:
@@ -253,17 +267,17 @@ def main(argv: list[str] | None = None) -> int:
     ns = parser.parse_args(argv)
     if ns.command == "create-agent":
         return _run_validate(validate_create_agent, sys.stdin.read())
-    if any(getattr(ns, name, None) for name in BUILDER_FLAGS):
-        missing = [
-            flag for flag, val in (
-                ("--description", ns.description),
-                ("--subagent-type", ns.subagent_type),
-                ("--prompt-file", ns.prompt_file),
-            ) if not val
-        ]
-        if missing:
-            parser.error(" ".join(f"{f} is required when building a launch" for f in missing))
+    if _required_builder_fields_present(ns):
         return _task_build_ns(ns)
+    if any(_builder_flag_is_set(ns, name) for name in BUILDER_FLAGS):
+        missing = [
+            flag for flag, attr in (
+                ("--description", "description"),
+                ("--subagent-type", "subagent_type"),
+                ("--prompt-file", "prompt_file"),
+            ) if not _non_empty_str(getattr(ns, attr))
+        ]
+        parser.error(" ".join(f"{f} is required when building a launch" for f in missing))
 
     return _run_validate(validate_task_payload, sys.stdin.read())
 
