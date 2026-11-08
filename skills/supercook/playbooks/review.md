@@ -26,21 +26,79 @@ Copy these into the ledger verbatim.
 
 ```
 - [ ] resolve targets: named PRs or the current branch's PR and its stack; record bottom-up order and each PR's base
-- [ ] per PR: check out the branch, launch bugbot, security-review, and both thermo reviewers in parallel, scoped to this PR's base
-- [ ] per PR: dedupe and triage findings; decline the rest with a stated reason
+- [ ] per PR: check out the branch; resolve each of bugbot and security-review to `hosted`, `local`, or `pending` against the PR head per "Reuse hosted Bugbot and security review"
+- [ ] per PR: launch both thermo reviewers plus every `local` reviewer in one parallel batch, scoped to this PR's base; collect `hosted` findings from the PR
+- [ ] per PR: once every reviewer has reported (each `pending` one resolved, then collected or launched locally), dedupe and triage findings; decline the rest with a stated reason
 - [ ] per PR: one supercook-implementer launch (review-implementer model) fixes all in-scope findings as one-commit diffs
-- [ ] per PR: one confirmation pass on the reviewers whose findings were implemented
-- [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), push, wait for CI checks only; never wait on hosted review-bot checks (Bugbot, security review), those already ran locally
+- [ ] per PR: run the recorded tests (and rendered smoke on a UI contract), then push
+- [ ] per PR: one confirmation pass on the reviewers whose findings were implemented, sources resolved again against the pushed head; the row stays open until each of them has reported
+- [ ] per PR, only when the confirmation pass found in-scope findings: one more implementer launch, run the recorded tests, push; no confirmation pass after it
+- [ ] per PR: wait for CI checks only; review-bot checks are covered by the source decision and the confirmation pass
 - [ ] stack only: restack children after fixes land on a base slice, gt or manual per the ledger's stacking capability
 - [ ] merge mode only: continue into phase 9 under the merge ask already given, one merge row per PR
 - [ ] review mode only: report the per-PR findings summary and stop at open PRs
 ```
 
+## Reuse hosted Bugbot and security review
+
+Bugbot and security review often already ran on the PR as hosted review bots. When one did, its findings are the review: read them from the PR instead of paying for the same review twice. The thermo reviewers have no hosted form and always run locally.
+
+Resolve each of the two reviewers to `hosted`, `local`, or `pending` against the PR's current head commit. List the head's check runs:
+
+```bash
+HEAD_SHA=$(gh pr view <n> --json headRefOid --jq .headRefOid)
+gh api --paginate "repos/{owner}/{repo}/commits/$HEAD_SHA/check-runs" \
+  --jq '.check_runs[] | {name, app: .app.slug, status, conclusion, started_at, output}'
+```
+
+Only check runs from the `cursor` app count, so a third-party check with a similar name never stands in for a review. Bugbot's check is named exactly `Cursor Bugbot`; `Cursor Bugbot Autofix` is a different check and never counts. Security review has no confirmed hosted check name yet, so it always resolves to `local`. Once its exact check name is known, add it here the same way, never as a partial match: the `cursor` app also posts user-named checks such as `Cursor Approval Agent: <name>`. When one name has several runs on the head, the latest `started_at` wins. Take the first row that matches:
+
+| That reviewer's check run on the head | Source |
+|---|---|
+| completed, conclusion `success` or `neutral`, and `output.summary` says `completed review` | `hosted` |
+| completed any other way, including `neutral` without `completed review` (the `cursor` app also reports `neutral` for a run that failed to start) | `local`, because a crashed or skipped bot is not a review |
+| not completed yet (queued, waiting, requested, or in progress), started less than 30 minutes ago | `pending` |
+| none yet, and the head was pushed less than 10 minutes ago | `pending`, since hosted bots take a moment to start |
+| none, or still not completed after 30 minutes | `local`; a run that only exists on an older commit missed the code pushed since |
+
+The push time is known when this run pushed the head itself. On a cold start, use the head commit's committer date; when that is older than the real push, the only cost is a local review that a hosted one would have covered.
+
+**A pending run never holds the fan-out.** Launch the local batch right away and keep resolving the pending reviewer against the table until it lands on `hosted` or `local`. If it lands on `local`, launch that reviewer then, and ignore any hosted result that arrives later for this head, so each reviewer has one source of truth. Triage waits until every pending reviewer has resolved and reported.
+
+Hosted findings come from three places, each filtered to the Cursor bot as author (login `cursor`) and to the head commit, so neither someone else's comment nor a finding left on an older commit passes as a new one:
+
+- the check run's `output` (title, summary, text) from the command above
+- review bodies left on the head commit:
+
+```bash
+gh pr view <n> --json reviews \
+  --jq "[.reviews[] | select(.author.login == \"cursor\" and .commit.oid == \"$HEAD_SHA\") | .body]"
+```
+
+- review threads whose first comment's `originalCommit` is the head commit and that are neither resolved nor outdated. REST does not expose either flag, so use GraphQL:
+
+```bash
+gh api graphql --paginate -F owner='{owner}' -F repo='{repo}' -F n=<n> -f query='
+  query($owner: String!, $repo: String!, $n: Int!, $endCursor: String) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $n) {
+        reviewThreads(first: 100, after: $endCursor) {
+          pageInfo { hasNextPage endCursor }
+          nodes { isResolved isOutdated path line
+            comments(first: 1) { nodes { author { login } originalCommit { oid } body } } }
+        }
+      }
+    }
+  }'
+```
+
+Record each reviewer's source (`pending` until it resolves), the head SHA it was judged against, and the check run's conclusion in the ledger. Hosted findings go through the same dedupe and triage as local ones; being on the PR earns them no extra trust.
+
 ## The reviewer fan-out
 
-Four reviewers per PR, launched in parallel in one message, each with a fresh context. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on all four launches, including the confirmation pass. `inherit` means omit the model field, same as every other role.
+Up to four reviewers per PR, launched in parallel in one message, each with a fresh context: both thermo reviewers always, plus `bugbot` and `security-review` when their source is `local`. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on every launch, including the confirmation pass. `inherit` means omit the model field, same as every other role. A `hosted` reviewer runs on its own service, so no model applies.
 
-**Parallel means one batch, without exception.** All four reviewer launches go out as a single batch of Task calls. Never launch one reviewer, wait for it, then launch the next; none of them depends on another's output, so a sequential fan-out quadruples the wall time for nothing. The confirmation pass follows the same rule: every reviewer being rerun launches in one batch. Parallelism stays within one PR because the diff-computing reviewers read the checked-out working tree and only one PR branch can be checked out at a time, so it is one PR at a time, all reviewers at once within it.
+**Parallel means one batch.** All local reviewer launches go out as a single batch of Task calls; the one exception is a pending hosted reviewer that falls back to `local` after the batch went out. Never launch one reviewer, wait for it, then launch the next; none of them depends on another's output, so a sequential fan-out multiplies the wall time for nothing. The confirmation pass follows the same rule: every reviewer being rerun locally launches in one batch. Parallelism stays within one PR because the diff-computing reviewers read the checked-out working tree and only one PR branch can be checked out at a time, so it is one PR at a time, all local reviewers at once within it.
 
 First check out the PR's branch (`gh pr checkout <n>`), because the diff-computing reviewers read the working tree.
 
@@ -60,14 +118,14 @@ Base Branch: <this PR's base branch>
 
 ## Triage before implementing
 
-Dedupe findings across the four reviewers first: overlapping findings merge into one entry and carry more weight. Then triage each finding with the same skeptical-bot rule as [../pipeline/merge.md](../pipeline/merge.md#comment-triage). Reviewers are useful and also confidently wrong sometimes, so verify every claim against the actual code before acting on it.
+Dedupe findings across every reviewer that reported, hosted and local, first: overlapping findings merge into one entry and carry more weight. Then triage each finding with the same skeptical-bot rule as [../pipeline/merge.md](../pipeline/merge.md#comment-triage). Reviewers are useful and also confidently wrong sometimes, so verify every claim against the actual code before acting on it.
 
 - **A real bug or a correct concern**: fix it on this PR's branch.
 - **A style preference the repo does not enforce**: decline, with the reason recorded.
 - **Wrong about the code**: decline, naming the file and line that disproves it.
 - **Out of scope for this slice**: note it as a follow-up, keep it out of this diff.
 
-**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. Launch after all four reviewers have returned and triage is done, per the contract in [../agents.md](../agents.md), carrying:
+**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. Launch after every local reviewer has returned, every hosted reviewer's findings are collected, and triage is done, per the contract in [../agents.md](../agents.md), carrying:
 
 - the full deduped in-scope findings list, one entry per finding with the file, the claim, and the evidence that survived triage
 - the scope list: the union of files those findings name
@@ -79,7 +137,7 @@ Every fix is still a diff under the normal rules: change only what the finding n
 
 ## One confirmation pass, not a loop
 
-After fixes land, re-run only the reviewers whose findings were implemented, once, with the same scoped prompt. New findings from that pass get triaged the same way, but there is no third pass: anything still open after the confirmation pass is reported on the PR rather than looped on. Reviewers can disagree with each other's fixes forever, and this cap is what keeps a review from becoming a bot argument.
+After the fixes are pushed, re-run only the reviewers whose findings were implemented, once. Resolve each one's source again against the pushed head with the same table: a hosted bot that reruns on the push is read from that run, and one that never starts within 10 minutes runs locally instead, so a confirmation pass never silently goes missing. Local reruns use the same scoped prompt and launch in one batch. The confirmation row stays open until every reviewer in it has reported. New findings from that pass get triaged the same way, but there is no third pass: anything still open after the confirmation pass is reported on the PR rather than looped on. A push made for confirmation-pass fixes gets no confirmation pass of its own. Reviewers can disagree with each other's fixes forever, and this cap is what keeps a review from becoming a bot argument.
 
 ## Order on a stack
 
@@ -93,9 +151,9 @@ Independent PRs (no shared stack) skip the restack and can be processed in any o
 
 ## Verify, then stop or merge
 
-After each PR's fixes: run the recorded tests or recipe, rerun the rendered smoke when a UI contract applies and a fix touched a rendered file, push, and wait for checks per the waiting rule in [../pipeline/merge.md](../pipeline/merge.md#waiting-is-not-blocked). A finding fixed but never verified is not fixed.
+After each PR's fixes: run the recorded tests or recipe, rerun the rendered smoke when a UI contract applies and a fix touched a rendered file, and push. Then run the confirmation pass, and wait for checks per the waiting rule in [../pipeline/merge.md](../pipeline/merge.md#waiting-is-not-blocked). A finding fixed but never verified is not fixed.
 
-**The wait covers CI and test checks only.** Hosted review-bot check runs on the PR (Cursor Bugbot, security review) are replaced by this track's local fan-out and its confirmation pass; a review-bot check still pending or absent never holds the verify row open. In merge mode, GitHub's merge API still enforces anything the repo marks as a *required* check, so a required review-bot check stays a readiness gate per [../pipeline/merge.md](../pipeline/merge.md#merging): reported if it blocks, never bypassed.
+**The wait covers CI and test checks only.** Review-bot check runs on the PR (Cursor Bugbot, security review) are covered by the source decision and the confirmation pass, so none of them holds the verify row open. In merge mode, GitHub's merge API still enforces anything the repo marks as a *required* check, so a required review-bot check stays a readiness gate per [../pipeline/merge.md](../pipeline/merge.md#merging): reported if it blocks, never bypassed.
 
 - **Review mode** ends here. The final report is one short block per PR: findings found, fixed (file and consequence each), declined (with reasons), and anything the confirmation pass left open.
 - **Merge mode** continues into phase 9 exactly as the merge playbook specifies. The `review and merge` ask already carried the merge consent: state and log the sequence (`gt merge --dry-run --no-interactive` on `stacking gt`, the plain-language walk on manual), then run it to merged without waiting for another yes.
@@ -130,11 +188,13 @@ Same reasoning as the merge track: this track changes the repo and can span sess
 
 ```
 - [ ] review (PR #412, base main)
+  - [x] sources (head 9f3c2e1): bugbot hosted (neutral), security-review local (no run on head) (15:01)
   - [x] reviewers: bugbot 2 findings, security-review 0, thermo review 1, thermo quality 3 (15:04)
   - [x] triage: 3 in scope, 2 declined as style, 1 follow-up noted (15:12)
   - [x] implementer: one launch, 3 findings fixed across src/queue/worker.ts and src/api/webhook.ts, diff read (15:22)
-  - [x] confirmation pass: bugbot and thermo quality rerun, no new findings (15:31)
-  - [x] verify: pnpm vitest run green, pushed, CI checks green (bugbot check skipped, ran locally) (15:40)
+  - [x] verify: pnpm vitest run green, pushed 4b7d0a8 (15:25)
+  - [x] confirmation pass (head 4b7d0a8): bugbot hosted rerun no new findings, thermo quality rerun locally no new findings (15:36)
+  - [x] CI checks green (15:40)
   - [~] merge: skip: review-only ask
 - [ ] review (PR #413, base supercook/rate-limit-1)
 ```
