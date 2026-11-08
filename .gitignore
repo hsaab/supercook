@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# Run artifacts under .supercook/ stay local; commit models.md for cloud/shared rosters.
+.supercook/*
+!.supercook/models.md
