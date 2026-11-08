@@ -22,7 +22,10 @@ ROSTER_KEYS = frozenset(
 )
 
 _ROSTER_SECTION = re.compile(r"^## The roster\s*$", re.MULTILINE)
-_ROSTER_FENCE = re.compile(r"^```\n(.*?\n)^```", re.MULTILINE | re.DOTALL)
+_ROSTER_FENCE = re.compile(
+    r"^```[^\n\r]*\r?\n(.*?)^```\s*(?:\r?\n|$)",
+    re.MULTILINE | re.DOTALL,
+)
 
 _LEDGER_FALLBACK = re.compile(
     r"^([a-zA-Z0-9_-]+)\s+inherit\s+\(unavailable\s+([^)]+)\)\s*$"

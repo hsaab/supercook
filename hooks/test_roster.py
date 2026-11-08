@@ -165,6 +165,22 @@ class RosterLineGrammarTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(roster.parse_roster(text), {})
 
+    def test_a_roster_body_with_crlf_newlines_returns_the_same_roles_as_lf(self):
+        lf = models_file("standard: claude-opus-5-5-high", "explorer: composer-2.5")
+        expected = {"standard": "claude-opus-5-5-high", "explorer": "composer-2.5"}
+
+        self.assertEqual(roster.parse_roster(lf), expected)
+        self.assertEqual(roster.parse_roster(lf.replace("\n", "\r\n")), expected)
+
+    def test_a_roster_fence_opened_as_text_returns_the_roles_inside(self):
+        body = models_file("arena-b: gpt-5.6-sol-max", "reviewer: claude-opus-5-5-high")
+        labeled = body.replace("```\n", "```text\n", 1)
+
+        self.assertEqual(
+            roster.parse_roster(labeled),
+            {"arena-b": "gpt-5.6-sol-max", "reviewer": "claude-opus-5-5-high"},
+        )
+
     def test_shipped_models_file_defines_every_roster_role(self):
         parsed = roster.parse_roster(SHIPPED_MODELS_PATH.read_text(encoding="utf-8"))
 
