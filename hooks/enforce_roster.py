@@ -13,7 +13,10 @@ from roster import ROSTER_KEYS, LedgerModel, load_roster, parse_ledger_models
 _SHIPPED_ROSTER = (
     Path(__file__).resolve().parent.parent / "skills/supercook/models.md"
 )
-_TAG_PATTERN = re.compile(r"^(supercook-role|supercook-run):\s*(.+?)\s*$", re.MULTILINE)
+_TAG_PATTERN = re.compile(
+    r"^(supercook-role|supercook-run):[ \t]*(.+?)[ \t]*$",
+    re.MULTILINE,
+)
 
 
 @dataclass(frozen=True)
