@@ -115,18 +115,28 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Ten roles, one line each: the assessor group, the three arena contestants, the plan judge, the plan optimizer, the implementer, the explorer, the reviewer (the four external review subagents on the review track), and the review implementer (the agent that fixes triaged findings there). Each role ships with a default model in [skills/supercook/models.md](skills/supercook/models.md).
+Ten roster keys, one line each in the fenced block: `standard` (assessor, planner, test-designer, verifier), the three arena contestants, plan judge, plan optimizer, implementer, explorer, reviewer (four external reviewers on the review track), and review-implementer. Each role ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
 
-Put your choices in `~/.supercook/models.md`, not in the plugin. A marketplace install lives in a commit-pinned cache directory that the next update replaces wholesale, so edits made inside the plugin do not survive `plugin marketplace update`. The home file does, and it applies to every repo you run in.
+**Three-tier precedence**, merged per role (highest tier wins for that role only):
+
+| Tier | File |
+|---|---|
+| 1 | `<workspace-root>/.supercook/models.md` optional override for this checkout |
+| 2 | `~/.supercook/models.md` your choices across repos |
+| 3 | shipped `skills/supercook/models.md` |
+
+Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. The `.supercook/` folder inside a repo is excluded locally (via git's exclude file, not your `.gitignore`), so run artifacts and an optional repository `models.md` stay on that machine unless you copy them yourself. Do not assume a repository override travels with git.
 
 ```bash
 mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-Then change the roles you want and delete the rest. Roles the home file does not name fall back to the shipped default, so a home file that sets two arena slots and nothing else changes exactly those two. Write `inherit` on a role to put it on your session model.
+Optionally create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin specific roles. Then change the roles you want and delete the rest. Any role a higher file does not name falls through to the next tier. Write `inherit` on a role to use your session model (omit the model field on launch).
 
-At the start of every run the orchestrator merges the two files, validates each slug against the models your session actually offers, and falls back to inherit with a note in the ledger if your plan does not carry one. Nothing breaks and nothing is guessed.
+At intake the orchestrator resolves all three files, validates each slug against the models your session offers, announces once which roles fell back, and writes the full `models:` line on the run ledger. Unavailable slugs become `inherit` with a header entry like `arena-b inherit (unavailable gpt-5.6-sol-max)` so later launches can omit the model without guesswork.
+
+**Tags and hook.** Every supercook subagent launch carries `supercook-role: <roster-key>` and `supercook-run: <run folder>` in the prompt. The plugin's `preToolUse` hook (`hooks/enforce_roster.py`) reads the same three-tier roster and the ledger header. It **denies** mismatched models or missing tags on `supercook-*` launches; it does not rewrite prompts or models. If the hook script errors or the hook command fails, the launch **fails open** and proceeds so unrelated work is not blocked. Details live in [skills/supercook/models.md](skills/supercook/models.md).
 
 **Keep the arena diverse:** the shipped arena already puts three different models on the three contestants. If you override them, keep them different. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off.
 
@@ -183,10 +193,11 @@ Playbooks, routed automatically from the assessment, except `merge`, `implement-
 ```
 .cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
 agents/                       nine discoverable subagents, all supercook- prefixed
+hooks/                        roster resolution and preToolUse enforcement (deny only, fail open)
 assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
-  models.md                   the default roster, overridden by ~/.supercook/models.md
+  models.md                   default roster; optional overrides in repo or home .supercook/models.md
   agents.md                   launch contracts and the parent-side guards
   pipeline/                   phase guides plus the cross-cutting UI contract
     ui.md                     cross-cutting design contract and rendered-smoke gates
