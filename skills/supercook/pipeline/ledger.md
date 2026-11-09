@@ -39,8 +39,8 @@ run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
-models-resolved: standard claude-opus-5-5-high | arena-a inherit | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-high | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high | implementer cursor-grok-4.6-high-fast | explorer cursor-grok-4.6-high-fast | reviewer claude-opus-5-5-high | review-implementer cursor-grok-4.6-high-fast
-models: standard claude-opus-5-5-high | arena-a inherit | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-high | plan-judge claude-opus-5-5-high | plan-optimizer claude-opus-5-5-high | implementer cursor-grok-4.6-high-fast | explorer cursor-grok-4.6-high-fast | reviewer claude-opus-5-5-high | review-implementer cursor-grok-4.6-high-fast
+models-resolved: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
+models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
 test-paths: **/*.test.ts
 ui-change: no | ui-source: none | render-check: none
 done: every public route rejects a 101st request in a minute with a 429, and the suite is green
@@ -66,8 +66,8 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 - [ ] no opportunistic refactors in the diff
 
 ## Log
-- 09:14 assessor (claude-opus-5-5-high): 3 services touched, session token shape changes, so architecture needs sign-off
-- 09:22 explorer (grok-4.7-xhigh): returned pointers, test command is `pnpm vitest run`
+- 09:14 assessor (grok-4.7-high): 3 services touched, session token shape changes, so architecture needs sign-off
+- 09:22 explorer (composer-2.5): returned pointers, test command is `pnpm vitest run`
 - 09:55 plan summary sent to user, continuing into implementation without waiting
 - 10:11 guard: implementer modified src/rate-limit/bucket.test.ts, restored it, routed the
   concern to test-designer as an amendment

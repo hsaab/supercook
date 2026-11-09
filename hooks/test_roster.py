@@ -133,7 +133,7 @@ class RosterLineGrammarTests(unittest.TestCase):
                 "standard:claude-opus-5-5-high",
                 "arena-a:   inherit   # session model is the third family",
                 "plan-optimizer: claude-opus-5-5-high",
-                "implementer:\tcursor-grok-4.6-xhigh-fast   ",
+                "implementer:\tgrok-4.7-high   ",
                 "reviewer:      claude-opus-5-5-high   # bugbot, security-review",
             )
         )
@@ -144,7 +144,7 @@ class RosterLineGrammarTests(unittest.TestCase):
                 "standard": "claude-opus-5-5-high",
                 "arena-a": "inherit",
                 "plan-optimizer": "claude-opus-5-5-high",
-                "implementer": "cursor-grok-4.6-xhigh-fast",
+                "implementer": "grok-4.7-high",
                 "reviewer": "claude-opus-5-5-high",
             },
         )

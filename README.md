@@ -138,11 +138,11 @@ On a machine with a home roster, you can still add `<workspace-root>/.supercook/
 
 At intake the orchestrator resolves all three files, validates each slug against the models your session offers (the same catalog `CreateAgent` or `Task` accepts), announces once which roles fell back, and writes **`models-resolved:`** on the run ledger (every roster key to slug or `inherit`). It also writes **`models:`** for hook and audit; unavailable slugs use `arena-b inherit (unavailable gpt-5.6-sol-max)` so later launches can omit the model without guesswork. Project and cloud coordinators must pass `model` on every `supercook-*` launch from `models-resolved:`; shipped agent frontmatter does not do that for you.
 
-Example slugs from the shipped roster (validate on your plan): `claude-opus-5-5-high`, `claude-fable-5-1-thinking-max`, `gpt-5.6-sol-max`, `grok-4.7-xhigh`, `composer-2.5`. Shipped defaults pin `arena-a` to `inherit` so the session model can be the third arena family alongside `gpt-5.6-sol-max` and `claude-opus-5-5-high`.
+Example slugs from the shipped roster (validate on your plan): `grok-4.7-high`, `grok-4.7-medium`, `composer-2.5`. Shipped defaults put `grok-4.7-high` on `arena-a` and `arena-c`, and `composer-2.5` on `arena-b`.
 
 **Tags and hook.** Every supercook subagent launch carries `supercook-role: <roster-key>` and `supercook-run: <run folder>` in the prompt. The plugin's `preToolUse` hook (`hooks/enforce_roster.py`) reads the same three-tier roster and the ledger header. It **denies** mismatched models or missing tags on `supercook-*` launches; it does not rewrite prompts or models. If the hook script errors or the hook command fails, the launch **fails open** and proceeds so unrelated work is not blocked. Details live in [skills/supercook/models.md](skills/supercook/models.md).
 
-**Keep the arena diverse:** the shipped arena already puts three different models on the three contestants. If you override them, keep them different. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off.
+**Keep the arena diverse:** if you override the contestants, keep them different. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off.
 
 ## What it needs, and what happens without it
 
