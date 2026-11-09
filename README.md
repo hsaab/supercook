@@ -154,7 +154,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 | A test runner | Tests become an executable verification recipe the verifier runs |
 | Worktrees | Works on the current branch, after saying so, and requires a clean tree |
 | git | Works in place, delivers a summary and the diff |
-| The plugin's agents | Roles run inline from the agent file bodies |
+| The plugin's agents | Each role launches through the session's generic spawn tool (on Cursor Cloud Agents, `task_v2` with `subagent_type: custom` and `name: supercook-<role>`) with its agent file as the prompt; with no spawn tool, roles run inline from the agent file bodies |
 | A renderer for a changed UI route | Writes a fully specified manual smoke and asks once for confirmation. A PR can disclose missing visual evidence, but never calls the route visually verified |
 
 **One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger.

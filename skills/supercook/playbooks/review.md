@@ -146,7 +146,7 @@ Dedupe findings across every reviewer that reported, hosted and local, first: ov
 - **Wrong about the code**: decline, naming the file and line that disproves it.
 - **Out of scope for this slice**: note it as a follow-up, keep it out of this diff.
 
-**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. That launch carries `supercook-role: review-implementer` and `supercook-run: <run folder>` like any other supercook subagent. Launch after every local reviewer has returned, every hosted reviewer's findings are collected, and triage is done, per the contract in [../agents.md](../agents.md), carrying:
+**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. The one exception is a session with no spawn tool at all (`spawn: none`), where the implementer role runs inline from its agent file per [../agents.md](../agents.md#no-spawn-tool-run-roles-inline). That launch carries `supercook-role: review-implementer` and `supercook-run: <run folder>` like any other supercook subagent. Launch after every local reviewer has returned, every hosted reviewer's findings are collected, and triage is done, per the contract in [../agents.md](../agents.md), carrying:
 
 - the full deduped in-scope findings list, one entry per finding with the file, the claim, and the evidence that survived triage
 - the scope list: the union of files those findings name

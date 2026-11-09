@@ -124,6 +124,8 @@ Changes to GitHub Actions, other CI config, shared pytest plugins, or repo autom
 
 Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
 
+**Launch with the tool you have.** Without typed `supercook-*` agents, a Cloud Agent that lists `task_v2` launches every roster role through it (`subagent_type: custom`, `name: supercook-<role>`, prompt from `agents/supercook-<role>.md`). A parent with no spawn tool at all runs each role inline from its agent file. Never call a tool that is not in your catalog, and never implement alone when a spawn tool exists. See [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+
 ## The pipeline
 
 Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before the assessor runs.
@@ -208,7 +210,7 @@ which the user selects directly. Copy the playbook's steps verbatim into the led
 
 - [references/coordinator-kickoff.md](references/coordinator-kickoff.md): good vs bad kickoff copy, per-host spawn notes, and parent invariants (intake + assessor before edits, checklist is not a plan).
 - [models.md](models.md): which model each role uses, and how to change it. The preToolUse hook denies a launch that does not match that roster.
-- [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the fallback when the agents are not installed.
+- [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the spawn path per host when the agents are not installed.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
   resolution, structure-test guards, and rendered smoke.
 - `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
