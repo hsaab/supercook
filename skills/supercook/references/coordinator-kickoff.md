@@ -1,6 +1,6 @@
 # Kickoff messages and parent invariants
 
-Supercook runs on more than one host. The parent may be a Cursor chat agent, a Project worker, a Cloud Agent checkout, or another entry that loaded the skill. Spawn tools differ (typed `supercook-*` agents, `task_v2` on Cloud Agent VMs, `Task`, `CreateAgent`, host `Subagent`, or nothing at all). The rules below do not.
+Supercook runs on more than one host. The parent may be a Cursor chat agent, a Project worker, a Cloud Agent checkout, or another entry that loaded the skill. Spawn tools differ from host to host and session to session (typed `supercook-*` agents in the catalog, `Task`, `CreateAgent`, host `Subagent`, some other nested-spawn tool, or nothing at all). The rules below do not: every roster role is a launch of the named subagent `supercook-<role>` through whatever this session lists.
 
 ## Non-negotiables (every host)
 
@@ -9,7 +9,7 @@ These apply whether the user invoked `/supercook` in chat or a coordinator paste
 1. **Turn 1:** Read [../SKILL.md](../SKILL.md) in full before intake edits, assessor skip logic, or any repo change.
 2. **Intake then assessor:** Phase 0 and phase 1 complete (or a user-selected track that legitimately skips assessor per [../SKILL.md](../SKILL.md)) before implementation, workflow, or delivery edits.
 3. **Checklist is not a plan:** A pasted file list, YAML block, pytest recipe, or step-by-step implement list is a *spec pointer* at most. It does not replace recon, planner output in `plan.md`, test-first rows, verifier, or ledger phases.
-4. **Use the spawn tool you actually have:** When `supercook-*` agents are missing, each roster role runs through the first path that exists in this session ([../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing)): a generic spawn tool with `agents/supercook-<role>.md` as the prompt body, or, only when no spawn tool exists, the parent running that role inline from its agent file. A parent that has a spawn tool does not solo-implement on **standard** or **complex** tier unless assessor classified **trivial** and tier collapse applies. Never call a tool that is not in your catalog.
+4. **Launch the named subagent with the spawn tool you actually have:** Launch `supercook-<role>` (`/supercook-<role>` or "use the supercook-<role> subagent") when typed agents are in the catalog. When they are missing, each roster role runs through the first path that exists in this session ([../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing)): any listed spawn tool, launching a worker named `supercook-<role>` with `agents/supercook-<role>.md` as the prompt body, or, only when no spawn tool exists, the parent running that role inline from its agent file. A parent that has a spawn tool does not solo-implement on **standard** or **complex** tier unless assessor classified **trivial** and tier collapse applies. Never call a tool that is not in your catalog.
 5. **Invalid ledger skip:** `skip: user checklist`, `skip: coordinator spec`, or `skip: agents not installed` without assessor-approved trivial collapse is never valid on standard/complex work. Missing agents change who runs a role, never whether it runs.
 
 ## Good kickoff vs bad kickoff
@@ -37,7 +37,7 @@ Same invariants as above; only typical spawn paths differ.
 ### Cursor chat (parent agent)
 
 - **Who:** User `@supercook` or skill-loaded parent in the editor.
-- **Spawn:** Plugin `supercook-*` subagents when installed; else `Task` with `agents/*.md` body and roster tags from intake.
+- **Spawn:** The named plugin `supercook-*` subagents when installed; else whatever spawn tool the session lists (often `Task`), launching a worker named `supercook-<role>` with the `agents/*.md` body and roster tags from intake.
 - **Hooks:** `enforce_roster` may run when the plugin hooks are active; record `enforce_roster: yes|no` on the ledger capability line.
 - **Parent job:** Read SKILL.md, run intake, launch assessor (or valid user-selected track), never treat the user's long message as permission to skip phase 1.
 
@@ -50,9 +50,9 @@ Same invariants as above; only typical spawn paths differ.
 ### Cloud Agent on a user repo
 
 - **Who:** Cloud worker on the customer's repository with the skill available.
-- **Typed agents:** Usually absent. Record `supercook-agents: no` unless the catalog lists them.
-- **Spawn, when `task_v2` is listed:** one `task_v2` call per roster role with `subagent_type: "custom"`, `name: "supercook-<role>"`, and `prompt` = role and run tags, then the body of `agents/supercook-<role>.md`, then the brief. This is the shape observed working on Cloud Agents; launch explorer, planner, test-designer, implementer, and verifier this way, not only the assessor. Prefer a same-machine option if the tool offers one; if the worker lands on its own VM, follow the separate-VM rule in [../agents.md](../agents.md#host-recipes).
-- **Spawn, when nothing is listed:** record `spawn: none` and run each role inline from its agent file ([../agents.md](../agents.md#no-spawn-tool-run-roles-inline)). Do not look for `CallDynamicTool`, `CreateAgent`, or `Task` unless they appear in your own tool list.
+- **Typed agents:** Present when the catalog lists `supercook-*` (installed plugin, or files mirrored into `~/.cursor/agents/`); otherwise record `supercook-agents: no`. Never vendor the agent files into the customer's repository to get them.
+- **Spawn, when any spawn tool is listed:** launch the named subagent `supercook-<role>` through that tool, one launch per roster role, with the prompt = role and run tags, then the body of `agents/supercook-<role>.md`, then the brief. Set the tool's type or name field to `supercook-<role>` when it has one and accepts that name. Launch explorer, planner, test-designer, implementer, and verifier this way, not only the assessor. Prefer a same-machine option if the tool offers one; if the worker lands on its own VM, follow the separate-VM rule in [../agents.md](../agents.md#host-recipes).
+- **Spawn, when nothing is listed:** record `spawn: none` and run each role inline from its agent file ([../agents.md](../agents.md#no-spawn-tool-run-roles-inline)). Do not wait for, guess, or invent a spawn tool that your own tool list does not show.
 - **Extras:** Resolve models from repo `.supercook/models.md` when present; read plugin [../SKILL.md](../SKILL.md) on turn 1 even when the coordinator message is long.
 - **Parent job:** Log `parent-host: cloud-agent` and `spawn:` when probed; run every phase through the recorded path; do not collapse to one-pass implement on standard/complex.
 

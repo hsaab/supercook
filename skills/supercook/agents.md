@@ -1,6 +1,6 @@
 # Agent launch contracts
 
-The nine agents live at the plugin root in `agents/`, not in this skill folder. That is where Cursor discovers them, so they show up as real delegatable subagents. Every name is prefixed `supercook-` so a public install cannot collide with someone's own `implementer` or `verifier`.
+The nine agents live at the plugin root in `agents/`, not in this skill folder. Each is a Cursor custom subagent file (YAML frontmatter with `name`, `description`, `model`, `readonly`), so Cursor discovers it from the installed plugin's `agents/` directory, or from `~/.cursor/agents/` on a host that mirrors only the skill (see the README install notes), and it shows up as a named subagent the parent can launch with `/supercook-<role>` or "use the supercook-<role> subagent". Consumer repositories never need a copy in their own `.cursor/agents/`. Every name is prefixed `supercook-` so a public install cannot collide with someone's own `implementer` or `verifier`.
 
 This file is the launch contract: what the parent passes in, when the job is done, what comes back, and what the parent checks afterwards. The prompt itself lives in the agent file.
 
@@ -174,18 +174,23 @@ UI controls live in two places rather than being copied here:
 
 ## Spawn paths when typed agents are missing
 
-Typed `supercook-*` subagents are often missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not make them typed agents: only the catalog does. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path whose tool is **actually listed in this session**. Never call a tool, namespace, or envelope you cannot see: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
+Every roster role is a **named subagent launch**: launch the subagent `supercook-<role>` (in Cursor terms, invoke `/supercook-<role>` or say "use the supercook-<role> subagent"), with the role and run tags, the body of `agents/supercook-<role>.md`, and this launch's brief as its prompt. This skill never requires a particular spawn tool by name. Use whatever spawn tool **this session actually lists**; hosts differ, and the same host can differ between sessions.
+
+Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
 
 | `spawn:` | When | How each roster role runs |
 |---|---|---|
-| `typed` | `supercook-*` agents are in the catalog (local IDE with the plugin) | Launch the typed agent, per the contracts above. |
-| `<tool name>` | No typed agents, but a generic nested-spawn tool is listed | Launch a worker through that tool with the agent file body as the prompt. See [the host recipes](#host-recipes). |
+| `typed` | `supercook-*` agents are in the catalog (plugin installed, or files in `~/.cursor/agents/`) | Launch the named `supercook-<role>` subagent, per the contracts above. |
+| `<tool name>` | No typed agents, but some nested-spawn tool is listed | Launch a worker named `supercook-<role>` through that tool with the agent file body as the prompt. See [the host recipes](#host-recipes). |
 | `none` | No nested-spawn tool of any kind | The parent runs each role itself from its agent file. See [No spawn tool](#no-spawn-tool-run-roles-inline). |
 
 ### Host recipes
 
-- **Cloud Agent VM with `task_v2`** (the shape observed working on Cursor Cloud Agents): call `task_v2` with `subagent_type: "custom"`, `name: "supercook-<role>"` (for example `supercook-explorer`), a short `description`, and `prompt` set to the role and run tags, then the body of `agents/supercook-<role>.md`, then this launch's brief. Pass `model` only if `task_v2` lists a model field. Same-named tools with the same `custom` plus `name` fields follow this recipe too.
-- **Cursor chat or Project worker with `Task`, `CreateAgent`, or `Subagent`**: launch `generalPurpose` (or `explore` for recon) with the agent file body as the prompt. Field placement for `Task` through `CallDynamicTool` versus top-level `CreateAgent` is in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md).
+The tool names below are examples of what a session might list, not a required API. Map the same intent onto whichever tool you see.
+
+- **Name the worker.** If the spawn tool has a field for the subagent's type or name, set it to `supercook-<role>` when the host accepts that name; otherwise use the host's general-purpose type (or its read-only explore type for recon) and put `supercook-<role>` in the description. Either way the prompt carries the role and run tags, then the body of `agents/supercook-<role>.md`, then the brief.
+- **Pass `model`** from the ledger `models-resolved:` map when the tool has a model field; omit it only for `inherit`.
+- **Field placement for `Task` and `CreateAgent`.** When the session lists `CallDynamicTool` with a `cursor` `Task` tool, or a top-level `CreateAgent` / `Subagent`, the envelope rules and pre-flight validator are in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md). Any other spawn tool follows its own listed schema.
 
 **Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
 
