@@ -118,7 +118,9 @@ A long kickoff is not permission to skip the pipeline. That rule applies to **ev
 
 A coordinator brief, worker assignment, or user message may include file paths, YAML, pytest snippets, or a step list. Treat that material as **spec pointers**, not as a finished `plan.md`, not as recon, and not as assessor output. The parent still runs phase 0 and phase 1 before editing the product repo, opening PRs, or changing CI and workflows. Delivery helpers (`ship-pr`, one-pass "just implement") stay off limits until intake and assessor (or a user-selected track that legitimately skips assessor) complete.
 
-CI, GitHub Actions, and pytest harness work are **not trivial by default**. Classify them in assessor phase 1; the feature playbook then runs recon through verify unless tier collapse says otherwise.
+CI, GitHub Actions, and pytest harness work are **not trivial by default**. Classify them in assessor phase 1; the feature playbook then runs recon through verify unless tier collapse says otherwise. Trivial tier needs a one-line `why:` in the ledger naming the single hunk or file and why recon and plan add no value.
+
+**Slice budget:** one slice name in `plan.md` does not waive the 500-line reviewable cap. Over the cap, split the work or log a cohesion `exception:` in the ledger before delivery ([pipeline/planning.md](pipeline/planning.md), [pipeline/delivery.md](pipeline/delivery.md)).
 
 Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
 
