@@ -109,6 +109,14 @@ Either way, reload the window, then confirm you see one skill (`supercook`) and 
 
 If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
 
+On a host that mirrors only the skill folder rather than installing the whole plugin, also copy the agents into your user subagent directory so Cursor discovers them as named subagents (`/supercook-assessor`, `/supercook-explorer`, and so on):
+
+```bash
+mkdir -p ~/.cursor/agents && cp ~/Apps/supercook/agents/supercook-*.md ~/.cursor/agents/
+```
+
+Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook still launches each role as a worker named `supercook-<role>` through whatever spawn tool the session has, using the agent file as the prompt.
+
 One thing to know before the first run: without worktree support it works on your current branch, and in that case it needs a clean tree. It will say so rather than stashing anything.
 
 The marketplace above is one you add to your own account. It is not a listing in the official Cursor Marketplace, which is a separate submission step.
@@ -154,7 +162,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 | A test runner | Tests become an executable verification recipe the verifier runs |
 | Worktrees | Works on the current branch, after saying so, and requires a clean tree |
 | git | Works in place, delivers a summary and the diff |
-| The plugin's agents | Each role launches through the session's generic spawn tool (on Cursor Cloud Agents, `task_v2` with `subagent_type: custom` and `name: supercook-<role>`) with its agent file as the prompt; with no spawn tool, roles run inline from the agent file bodies |
+| The plugin's agents | Each role still launches as a worker named `supercook-<role>` through whatever spawn tool the session lists, with its agent file as the prompt; with no spawn tool, roles run inline from the agent file bodies |
 | A renderer for a changed UI route | Writes a fully specified manual smoke and asks once for confirmation. A PR can disclose missing visual evidence, but never calls the route visually verified |
 
 **One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger.

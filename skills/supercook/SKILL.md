@@ -124,7 +124,7 @@ Changes to GitHub Actions, other CI config, shared pytest plugins, or repo autom
 
 Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
 
-**Launch with the tool you have.** Without typed `supercook-*` agents, a Cloud Agent that lists `task_v2` launches every roster role through it (`subagent_type: custom`, `name: supercook-<role>`, prompt from `agents/supercook-<role>.md`). A parent with no spawn tool at all runs each role inline from its agent file. Never call a tool that is not in your catalog, and never implement alone when a spawn tool exists. See [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+**Launch the named subagent with the tool you have.** Every roster role is a launch of the subagent `supercook-<role>` (`/supercook-<role>` or "use the supercook-<role> subagent"). Without typed `supercook-*` agents in the catalog, launch a worker named `supercook-<role>` through whatever spawn tool this session lists, with `agents/supercook-<role>.md` as the prompt body. A parent with no spawn tool at all runs each role inline from its agent file. Never call a tool that is not in your catalog, and never implement alone when a spawn tool exists. See [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
 
 ## The pipeline
 

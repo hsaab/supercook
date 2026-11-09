@@ -2,7 +2,7 @@
 
 Read this before every `CallDynamicTool` with `toolName: Task` or a `CreateAgent` spawn.
 
-**Scope.** These shapes apply only to parents whose own tool list has `CallDynamicTool` (with a `cursor` `Task` tool) or `CreateAgent`, such as Grok Bot or a Project coordinator. A Cursor Cloud Agent VM usually has neither: when it lists `task_v2`, launch with `subagent_type: "custom"` and `name: "supercook-<role>"`; when it lists no spawn tool, run each role inline from its agent file. Both recipes are in [skills/supercook/agents.md](../../skills/supercook/agents.md#spawn-paths-when-typed-agents-are-missing). Do not build these envelopes for a tool you cannot see.
+**Scope.** These shapes apply only to parents whose own tool list has `CallDynamicTool` (with a `cursor` `Task` tool) or `CreateAgent`, such as Grok Bot or a Project coordinator. A session with a different spawn tool launches the named `supercook-<role>` worker through that tool's own listed schema; a session with no spawn tool runs each role inline from its agent file. Both paths are in [skills/supercook/agents.md](../../skills/supercook/agents.md#spawn-paths-when-typed-agents-are-missing). Do not build these envelopes for a tool you cannot see.
 
 ## Wire format
 
