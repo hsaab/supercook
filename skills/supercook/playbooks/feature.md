@@ -23,7 +23,7 @@ Every phase runs at standard and complex tier. Phase 3 depends on the big-change
 
 ## CI, workflows, and test harness work
 
-Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **feature** track at **standard** tier by default: recon, plan, implement, and verify still run. The kickoff may name workflow files; that naming is not a shortcut past assessor or planner. Only assessor **trivial** collapse may drop recon and plan.
+Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **feature** track at **standard** tier by default: recon, plan, implement, and verify still run. The kickoff may name workflow files; that naming is not a shortcut past assessor or planner. Only assessor **trivial** collapse may drop recon and plan. When that collapse drops recon and plan for this kind of work, log the same `trivial-collapse:` note in the ledger. The assessor's `why:` line does not satisfy it.
 
 ## Name the data shape first
 
