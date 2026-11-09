@@ -8,6 +8,7 @@ One PR per slice, opened as each slice closes. Not one batch at the end.
 - [UI delivery guard](#ui-delivery-guard)
 - [Branching and stacking](#branching-and-stacking)
 - [The stack lifecycle](#the-stack-lifecycle)
+- [Slice size fail-closed](#slice-size-fail-closed)
 - [Splitting as a backstop](#splitting-as-a-backstop)
 - [Handoff](#handoff)
 
@@ -175,6 +176,24 @@ fi
 gh pr checks <child-pr>                  # what state are they in now?
 gh run rerun <run-id> --failed           # a run id is required, this is not interactive
 ```
+
+## Slice size fail-closed
+
+Before `gt submit`, `gh pr create`, or any PR open for a slice, measure **reviewable** lines from the merge base with the commands in [implementation.md](implementation.md#line-accounting). Lockfiles, generated output, vendored trees, and snapshots stay excluded.
+
+**Over 500 reviewable lines, do not open the PR** unless that slice already has a cohesion `exception:` logged from the plan. The reason must be the one planning already requires: splitting would leave the default branch broken or unsafe between PRs.
+
+With that exception already logged, open the PR.
+
+Without that exception, split into more slices and open those as separate PRs. Do not mint the exception at PR-open time. An unexplained oversize PR is a defect.
+
+Naming the work "one TDD slice", "slice E0", or "one eval harness" is not cohesion by itself. The exception still needs the same unsafe-between-PRs test as planning ([planning.md](planning.md#the-cohesion-exception)).
+
+Every slice PR open in this section, whether under budget, opened with a logged cohesion exception, or opened from a backstop split, logs reviewable and raw counts on the deliver ledger row. Planning already requires both numbers on every slice ([planning.md](planning.md)).
+
+This gate applies to a planned slice that is already openable: under budget, or over budget with a logged cohesion exception. Use [Splitting as a backstop](#splitting-as-a-backstop) and [open-pr.md](../playbooks/open-pr.md) only when there is no planned slice with a logged cohesion exception, for example an oversized diff without a plan exception or the open-pr track. Those paths do not invent a plan exception.
+
+The parent-side guard runs here even when the plan named only one slice.
 
 ## Splitting as a backstop
 

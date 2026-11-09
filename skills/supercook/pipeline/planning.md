@@ -115,6 +115,10 @@ Cohesion outranks the number. A slice stays whole when splitting it would leave 
 
 Write `exception: <reason>` on that slice and log it. An unexplained oversized slice is a defect; an explained one is a judgment call the reviewer can see.
 
+**Not cohesion by naming alone:** a single plan slice titled "one TDD slice", "eval harness", or "E0" does not waive the budget. Those labels count as cohesion only when splitting would leave the default branch broken or unsafe between PRs (same bar as the bullets above). Convenience, one branch name, or one review thread is not enough.
+
+Phase 8 refuses an oversize PR without a logged exception; see [delivery.md](delivery.md#slice-size-fail-closed).
+
 ## Notify and continue
 
 When `plan.md` lands:
