@@ -86,7 +86,7 @@ The plugin ships a **preToolUse** hook (`hooks/enforce_roster.py`, matchers `Sub
 
 ## Keep the arena diverse
 
-The shipped arena already puts three different models on the three contestants. If you override any of them, keep them different.
+Shipped defaults put `grok-4.7-high` on `arena-a` and `arena-c`, and `composer-2.5` on `arena-b`. If you override the contestants, keep them different.
 
 The arena is a cook-off: three agents plan the same complex task in parallel, then `supercook-plan-judge` merges or picks. Three contestants on one model still give three independent attempts, but the value comes from genuinely different reasoning. Three families disagree in useful ways; three runs of one model mostly agree with themselves.
 
