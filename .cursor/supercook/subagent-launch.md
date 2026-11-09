@@ -2,6 +2,8 @@
 
 Read this before every `CallDynamicTool` with `toolName: Task` or a `CreateAgent` spawn.
 
+**Scope.** These shapes apply only to parents whose own tool list has `CallDynamicTool` (with a `cursor` `Task` tool) or `CreateAgent`, such as Grok Bot or a Project coordinator. A Cursor Cloud Agent VM usually has neither: when it lists `task_v2`, launch with `subagent_type: "custom"` and `name: "supercook-<role>"`; when it lists no spawn tool, run each role inline from its agent file. Both recipes are in [skills/supercook/agents.md](../../skills/supercook/agents.md#spawn-paths-when-typed-agents-are-missing). Do not build these envelopes for a tool you cannot see.
+
 ## Wire format
 
 | Field | Task (`CallDynamicTool`) | CreateAgent / coordinator `Subagent` |
@@ -29,6 +31,7 @@ Invalid arguments: `prompt — expected string, received undefined` when Task fi
 ## Local vs cloud
 
 - `environment: "local"` (default) runs the subagent on the same machine and checkout as the parent, whether the parent is in the IDE or is itself a cloud agent, so it can read the parent's files including `.supercook/`.
+- Prefer `local` for every supercook role, including when the parent is a Cloud Agent: the run folder lives only on the parent's checkout.
 - `environment: "cloud"` runs the subagent on its own VM. With `cloud_base_branch` set, it starts from that pushed branch; without `cloud_base_branch`, a cloud subagent starts from the parent's current branch on the remote, so push that branch before launch.
 - Set `cloud_base_branch` only with `environment: "cloud"`. Push that branch to the remote before launch; the validator does not check the remote.
 - A cloud subagent cannot read `.supercook/` (git-excluded on the parent). Put run context, slice scope, and the full prompt inline in `arguments.prompt`; do not tell it to open a `.supercook/` path.
@@ -120,4 +123,4 @@ printf '%s' '{"namespace":"cursor","toolName":"Task","arguments":{"description":
 
 ## On failure
 
-A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch; log the exact error, then run the role yourself. Never silently parent-implement instead of launching the subagent.
+A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch, or to a session with no spawn tool at all (`spawn: none`); log the exact error or `spawn none`, then run the role yourself from its agent file. Never silently parent-implement instead of launching the subagent.

@@ -8,9 +8,11 @@ alwaysApply: false
 
 Full wire format and commands: [.cursor/supercook/subagent-launch.md](../supercook/subagent-launch.md).
 
+These envelopes apply only when `CallDynamicTool` (Task) or `CreateAgent` is in your own tool list. A Cloud Agent with `task_v2` uses `subagent_type: custom` plus `name: supercook-<role>`; a session with no spawn tool runs roles inline. Both are in `skills/supercook/agents.md` (Spawn paths).
+
 Before each launch, run `python3 <repo>/scripts/validate_subagent_launch.py` via the `task` or `create-agent` subcommand (long prompts: `.supercook/prompts/<phase>-<role>.md` plus `task --prompt-file`).
 
 - **task**: `description`, `subagent_type`, and `prompt` only under `arguments`.
 - **create-agent**: `description`, `subagent_type`, and `prompt` at the top level, never under `arguments`.
 
-A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch; log the exact error, then run the role yourself. Never silently parent-implement instead of launching the subagent.
+A validator rejection means fix and re-run, never run the role inline. A roster hook model denial is fix-and-relaunch (correct slug or omit for inherit), not parent inline: fix the `model` slug and relaunch, or launch `generalPurpose` with the agent prompt per `skills/supercook/agents.md`. Never parent-implement for `implementer` or `review-implementer` instead of launching the subagent. Limit `degraded: parent inline` to non-roster platform or tool errors after retry on an already validated launch, or to a session with no spawn tool at all (`spawn: none`); log the exact error or `spawn none`, then run the role yourself from its agent file. Never silently parent-implement instead of launching the subagent.
