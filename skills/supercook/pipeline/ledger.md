@@ -25,7 +25,7 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 | Reason (or close variant) | Why invalid |
 |---|---|
 | `user checklist` / `coordinator spec` | A pasted task list is not assessor, recon, or `plan.md`. |
-| `agents not installed` | Fallback still launches phase workers; see [../agents.md](../agents.md). |
+| `agents not installed` | Each role still runs through a spawn tool or, with `spawn: none`, inline in the parent; see [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing). |
 | `plan in kickoff` | Spec pointers do not replace planner or arena output. |
 | `worker assignment` | Project and cloud briefs still run the pipeline. |
 

@@ -1,6 +1,6 @@
 # Kickoff messages and parent invariants
 
-Supercook runs on more than one host. The parent may be a Cursor chat agent, a Project worker, a Cloud Agent checkout, or another entry that loaded the skill. Spawn tools differ (`Task`, `CreateAgent`, host `Subagent`, or typed `supercook-*` agents). The rules below do not.
+Supercook runs on more than one host. The parent may be a Cursor chat agent, a Project worker, a Cloud Agent checkout, or another entry that loaded the skill. Spawn tools differ (typed `supercook-*` agents, `task_v2` on Cloud Agent VMs, `Task`, `CreateAgent`, host `Subagent`, or nothing at all). The rules below do not.
 
 ## Non-negotiables (every host)
 
@@ -9,8 +9,8 @@ These apply whether the user invoked `/supercook` in chat or a coordinator paste
 1. **Turn 1:** Read [../SKILL.md](../SKILL.md) in full before intake edits, assessor skip logic, or any repo change.
 2. **Intake then assessor:** Phase 0 and phase 1 complete (or a user-selected track that legitimately skips assessor per [../SKILL.md](../SKILL.md)) before implementation, workflow, or delivery edits.
 3. **Checklist is not a plan:** A pasted file list, YAML block, pytest recipe, or step-by-step implement list is a *spec pointer* at most. It does not replace recon, planner output in `plan.md`, test-first rows, verifier, or ledger phases.
-4. **Fallback is still delegation:** When `supercook-*` agents are missing, phases 1, 2, 4, 6, and 7 still run through an equivalent worker/subagent launch using `agents/supercook-<role>.md` as the prompt body (see [../agents.md](../agents.md)). The parent orchestrates and guards; it does not solo-implement on **standard** or **complex** tier unless assessor classified **trivial** and tier collapse applies.
-5. **Invalid ledger skip:** `skip: user checklist`, `skip: coordinator spec`, or `skip: agents not installed` without assessor-approved trivial collapse is never valid on standard/complex work.
+4. **Use the spawn tool you actually have:** When `supercook-*` agents are missing, each roster role runs through the first path that exists in this session ([../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing)): a generic spawn tool with `agents/supercook-<role>.md` as the prompt body, or, only when no spawn tool exists, the parent running that role inline from its agent file. A parent that has a spawn tool does not solo-implement on **standard** or **complex** tier unless assessor classified **trivial** and tier collapse applies. Never call a tool that is not in your catalog.
+5. **Invalid ledger skip:** `skip: user checklist`, `skip: coordinator spec`, or `skip: agents not installed` without assessor-approved trivial collapse is never valid on standard/complex work. Missing agents change who runs a role, never whether it runs.
 
 ## Good kickoff vs bad kickoff
 
@@ -50,9 +50,11 @@ Same invariants as above; only typical spawn paths differ.
 ### Cloud Agent on a user repo
 
 - **Who:** Cloud worker on the customer's repository with the skill available.
-- **Spawn:** `CreateAgent` or `Task` per host catalog.
+- **Typed agents:** Usually absent. Record `supercook-agents: no` unless the catalog lists them.
+- **Spawn, when `task_v2` is listed:** one `task_v2` call per roster role with `subagent_type: "custom"`, `name: "supercook-<role>"`, and `prompt` = role and run tags, then the body of `agents/supercook-<role>.md`, then the brief. This is the shape observed working on Cloud Agents; launch explorer, planner, test-designer, implementer, and verifier this way, not only the assessor. Prefer a same-machine option if the tool offers one; if the worker lands on its own VM, follow the separate-VM rule in [../agents.md](../agents.md#host-recipes).
+- **Spawn, when nothing is listed:** record `spawn: none` and run each role inline from its agent file ([../agents.md](../agents.md#no-spawn-tool-run-roles-inline)). Do not look for `CallDynamicTool`, `CreateAgent`, or `Task` unless they appear in your own tool list.
 - **Extras:** Resolve models from repo `.supercook/models.md` when present; read plugin [../SKILL.md](../SKILL.md) on turn 1 even when the coordinator message is long.
-- **Parent job:** Log `parent-host: cloud-agent` when probed; delegate phases; do not collapse to one-pass implement on standard/complex.
+- **Parent job:** Log `parent-host: cloud-agent` and `spawn:` when probed; run every phase through the recorded path; do not collapse to one-pass implement on standard/complex.
 
 ### Grok Bot, voice, and other entries
 
@@ -62,5 +64,5 @@ Same invariants as above; only typical spawn paths differ.
 
 ## Coordinators writing worker briefs
 
-Prefer linking **objective**, **done-when**, **spec path**, and **branch** over inlining the implementation. Workers remain responsible for ledger rows that show **launched** assessor, explorer, planner, and verifier (or valid skips with assessor/tier reasons), not silent skips.
+Prefer linking **objective**, **done-when**, **spec path**, and **branch** over inlining the implementation. Workers remain responsible for ledger rows that show assessor, explorer, planner, implementer, and verifier **launched** (or run `degraded: parent inline (spawn none)` when the worker has no spawn tool), or valid skips with assessor/tier reasons, not silent skips.
 

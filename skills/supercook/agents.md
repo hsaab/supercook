@@ -11,11 +11,11 @@ This file is the launch contract: what the parent passes in, when the job is don
 - [What every launch includes](#what-every-launch-includes)
 - [Per-role contracts](#per-role-contracts)
 - [Parent-side guards](#parent-side-guards)
-- [Fallback when the agents are not installed](#fallback-when-the-agents-are-not-installed)
+- [Spawn paths when typed agents are missing](#spawn-paths-when-typed-agents-are-missing)
 
 ## Launch mechanism
 
-When a Project or cloud coordinator delegates work, every `supercook-*` launch must go through **`CreateAgent`** (or the host's equivalent subagent spawn, such as the **`Task`** tool) with an explicit **`model`** argument. Take the slug from the intake **`models-resolved:`** ledger line (or the same map you just validated at intake) for that agent's roster key in [models.md](models.md). **Omit `model` only when that role resolved to `inherit`.** The `model: inherit` frontmatter in an agent file does not select a model; the parent must pass it on the launch call or the session default runs and the roster hook may deny the launch.
+Pick the spawn path from the tools this session actually lists, per [Spawn paths](#spawn-paths-when-typed-agents-are-missing). Whatever the tool, pass an explicit **`model`** argument when the tool accepts one. Take the slug from the intake **`models-resolved:`** ledger line (or the same map you just validated at intake) for that agent's roster key in [models.md](models.md). **Omit `model` only when that role resolved to `inherit`.** The `model: inherit` frontmatter in an agent file does not select a model; the parent must pass it on the launch call or the session default runs and the roster hook may deny the launch.
 
 **Arena (complex tier):** launch three `supercook-arena-runner` subagents in parallel in one message. Pass `arena-a`, `arena-b`, and `arena-c` models respectively (omit `model` only for a role that resolved to `inherit`).
 
@@ -46,7 +46,7 @@ Pass these on every launch, without exception:
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
   owns rendered smoke.
-- **The model**, taken from the ledger `models-resolved:` map (see [models.md](models.md) and [pipeline/intake.md](pipeline/intake.md)), passed on every `CreateAgent` / `Task` launch, or omitted only when that role is `inherit`. Resolve once at intake, then reuse the ledger line on resume; do not re-guess per launch.
+- **The model**, taken from the ledger `models-resolved:` map (see [models.md](models.md) and [pipeline/intake.md](pipeline/intake.md)), passed on every launch whose spawn tool accepts a model field, or omitted only when that role is `inherit`. Resolve once at intake, then reuse the ledger line on resume; do not re-guess per launch.
 - **The plain-language rule**: its returns must name files and real consequences, and must not contain em dashes.
 
 Do not paste the whole conversation, prior agent output, or file contents that the agent can read itself. A clean context window is the reason to delegate at all.
@@ -172,29 +172,49 @@ UI controls live in two places rather than being copied here:
 - [pipeline/implementation.md](pipeline/implementation.md#ui-contract-guard)
   defines the executable anchor and order-test guard.
 
-## Fallback when the agents are not installed
+## Spawn paths when typed agents are missing
 
-The skill still works when typed `supercook-*` subagents are missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. **Fallback means delegated launches, not a parent implementing alone.** On **standard** or **complex** tier, phases 1, 2, 4, 6, and 7 each require a **launched** worker row in the ledger (assessor output may be inline only where the contract below says so). The parent orchestrates, guards, and commits; it does not replace implementer, explorer, planner, or verifier with its own edits.
+Typed `supercook-*` subagents are often missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not make them typed agents: only the catalog does. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path whose tool is **actually listed in this session**. Never call a tool, namespace, or envelope you cannot see: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
 
-When the host offers any subagent spawn (`CreateAgent`, `Task`, `Subagent`, or equivalent), roster tags and model resolution from intake still apply when the host enforces them.
-
-### Phase map (same contract, any spawn tool)
-
-| Phase | Agent file | Typical spawn when typed agent missing |
+| `spawn:` | When | How each roster role runs |
 |---|---|---|
-| 1 assess | `agents/supercook-assessor.md` | `CreateAgent` / `Task` / `Subagent` with `generalPurpose`, or parent inline classify per assessor contract only |
-| 2 recon | `agents/supercook-explorer.md` | `explore` or `generalPurpose` with explorer body |
-| 4 plan | `agents/supercook-planner.md` (or arena/judge/optimizer roles) | `generalPurpose` with matching agent body |
-| 5 test-first | `agents/supercook-test-designer.md` | `generalPurpose` with test-designer body |
-| 6 implement | `agents/supercook-implementer.md` | `generalPurpose` with implementer body; **never parent solo** on standard/complex |
-| 7 verify | `agents/supercook-verifier.md` | `generalPurpose` with verifier body; fresh context, **never parent solo** on standard/complex |
+| `typed` | `supercook-*` agents are in the catalog (local IDE with the plugin) | Launch the typed agent, per the contracts above. |
+| `<tool name>` | No typed agents, but a generic nested-spawn tool is listed | Launch a worker through that tool with the agent file body as the prompt. See [the host recipes](#host-recipes). |
+| `none` | No nested-spawn tool of any kind | The parent runs each role itself from its agent file. See [No spawn tool](#no-spawn-tool-run-roles-inline). |
+
+### Host recipes
+
+- **Cloud Agent VM with `task_v2`** (the shape observed working on Cursor Cloud Agents): call `task_v2` with `subagent_type: "custom"`, `name: "supercook-<role>"` (for example `supercook-explorer`), a short `description`, and `prompt` set to the role and run tags, then the body of `agents/supercook-<role>.md`, then this launch's brief. Pass `model` only if `task_v2` lists a model field. Same-named tools with the same `custom` plus `name` fields follow this recipe too.
+- **Cursor chat or Project worker with `Task`, `CreateAgent`, or `Subagent`**: launch `generalPurpose` (or `explore` for recon) with the agent file body as the prompt. Field placement for `Task` through `CallDynamicTool` versus top-level `CreateAgent` is in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md).
+
+**Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
+
+### Phase map (same contract, any path)
+
+| Phase | Agent file | Note |
+|---|---|---|
+| 1 assess | `agents/supercook-assessor.md` | Launched when a spawn tool exists; inline only with `spawn: none`. |
+| 2 recon | `agents/supercook-explorer.md` | One launch per area, in parallel when the tool allows it. |
+| 4 plan | `agents/supercook-planner.md` (or arena, judge, optimizer) | Arena runners go out in one batch. |
+| 5 test-first | `agents/supercook-test-designer.md` | Tests committed before phase 6. |
+| 6 implement | `agents/supercook-implementer.md` | With a spawn tool, **never** the parent on standard or complex tier. |
+| 7 verify | `agents/supercook-verifier.md` | With a spawn tool, a fresh worker, **never** the parent on standard or complex tier. |
 
 For each launch:
 
-1. Read `agents/supercook-<role>.md` and use its body as the prompt (prepend `supercook-role:` and `supercook-run:` when the host supports tags).
+1. Read `agents/supercook-<role>.md` and use its body as the prompt, after the line-anchored `supercook-role:` and `supercook-run:` tags.
 2. Pass `model` from the ledger `models-resolved:` map when the tool accepts it; omit only for `inherit`.
 3. Keep the same inputs, done-when, returns shape, and parent-side guards from this file.
-4. Log one ledger row with spawn tool name and model slug (or `inherit`).
+4. Log one ledger row with the spawn tool name, the worker name, and the model slug (or `inherit`).
+
+### No spawn tool: run roles inline
+
+When `spawn: none`, every roster role runs in the parent from its agent file body. This is the original Supercook fallback, and it is the honest one: do not invent launch ceremony or rows for launches that never happened.
+
+1. At the start of each roster phase, read `agents/supercook-<role>.md` and do that role's job under its contract: the same inputs, effort budget, boundaries, done-when, and returns shape.
+2. Write the role's return into the ledger as if a worker had returned it, on a row marked `degraded: parent inline (spawn none)`. Tags and model fields do not apply.
+3. Run the parent-side guard for that role exactly as after a launch. The pipeline still runs in full on standard and complex tier: recon pointers, `plan.md`, red tests committed before source, implementation inside the scope list, and a verifier pass.
+4. Run the verifier role with a fresh read: re-open `plan.md`, the ledger, and `git diff` from disk instead of relying on what you remember writing, then run the test command and quote its output.
 
 ### Forbidden skips
 
@@ -205,6 +225,4 @@ On standard or complex tier, these ledger reasons are **invalid** unless assesso
 - `skip: coordinator spec`
 - `skip: plan included in kickoff`
 
-A Project or cloud assignment that pastes the implementation is still intake + assessor first. Checklist text does not waive explorer, planner, implementer delegation, or verifier.
-
-The assessor is small enough that the parent may classify inline **only** for phase 1 when no spawn tool is available; that inline pass still produces the four-line verdict and a ledger assess row, and it is not permission to skip phases 2, 4, 6, or 7 on standard/complex.
+Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.
