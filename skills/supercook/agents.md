@@ -128,7 +128,7 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 ### supercook-implementer
 
-- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI the entry, source locator, resolved brief, retained visual evidence, and owned obligations.
+- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI the entry, source locator, resolved brief, retained visual evidence, and owned obligations. A trivial run has no plan and no red test: the inputs are the task text, the file scope, and the recorded test command, and done-when is the change made with that command passing.
 - **Effort budget**: as long as it takes to green the named tests, and not one file further.
 - **Boundaries**: never edit, add, or delete a test file or verification recipe. Never touch a path outside the scope list. Something outside scope that looks wrong gets reported, not fixed.
 - **Done when**: the recorded verification passes and no file outside the scope list is modified. Contract-level UI also requires the evidence to be consumed before a view edit and all owned obligations to match it.
@@ -137,7 +137,7 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 ### supercook-verifier
 
-- **Inputs**: `plan.md`, the ledger, the diff, and the test command or recorded executable recipe plus its expected checksum. Open-pr supplies its initial diff inventory and can supply its retrospective ledger contract instead of `plan.md`. Fresh context only, no implementation history.
+- **Inputs**: `plan.md`, the ledger, the diff, and the test command or recorded executable recipe plus its expected checksum. Open-pr supplies its initial diff inventory and can supply its retrospective ledger contract instead of `plan.md`. A trivial run has no `plan.md`: the task text and the ledger's `done:` predicate are the contract instead. Fresh context only, no implementation history.
 - **Effort budget**: enough to run the recorded verification and check every contract row.
 - **Done when**: every plan row, or every retrospective ledger row on open-pr, is marked landed or missing with evidence, the tests or recipe have run in this session, and any UI contract obligations are checked in source and verification.
 - **Returns**: a verdict line, one line per contract row, out-of-scope findings, `ui-contract: ok | mismatch | not applicable`, recipe checksum status when relevant, then the quoted verification output. It never returns `visual: ok`; the parent renders.

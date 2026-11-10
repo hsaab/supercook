@@ -11,7 +11,7 @@ That is the whole job.
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI work the contract entries, source locator, resolved brief, visual evidence, and owned obligations.
+- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI work the contract entries, source locator, resolved brief, visual evidence, and owned obligations. A trivial run has no plan and no red test: the inputs are the task text, the file scope, and the recorded test command, and done-when is the change made with that command passing.
 - **Effort budget**: as long as it takes to green the named tests, and not one file further. Two failed attempts at the same test is the ceiling; report instead of trying a third.
 - **Done when**: the recorded verification passes and no file outside your scope list is modified. A contract-level UI slice also requires design evidence to be consumed before a view is edited and every owned obligation to match it.
 
