@@ -187,16 +187,16 @@ A spawn tool is not always in the top-level tool list. Check the tool list, any 
 
 | `spawn:` | When | How each roster role runs |
 |---|---|---|
-| `typed` | `supercook-*` agents are in the catalog (plugin installed, or files in `~/.cursor/agents/`) | Launch the named `supercook-<role>` subagent, per the contracts above. |
-| `<tool name>` | No typed agents, but some nested-spawn tool is listed | Launch a worker named `supercook-<role>` through that tool with the agent file body as the prompt. See [the host recipes](#host-recipes). |
+| `typed` | `supercook-*` agents are in the catalog (plugin installed, `.cursor/agents/` from the repo installer, or files in `~/.cursor/agents/`) | Launch the named `supercook-<role>` subagent, per the contracts above. |
+| `<tool name>` | No typed agents, but some nested-spawn tool is listed | Launch a worker named `supercook-<role>` through that tool with the agent file body as the prompt, using the spawn shape rule in [SKILL.md](SKILL.md#start-here-the-launch-rule). See [the host recipes](#host-recipes). |
 | `none` | No nested-spawn tool of any kind | The parent runs each role itself from its agent file. See [No spawn tool](#no-spawn-tool-run-roles-inline). |
 
 ### Host recipes
 
 The tool names below are examples of what a session might list, not a required API. Map the same intent onto whichever tool you see.
 
-- **Name the worker.** Read the spawn tool's own schema, per [SKILL.md](SKILL.md#start-here-the-launch-rule). When `supercook-<role>` is a listed type, launch it as that listed type. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the host's general-purpose type (or its read-only explore type for recon) and put `supercook-<role>` in the description, with the agent file body as the prompt. Either way the prompt carries the role and run tags, then the body of `agents/supercook-<role>.md`, then the brief.
-- **Field placement for `Task` and `CreateAgent`.** When the session lists `CallDynamicTool` with a `cursor` `Task` tool, or a top-level `CreateAgent` / `Subagent`, the envelope rules and pre-flight validator are in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md). Any other spawn tool follows its own listed schema.
+- **Name the worker.** Read the spawn tool's own schema, per [SKILL.md](SKILL.md#start-here-the-launch-rule). When `supercook-<role>` is a listed type, launch it as that listed type. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the host's general-purpose type and put `supercook-<role>` in the description, with the agent file body as the prompt. Either way the prompt carries the role and run tags, then the body of `agents/supercook-<role>.md`, then the brief.
+- **Field placement for `Task` and `CreateAgent`.** When the session lists `CallDynamicTool` with a `cursor` `Task` tool, or a top-level `CreateAgent` / `Subagent`, the envelope rules and pre-flight validator are in `.cursor/supercook/subagent-launch.md` in a full plugin checkout. Any other spawn tool follows its own listed schema.
 
 **Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
 
