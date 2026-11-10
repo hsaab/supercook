@@ -98,24 +98,35 @@ Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`,
 cursor-agent plugin marketplace update supercook-marketplace
 ```
 
-If you would rather have a checkout you can edit, install it locally instead:
+If you would rather have a checkout you can edit, clone it straight into the local plugins folder, and update it with `git pull`:
 
 ```bash
-git clone https://github.com/hsaab/supercook.git ~/Apps/supercook
-ln -s ~/Apps/supercook ~/.cursor/plugins/local/supercook
+git clone https://github.com/hsaab/supercook.git ~/.cursor/plugins/local/supercook
 ```
 
-Either way, reload the window, then confirm you see one skill (`supercook`) and nine agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`).
+Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugins-locally) decide whether that checkout is the one that loads. Cursor skips a link in `~/.cursor/plugins/local` that points at a checkout elsewhere on disk, so clone into the folder rather than linking to it. And a marketplace install with the same name takes precedence over the local copy, so keep one install or the other: an old marketplace install hides a newer local checkout.
 
-If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
+Either way, reload the window, then confirm you see one skill (`supercook`) and nine agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`).
 
 On a host that mirrors only the skill folder rather than installing the whole plugin, also copy the agents into your user subagent directory so Cursor discovers them as named subagents (`/supercook-assessor`, `/supercook-explorer`, and so on):
 
 ```bash
-mkdir -p ~/.cursor/agents && cp ~/Apps/supercook/agents/supercook-*.md ~/.cursor/agents/
+mkdir -p ~/.cursor/agents && cp ~/.cursor/plugins/local/supercook/agents/supercook-*.md ~/.cursor/agents/
 ```
 
 Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook still launches each role as a worker named `supercook-<role>` through whatever spawn tool the session has, using the agent file as the prompt.
+
+### On Cloud Agents
+
+A cloud VM has no access to your local home directory, so what a run gets depends on how Supercook reached the VM. Three things decide whether a run sees typed `supercook-*` agents:
+
+- **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
+- **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
+- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the copy in the environment's install step.
+
+To see what a run actually got, read the subagent types it lists. Nine `supercook-*` names means the current agents are typed. Eight, with no `supercook-plan-optimizer`, means the VM loaded an install from before that agent existed, so refresh the marketplace. None means every role goes through the session's spawn tool with its agent file as the prompt. All three run the same pipeline: the coordinator launches a worker per roster phase, and it runs roles inline only when the session has no spawn tool at all.
+
+A skill folder mirrored on its own (for example into `~/.cursor/skills/supercook`) carries no agent files, because they live at the plugin root in `agents/`. Mirror them in the same install step with the `cp` command above.
 
 One thing to know before the first run: without worktree support it works on your current branch, and in that case it needs a clean tree. It will say so rather than stashing anything.
 
