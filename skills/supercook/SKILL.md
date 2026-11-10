@@ -34,7 +34,7 @@ Before settling on path 3, look in every place this session lists tools: the too
 
 None of these is a reason to do a roster phase yourself while path 1 or 2 exists: the task looks small, you can already see the fix, doing it yourself would be faster or more efficient, the kickoff already lists the steps, the typed agents are not installed, you already launched the assessor, or the spawn tool takes an extra lookup to reach. The rule is what makes the other controls real: a verifier that wrote the code is not an independent check, the test-integrity guard needs an implementer whose diff you inspect, and your context is the run's memory.
 
-**Check yourself twice.** Before you write source or test code, name the worker that owns that edit and launch it. Before you check off a roster row, confirm it has a launch record or a `degraded: parent inline (spawn none)` record, per [pipeline/ledger.md](pipeline/ledger.md#rules). Launch contracts and per-host detail are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+**Check yourself twice.** Before you write source or test code, name the worker that owns that edit and launch it. Before you check off a roster row, confirm it has a launch record or a `degraded: parent inline (spawn none)` record, per rule 6 in [pipeline/ledger.md](pipeline/ledger.md#rules), which also covers a launch the platform itself fails. Launch contracts and per-host detail are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
 
 ## Principle 1: plain language tied to code and impact
 
