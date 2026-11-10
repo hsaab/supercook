@@ -2,10 +2,10 @@
 
 Event JSON on stdin, or argv doctor to print SUPERCOOK_HOOK_LOG. postToolUse prints
 {"additional_context": ...} or {}. beforeSubmitPrompt prints {}. Exit 0. One doctor
-line, top-level fields only: {event} tool={name|-} then subagent_type name
-conversation_id parent_conversation_id parent_agent_id parent_tool_call_id
-transcript_path, each =yes or =no. yes is a non-empty string. Null and empty are
-no. Values are omitted.
+line: {event} tool={name|-} then subagent_type name conversation_id
+parent_conversation_id parent_agent_id parent_tool_call_id transcript_path, each
+=yes or =no. yes is a non-empty string. On a Task line, subagent_type and name
+also count inside tool_input. Null and empty are no. Values are omitted.
 """
 
 import json
@@ -158,4 +158,34 @@ class CloudRosterEventTests(unittest.TestCase):
             edit_line = log_line("preToolUse", "Edit", {"conversation_id", "transcript_path"})
             self.assert_recorded(
                 root, [parent_line, worker_line, empty_line, edit_line], BANNED,
+            )
+
+    def test_doctor_reads_launch_fields_from_tool_input(self):
+        with tree() as root:
+            launched = pre_tool(root, tool="Task", path="unused", key="path", shape="parent")
+            launched["tool_input"] = {
+                "description": "Map the hooks", "prompt": "Map the hooks folder.",
+                "subagent_type": "supercook-explorer", "name": "supercook-explorer",
+            }
+            self.assertNotIn("subagent_type", launched)
+            self.assertNotIn("name", launched)
+            started = {
+                "hook_event_name": "subagentStart", "subagent_type": "supercook-explorer",
+                "workspace_roots": [str(root)],
+            }
+            self.assertNotIn("tool_input", started)
+            bare = pre_tool(root, tool="Task", path="unused", key="path", shape="parent")
+            bare["tool_input"] = {
+                "description": "Map the hooks", "prompt": "Map the hooks folder.",
+            }
+            for event in (launched, started, bare):
+                self.hook(root, event)
+            parent_ids = {"conversation_id", "transcript_path"}
+            launch_line = log_line(
+                "preToolUse", "Task", parent_ids | {"subagent_type", "name"},
+            )
+            start_line = log_line("subagentStart", None, {"subagent_type"})
+            bare_line = log_line("preToolUse", "Task", parent_ids)
+            self.assert_recorded(
+                root, [launch_line, start_line, bare_line], (*BANNED, "supercook-explorer"),
             )
