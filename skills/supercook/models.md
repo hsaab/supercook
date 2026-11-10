@@ -12,7 +12,7 @@ Three files can define the roster. The parent and the roster hook read all three
 | 2 | `~/.supercook/models.md` | Your choices outside any repo. Wins for any role the repository file does not name. |
 | 3 | this file (`skills/supercook/models.md`) | Shipped default. A model for every role when neither override names it. |
 
-**Edit the home file or the repository file, not this one**, unless you cloned the repo and symlinked it into `~/.cursor/plugins/local/`. A marketplace install lives in a commit-pinned cache directory that the next plugin update replaces with a fresh one, so an edit made there is stranded the moment a new version lands. The home and repository paths are outside all of that.
+**Edit the home file or the repository file, not this one**, unless you cloned the repo into `~/.cursor/plugins/local/`. A marketplace install lives in a commit-pinned cache directory that the next plugin update replaces with a fresh one, so an edit made there is stranded the moment a new version lands. The home and repository paths are outside all of that.
 
 The home file does not exist until you create it:
 

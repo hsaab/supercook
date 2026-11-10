@@ -61,12 +61,12 @@
   <text x="895" y="582" font-size="13" fill="#5f3d00" text-anchor="middle">or complex?</text>
 
   <!-- trivial band nodes -->
-  <rect x="1070" y="135" width="230" height="90" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
-  <text x="1185" y="172" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">Parent edits directly</text>
-  <text x="1185" y="192" font-size="12.5" fill="#44443e" text-anchor="middle">no recon, no planning</text>
-  <rect x="1340" y="135" width="210" height="90" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
-  <text x="1445" y="172" font-size="14" font-weight="600" fill="#26251e" text-anchor="middle">Light verify,</text>
-  <text x="1445" y="192" font-size="12.5" fill="#44443e" text-anchor="middle">then commit</text>
+  <rect x="1070" y="135" width="230" height="90" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1185" y="172" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-implementer</text>
+  <text x="1185" y="192" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">one small diff, no recon or plan</text>
+  <rect x="1340" y="135" width="210" height="90" rx="10" fill="#635DFF" stroke="#4b46c6"/>
+  <text x="1445" y="172" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-verifier</text>
+  <text x="1445" y="192" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">light verify, then commit</text>
   <rect x="1590" y="150" width="200" height="60" rx="30" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
   <text x="1690" y="186" font-size="13" fill="#26251e" text-anchor="middle">Done. PR only if asked</text>
 
