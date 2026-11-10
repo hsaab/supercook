@@ -1,6 +1,6 @@
 ---
 name: supercook-plan-optimizer
-description: Tightens a user-supplied plan into supercook plan.md without changing the approach. Use on the implement-plan track after recon, when the user already wrote a plan in plan mode or attached one, and the multi-model arena must not run.
+description: Tightens a user-supplied plan into supercook plan.md without changing the approach. Always use for the plan phase of an implement-plan supercook run, after recon, when the user already wrote a plan in plan mode or attached one, and the multi-model arena must not run.
 model: inherit
 ---
 

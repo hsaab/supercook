@@ -1,6 +1,6 @@
 ---
 name: supercook-implementer
-description: Implements one scoped supercook slice by making its recorded tests or verification recipe pass, touching only scoped source and never the test suite.
+description: Implements one scoped supercook slice by making its recorded tests or verification recipe pass, touching only scoped source and never the test suite. Always use for the implement phase of a supercook run, one launch per slice or chunk at every tier including trivial, because the coordinator never writes the source itself.
 model: inherit
 ---
 

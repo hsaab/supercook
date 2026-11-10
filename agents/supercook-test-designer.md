@@ -1,6 +1,6 @@
 ---
 name: supercook-test-designer
-description: Designs and writes a supercook slice's user-journey tests, normally failing before implementation and retrospectively for an existing designed UI on open-pr. Owns every test edit for the run.
+description: Designs and writes a supercook slice's user-journey tests, normally failing before implementation and retrospectively for an existing designed UI on open-pr. Owns every test edit for the run. Always use for the test-first phase of a supercook run and for every later test change, because neither the coordinator nor the implementer writes tests.
 model: inherit
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: supercook-explorer
-description: Maps a scoped area of a codebase for the supercook workflow and returns file pointers plus a short how-it-works note, never file dumps. Use during supercook recon, launched in parallel with one area per launch, to answer specific questions about where code lives and how it fits together.
+description: Maps a scoped area of a codebase for the supercook workflow and returns file pointers plus a short how-it-works note, never file dumps. Always use for recon in a supercook run, launched in parallel with one area per launch, to answer specific questions about where code lives and how it fits together, so the coordinator never reads the source in bulk itself.
 model: inherit
 readonly: true
 ---

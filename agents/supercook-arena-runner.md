@@ -1,6 +1,6 @@
 ---
 name: supercook-arena-runner
-description: Produces one independent candidate plan for a complex supercook task, to be compared against rival candidates by supercook-plan-judge. Use on complex-tier work, launched three times in parallel with a different model each time, so genuinely different approaches compete before any code is written.
+description: Produces one independent candidate plan for a complex supercook task, to be compared against rival candidates by supercook-plan-judge. Always use for the plan phase of a complex-tier supercook run, launched three times in parallel with a different model each time, so genuinely different approaches compete before any code is written.
 model: inherit
 ---
 
