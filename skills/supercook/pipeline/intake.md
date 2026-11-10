@@ -1,14 +1,12 @@
 # Phase 0: intake
 
-Five steps, in this order. The order is not cosmetic: doing them out of sequence is how a ledger ends up in a directory the run abandons.
+Five steps, in this order. The order is not cosmetic: doing them out of sequence is how a ledger ends up in a directory the run abandons, and stopping after step 4 is how a parent ends up doing the roster's work itself.
 
 1. [Probe capabilities](#1-probe-capabilities)
 2. [Decide the working tree](#2-decide-the-working-tree)
 3. [Fix run identity](#3-fix-run-identity)
 4. [Seed the ledger](#4-seed-the-ledger)
-5. [Hand off to the first worker](#5-hand-off-to-the-first-worker)
-
-Intake is the coordinator's own phase. It ends with a launch, not with an edit to the product repo.
+5. [Launch the first worker](#5-launch-the-first-worker)
 
 ## 1. Probe capabilities
 
@@ -24,13 +22,13 @@ test -f "$(git rev-parse --git-path .graphite_repo_config 2>/dev/null)"  # gt in
 gt auth 2>&1 | head -1                                    # Graphite authed? "No auth token set" means no
 ```
 
-Also determine, without a separate agent launch:
+Intake itself needs no worker. Determine these yourself:
 
 - **The test command.** Look at the `scripts` block, the CI config, or a test runner config file. Do not guess from the language.
 - **UI evidence in the task.** Record whether the request changes a rendered surface and whether it supplies a Figma URL, screenshot, attachment, or layout spec. Read [ui.md](ui.md) immediately when either fact is true.
 - **The render check.** Note an available browser or computer-use tool, or an existing browser or end-to-end command in the repo. Record `none` when the route cannot be rendered yet. Recon refines the start command, route, state, and viewports. A trivial UI run that skips recon must do a minimal route, start-command, and representative-state lookup before verify.
-- **Whether the supercook agents are installed.** Look for `supercook-*` in the host subagent catalog. Agent files on disk (`agents/supercook-*.md`) supply prompt bodies but do not make typed agents launchable; only the catalog counts. Record `supercook-agents: installed|no` on the capability line.
-- **Which spawn path this session has.** Read your own tool list, not a doc's, and read all of it: a spawn tool can sit behind a dynamic tool catalog (for example a `cursor` namespace reached through `CallDynamicTool`), so list those namespaces before deciding. Record `spawn: typed` when typed agents are installed, the name of whichever nested-spawn tool this session lists (for example `Task`, `CreateAgent`, `Subagent`, or another host's equivalent), or `spawn: none` when no nested-spawn tool exists. Any value other than `none` makes every roster phase a launch for the rest of the run, per the launch rule in [../SKILL.md](../SKILL.md#the-launch-rule-you-coordinate-named-workers-run-the-phases). `none` is a finding about this session, not a choice: never record it to save launches, and never record a tool you cannot see. The path for each value is in [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing).
+- **Whether the supercook agents are installed.** Look for `supercook-*` in the host subagent catalog, meaning the subagent types this session lists for its launch tool. Agent files on disk (`agents/supercook-*.md`) supply prompt bodies but do not make typed agents launchable; only the catalog counts, and it is fixed when the session starts. Check all nine names: an older installed copy lists eight, with no `supercook-plan-optimizer`, and a missing role uses the spawn-tool path for that role only. Record `supercook-agents: installed|no` on the capability line, naming any missing role (`installed, missing plan-optimizer`).
+- **Which spawn path this session has.** Read your own tool list, not a doc's, and read all of it. A session lists tools in up to three places: the top-level tool list, a deferred or dynamic tool catalog whose namespaces you open before calling (a Cloud Agent can list `Task` there and nowhere else), and the subagent types. Record `spawn: typed` when typed agents are installed, the name of whichever nested-spawn tool this session lists and where you found it (for example `spawn Task (dynamic tool catalog)`, or `CreateAgent`, `Subagent`, or another host's equivalent), or `spawn none (checked tool list, dynamic tool catalog, subagent types)` when all three came up empty. `none` is a finding about this session, not a choice: a bare `spawn: none` with nothing checked is a guess, and it turns every later phase into the parent working alone. Never record a tool you cannot see. The path for each value is in [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing).
 - **Whether roster hooks run.** When the Supercook plugin is active, `hooks/enforce_roster.py` may deny mismatched launches. Record `enforce_roster: yes|no`. `no` does not relax launch contracts in [../agents.md](../agents.md).
 - **Which host shape this parent has.** Record `parent-host: cursor-chat|project-worker|cloud-agent|unknown` on the capability line when you can tell; otherwise `unknown` after a good-faith read of the session (Project worker brief, cloud task banner, editor chat, etc.). Use `parent-host` so the line stays distinct from `host github` (the forge).
 - **Turn 1 on cloud and Project workers.** Read [../SKILL.md](../SKILL.md) in full before phase 0 file writes, before treating the assignment as the plan, and before any product edit. The assignment may restate objectives; it does not replace SKILL.md.
@@ -98,6 +96,8 @@ Resume depends entirely on this, so write it down before anything else happens.
 
 Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
 
+Name the worker on every roster row as you seed it, for example `- [ ] implement: supercook-implementer, one launch per slice`. A resumed or compacted session re-reads the ledger, not this skill, so the row is where the next turn learns that the phase is a launch and not its own to-do.
+
 **The merge track does not get the investigation exception.** It changes the repo and it can span sessions while checks run, so it needs the record more than most runs, not less. Seed the ledger, with the target PR number in the header.
 
 **Review track, cold start.** Route **review**, never **merge**, when the primary ask is `review` or `review and merge` (see [../SKILL.md](../SKILL.md#user-selected-track-routing)). Before any reviewer launch:
@@ -126,22 +126,18 @@ Skip the write entirely when the probe says this is not a git repo.
 
 Finally, mirror the phase rows into the todo list so progress is visible live.
 
-## 5. Hand off to the first worker
+## 5. Launch the first worker
 
-Intake is done when the ledger is seeded and the capability line carries `spawn:`. On the investigation track the todo list holds both. The next action is the first roster phase of the routed track, run by its worker:
+Intake ends on a launch, not on an edit. With the ledger seeded (or the todo list, on the investigation track), the next action is one of these:
 
-| Track | First roster phase after intake |
-|---|---|
-| Everything routed by assessment | Phase 1: launch `supercook-assessor` |
-| `implement-plan` | Phase 2: launch `supercook-explorer` against the areas `user-plan.md` names |
-| `review` | The reviewer fan-out in [../playbooks/review.md](../playbooks/review.md), then `supercook-implementer` for the findings |
-| `merge` | No roster phase up front. The merge loop in [merge.md](merge.md) is the coordinator's own work |
+- **Assessor-routed run:** launch `supercook-assessor` through the `spawn:` path on the capability line, passing the raw task text, the repo name, and the capability line. The launch contract is in [../agents.md](../agents.md#supercook-assessor).
+- **`implement-plan`:** launch `supercook-explorer` against the areas `user-plan.md` names.
+- **`review`:** start the reviewer fan-out in [../playbooks/review.md](../playbooks/review.md).
+- **`merge`:** no roster phase up front. The merge loop in [merge.md](merge.md) is the coordinator's own work.
 
-With `spawn: typed` or a named spawn tool, that is a launch, and so is every roster phase after it: explorer, planner or arena, test-designer, implementer, and verifier each get their own. Launching the assessor and then doing the rest yourself is the most common way this goes wrong. Read [../agents.md](../agents.md) now for the launch contract.
+With `spawn none`, run that same role inline from its agent file, logged as `degraded: parent inline (spawn none)`.
 
-With `spawn: none`, do the same phase yourself from its agent file and log it `degraded: parent inline (spawn none)`.
-
-Either way, do not edit the product repo between seeding the ledger and this handoff.
+Until that first worker has returned, do not open the task's source to start on the work and do not settle on a tier. A task that already looks small enough for one pass is exactly the call the assessor exists to make, and every roster phase after it is its own launch too, per [../SKILL.md](../SKILL.md#start-here-the-launch-rule).
 
 ## Degraded paths
 

@@ -17,6 +17,7 @@ The ledger is the run's memory and its audit trail. It is the thing that makes a
 3. **Mutable, never lossy.** Rows get appended and checked. They never get deleted or quietly edited away.
 4. **No silent skips.** Work that is not done gets `skip: <reason>`. An unexplained missing row is a defect.
 5. **Plain language, no em dashes.** Every row names files and real consequences, the same as any other output.
+6. **A roster row closes on a launch record.** The assess, recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model (`supercook-implementer via Task, composer-2.5`), or says `degraded: parent inline (spawn none)`. That holds at every tier, trivial included. The one other degraded record is a platform error after a retried, validated launch, with the error quoted, per [subagent-launch.md](../../../.cursor/supercook/subagent-launch.md#on-failure). A roster row checked with none of these is a silent skip, even when the work itself is good.
 
 ### Invalid skip reasons
 
@@ -28,10 +29,11 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 | `agents not installed` | Each role still runs through a spawn tool or, with `spawn: none`, inline in the parent; see [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing). |
 | `plan in kickoff` | Spec pointers do not replace planner or arena output. |
 | `worker assignment` | Project and cloud briefs still run the pipeline. |
+| `faster inline` / `small task` / `assessor already launched` | Never a reason for the parent to do a roster phase, at any tier. Size is the assessor's verdict, and a trivial verdict removes phases, not workers. |
 
 Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
 
-A skip removes a phase. It never moves a phase that runs from its worker to the parent. On a run whose capability line has `spawn:` set to anything but `none`, a roster phase row is checked only when the log has that worker's launch row, at every tier including trivial. `small enough to do directly` and `faster inline` are not reasons, per the launch rule in [../SKILL.md](../SKILL.md#the-launch-rule-you-coordinate-named-workers-run-the-phases).
+A skip removes a phase. It never moves a phase that runs from its worker to the parent (rule 6).
 
 ## Format
 
@@ -49,16 +51,16 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 
 ## Phases
 - [x] intake: worktree created, capabilities probed, ledger seeded (09:12)
-- [x] assess: complex/feature, big-change flag (09:14)
-- [x] recon: 3 explorers, pointers in log (09:22)
+- [x] assess: supercook-assessor (typed) returned complex/feature, big-change flag (09:14)
+- [x] recon: 3 supercook-explorer launches (typed), pointers in log (09:22)
 - [x] design doc (lite): design-doc.md approved (09:41)
-- [x] plan: cook-off ran, plan-judge merged candidates A and C (09:55)
-- [x] test-first: 6 journeys designed, slice 1 suite committed red (09:58)
-- [ ] implement
-  - [x] slice 1: middleware skeleton + config type (10:04, 214 reviewable / 231 raw, PR #241)
+- [x] plan: 3 supercook-arena-runner launches, supercook-plan-judge merged candidates A and C (09:55)
+- [x] test-first: supercook-test-designer (typed) designed 6 journeys, slice 1 suite committed red (09:58)
+- [ ] implement: supercook-implementer, one launch per slice
+  - [x] slice 1: middleware skeleton + config type (typed launch, 10:04, 214 reviewable / 231 raw, PR #241)
   - [ ] slice 2: redis token bucket (running: 180 reviewable)
   - [~] slice 3: admin bypass. skip: out of plan scope, filed as follow-up
-- [ ] verify
+- [ ] verify: supercook-verifier, fresh launch per slice
 - [ ] deliver
 - [~] merge. skip: no merge asked for, run ends at the open PRs
 

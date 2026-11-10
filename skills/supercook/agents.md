@@ -4,9 +4,9 @@ The nine agents live at the plugin root in `agents/`, not in this skill folder. 
 
 This file is the launch contract: what the parent passes in, when the job is done, what comes back, and what the parent checks afterwards. The prompt itself lives in the agent file.
 
-**Whether to launch is not decided here.** The launch rule in [SKILL.md](SKILL.md#the-launch-rule-you-coordinate-named-workers-run-the-phases) already decided it: whenever the session has a spawn path, every roster phase that runs is a launch of its named worker, at every tier. This file only says how.
+Whether to launch is already decided by [Start here](SKILL.md#start-here-the-launch-rule): every roster phase that runs is a launch, at every tier, unless the session has no spawn tool. This file only says how.
 
-**Finding an agent file.** `agents/supercook-<role>.md` is relative to the plugin root, which is two directories above this skill folder (`../../agents/` from here). A skill-only copy has no plugin root, so look in `~/.cursor/agents/` next. If neither place has the file, that changes the prompt, not the path: launch the worker anyway and use that role's block under [Per-role contracts](#per-role-contracts) as the prompt body, then log `agent file missing` on the launch row. A missing prompt file is never a reason to run a role yourself when a spawn path exists.
+**Finding an agent file.** `agents/supercook-<role>.md` is a path from the plugin root, two folders up from this skill folder (`../../agents/` from here), and is a different thing from this `agents.md` file. When this skill folder was mirrored on its own, read the file from `~/.cursor/agents/`, then from `~/.cursor/plugins/local/supercook/agents/`. If none of those has it, launch the worker anyway with that role's block under [Per-role contracts](#per-role-contracts) as the prompt body, and log `agent file missing` on the launch row. A missing prompt file never moves a role to the parent.
 
 ## Contents
 
@@ -149,7 +149,7 @@ A boundary written in a prompt is a request. These checks are what make it a con
 
 | After | Guard |
 |---|---|
-| Any roster phase, before its ledger row is checked | Confirm the ledger has a launch row for that phase's worker (spawn tool, worker name, model), or a `degraded: parent inline (spawn none)` row on a session with no spawn tool. Roster work done by the parent while `spawn:` is not `none` fails this guard at any tier: reopen the row and launch the worker. |
+| Any roster phase | Before checking its ledger row, confirm the launch record that [ledger rule 6](pipeline/ledger.md#rules) requires. Without one, reopen the row and launch the worker. |
 | Any launch | Model enforcement already ran in the preToolUse roster hook (see [models.md](models.md)). After the agent returns, log the model slug actually passed on every launch row in the ledger (or `inherit` when omitted). |
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
@@ -181,7 +181,9 @@ UI controls live in two places rather than being copied here:
 
 Every roster role is a **named subagent launch**: launch the subagent `supercook-<role>` (in Cursor terms, invoke `/supercook-<role>` or say "use the supercook-<role> subagent"), with the role and run tags, the body of `agents/supercook-<role>.md`, and this launch's brief as its prompt. This skill never requires a particular spawn tool by name. Use whatever spawn tool **this session actually lists**; hosts differ, and the same host can differ between sessions.
 
-Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
+Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does, and the catalog is fixed when the session starts. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies, role by role: a session that loaded an older install can list eight typed agents and no `supercook-plan-optimizer`, and then only that role drops to the second path.
+
+A spawn tool is not always in the top-level tool list. Check the tool list, any deferred or dynamic tool catalog (open its namespaces and read what they hold), and the subagent types before recording `none`. A real `none` does exist: a parent that was itself launched as a subagent often has no spawn tool, and hooks or tool policy can remove it. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
 
 | `spawn:` | When | How each roster role runs |
 |---|---|---|
@@ -210,8 +212,6 @@ The tool names below are examples of what a session might list, not a required A
 | 6 implement | `agents/supercook-implementer.md` | With a spawn tool, **never** the parent, at any tier. A trivial run is one launch for its one chunk. |
 | 7 verify | `agents/supercook-verifier.md` | With a spawn tool, a fresh worker, **never** the parent, at any tier. |
 
-Tier and track decide which of these phases run. They never move a phase that runs from its worker to the parent.
-
 For each launch:
 
 1. Read `agents/supercook-<role>.md` and use its body as the prompt, after the line-anchored `supercook-role:` and `supercook-run:` tags.
@@ -230,19 +230,6 @@ When `spawn: none`, every roster role runs in the parent from its agent file bod
 
 ### Forbidden skips
 
-On standard or complex tier, these ledger reasons are **invalid** unless assessor approved **trivial** tier collapse:
+A skip removes a phase. It never moves a phase that runs from its worker to the parent, at any tier. The invalid ledger reasons are listed once, in [pipeline/ledger.md](pipeline/ledger.md#invalid-skip-reasons): `agents not installed`, `user checklist`, `coordinator spec`, `plan in kickoff`, `faster inline`, `small task`, and `assessor already launched` are the ones a parent reaches for here.
 
-- `skip: agents not installed`
-- `skip: user checklist`
-- `skip: coordinator spec`
-- `skip: plan included in kickoff`
-
-Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.
-
-At **every** tier, including trivial, these reasons are invalid for the parent doing roster work itself while `spawn:` is not `none`:
-
-- `skip: small enough to do directly`, `skip: faster inline`, or any other efficiency reason
-- `skip: assessor already launched` as cover for running the later roles in the parent
-- `degraded: parent inline` on a session that lists a spawn tool, apart from the platform-error case in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md#on-failure)
-
-A trivial verdict removes recon, plan, and test-first. It does not remove the implementer launch or the verifier launch.
+Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Size is the assessor's verdict, and a trivial verdict removes recon, plan, and test-first, not the implementer launch or the verifier launch. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.

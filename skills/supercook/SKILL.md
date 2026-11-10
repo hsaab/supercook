@@ -1,6 +1,6 @@
 ---
 name: supercook
-description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode, reviewing slice PRs with external reviewers and fixing the findings) when the user invokes /supercook. The agent that loads this skill is the coordinator, not the worker. Whenever its session has a spawn path it launches the named supercook-<role> subagent for every phase that runs, and it does a role itself only when the session lists no spawn tool at all. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
+description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode, reviewing slice PRs with external reviewers and fixing the findings) when the user invokes /supercook. The agent that loads this skill coordinates, launching the named supercook-<role> subagent for every roster phase and doing a role itself only when the session lists no spawn tool. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
 disable-model-invocation: true
 ---
 
@@ -8,8 +8,8 @@ disable-model-invocation: true
 
 ## Contents
 
+- [Start here: the launch rule](#start-here-the-launch-rule)
 - [Principle 1: plain language tied to code and impact](#principle-1-plain-language-tied-to-code-and-impact)
-- [The launch rule: you coordinate, named workers run the phases](#the-launch-rule-you-coordinate-named-workers-run-the-phases)
 - [The other principles](#the-other-principles)
 - [Autonomy: host permissions first](#autonomy-host-permissions-first)
 - [The pipeline](#the-pipeline)
@@ -17,6 +17,24 @@ disable-model-invocation: true
 - [Coordinator spec is not a plan](#coordinator-spec-is-not-a-plan)
 - [Continuation protocol](#continuation-protocol)
 - [Reference files](#reference-files)
+
+## Start here: the launch rule
+
+Loading this skill makes you the **coordinator**. You own intake, the ledger, the guards, the commits, and delivery. Assess, recon, plan, test-first, implement, and verify belong to workers named `supercook-<role>`, listed under "Run by" in [the pipeline](#the-pipeline). For those phases you launch the worker, check what it returns, and record it. Reading this file is not the cue to start editing the task's code.
+
+**Every roster phase that runs is a launch, through the first path this session has, role by role:**
+
+1. **Typed.** `supercook-<role>` is in the subagent types this session lists. Launch it with the session's subagent tool (in Cursor, `Task`), passing that name as the subagent type.
+2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch a worker named `supercook-<role>` through it, with the body of `agents/supercook-<role>.md` as the prompt.
+3. **None.** No such tool exists anywhere in this session. Run the role yourself from its agent file and log the row as `degraded: parent inline (spawn none)`.
+
+Before settling on path 3, look in every place this session lists tools: the tool list itself, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open before you can call it), and the subagent types. Never call, wait for, or invent a tool that none of those places show.
+
+**Tier and track decide which phases run, never who runs them.** The tier is the assessor's verdict, not your first impression, so the first action after intake is the `supercook-assessor` launch (a user-selected track starts at its playbook's first launch instead). A `trivial` verdict removes recon, plan, and test-first. What is left is still a `supercook-implementer` launch and a `supercook-verifier` launch.
+
+None of these is a reason to do a roster phase yourself while path 1 or 2 exists: the task looks small, you can already see the fix, doing it yourself would be faster or more efficient, the kickoff already lists the steps, the typed agents are not installed, you already launched the assessor, or the spawn tool takes an extra lookup to reach. The rule is what makes the other controls real: a verifier that wrote the code is not an independent check, the test-integrity guard needs an implementer whose diff you inspect, and your context is the run's memory.
+
+**Check yourself twice.** Before you write source or test code, name the worker that owns that edit and launch it. Before you check off a roster row, confirm it has a launch record or a `degraded: parent inline (spawn none)` record, per [pipeline/ledger.md](pipeline/ledger.md#rules). Launch contracts and per-host detail are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
 
 ## Principle 1: plain language tied to code and impact
 
@@ -41,37 +59,11 @@ Rules that follow:
 - **Never use an em dash or en dash.** Use a comma, a colon, parentheses, or two sentences.
 - **Every surface.** Chat replies, ledger rows, plan summaries, PR bodies, commit messages, verifier verdicts, and every agent's returns contract.
 
-## The launch rule: you coordinate, named workers run the phases
-
-The agent that loaded this skill is the **coordinator**. Its job is intake, launching workers, running the guards, reading diffs, committing, keeping the ledger, and delivering. Classifying the task, exploring, planning, writing tests, writing source, and verifying are the workers' jobs.
-
-**Whenever this session has a spawn path, every roster phase that runs is a launch of its named `supercook-<role>` subagent.** A spawn path is either of these:
-
-- typed `supercook-*` agents in your subagent catalog, or
-- any tool in your own tool list that starts another agent from a prompt (`Task` is one example; hosts name it differently).
-
-Intake records which one you have as `spawn:`. Doing a role yourself is right in exactly one case: `spawn: none`, where your tool list has no such tool.
-
-Tier and track decide **which** phases run. They never decide **who** runs them. A trivial bugfix is still an assessor launch, then an implementer launch, then a verifier launch. The [pipeline table](#the-pipeline) names the worker for each phase.
-
-This is not ceremony, and here is what breaks without it. The verifier is only an independent check when it did not write the code. The test-integrity guard only means something when the implementer is a separate worker whose diff you inspect. And your context is the run's memory: filling it with source files is how a long run loses its plan.
-
-These thoughts are the failure this rule exists to stop. None of them is a reason:
-
-- "This is small, I will implement it directly" (or "efficiently"). Size is the assessor's verdict, and a trivial verdict removes phases, not workers.
-- "I launched the assessor, so I can do the rest myself." Every later roster phase is its own launch.
-- "The typed agents are not installed." Launch a worker named `supercook-<role>` through the spawn tool you do have.
-- "The kickoff already contains the plan." See [Coordinator spec is not a plan](#coordinator-spec-is-not-a-plan).
-
-The opposite mistake is just as wrong: never call, wait for, or invent a spawn tool that your own tool list does not show. With `spawn: none`, running each role yourself from its agent file is the honest path, logged as `degraded: parent inline (spawn none)`.
-
-**Check yourself at two points.** Before you write source or test code in phase 5 or 6, name the worker that owns that edit and launch it instead. Before you check off a roster phase row, the ledger must hold that phase's launch row (worker name, spawn tool, model). A checked roster row with no launch row, on a run whose `spawn:` is not `none`, is not done: reopen it and launch the worker. How to launch on each path is in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
-
 ## The other principles
 
 1. **Ceremony scales with risk.** A one-line fix does not get an arena, a design doc, and a test matrix. See the tier rules in [pipeline/planning.md](pipeline/planning.md).
 2. **Surgical diffs.** Change what the task needs. No opportunistic refactors, no drive-by renames, no reformatting untouched lines. A tempting cleanup gets reported, not done.
-3. **Delegate atomic work with a clean context.** Delegating is the [launch rule](#the-launch-rule-you-coordinate-named-workers-run-the-phases), not a judgment call. Each agent gets an objective, its inputs, an effort budget, boundaries, one done-when predicate, and a terse returns shape. See [agents.md](agents.md).
+3. **Delegate atomic work with a clean context.** Delegating is the [launch rule](#start-here-the-launch-rule), not a judgment call. Each agent gets an objective, its inputs, an effort budget, boundaries, one done-when predicate, and a terse returns shape. See [agents.md](agents.md).
 4. **The ledger is the memory.** Every phase and every skip is written down. Silent skips are banned. See [pipeline/ledger.md](pipeline/ledger.md).
 5. **Own every diff.** Review each subagent's changes yourself before committing. Their summary is a claim, not evidence.
 6. **Boundaries are enforced, not requested.** Every rule that matters has a parent-side check after the agent returns.
@@ -151,26 +143,26 @@ Changes to GitHub Actions, other CI config, shared pytest plugins, or repo autom
 
 Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
 
-**Launch the named subagent with the tool you have.** A long kickoff does not relax the [launch rule](#the-launch-rule-you-coordinate-named-workers-run-the-phases). Every roster role is a launch of the subagent `supercook-<role>` (`/supercook-<role>` or "use the supercook-<role> subagent"). Without typed `supercook-*` agents in the catalog, launch a worker named `supercook-<role>` through whatever spawn tool this session lists, with `agents/supercook-<role>.md` as the prompt body. A parent with no spawn tool at all runs each role inline from its agent file. Never call a tool that is not in your catalog, and never implement alone when a spawn tool exists. See [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+**The launch rule does not change with the host or the kickoff.** [Start here](#start-here-the-launch-rule) applies to a Cursor chat, a Project worker, and a Cloud Agent alike, however long the assignment is.
 
 ## The pipeline
 
 Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before the assessor runs.
 
-The **Run by** column is the [launch rule](#the-launch-rule-you-coordinate-named-workers-run-the-phases) per phase. A named worker there is a launch whenever the session has a spawn path, and the coordinator does that phase itself only with `spawn: none`.
-
 | # | Phase | Run by | Guide |
 |---|---|---|---|
-| 0 | Intake: probe capabilities, decide the working tree, fix run identity, seed the ledger | coordinator | [pipeline/intake.md](pipeline/intake.md) |
+| 0 | Intake: probe capabilities, decide the working tree, fix run identity, seed the ledger | You | [pipeline/intake.md](pipeline/intake.md) |
 | 1 | Assess: tier, track, big-change flag | `supercook-assessor` | [agents.md](agents.md) |
 | 2 | Recon: broad map, then targeted deep-dives, test paths and test command | `supercook-explorer`, one launch per area | [pipeline/recon.md](pipeline/recon.md) |
-| 3 | Design Doc, big changes only | coordinator, with the user | [pipeline/design-doc.md](pipeline/design-doc.md) |
-| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | `supercook-planner`; on complex work three `supercook-arena-runner` then `supercook-plan-judge`; on a supplied plan `supercook-plan-optimizer` | [pipeline/planning.md](pipeline/planning.md) |
+| 3 | Design Doc, big changes only | You, with the user | [pipeline/design-doc.md](pipeline/design-doc.md) |
+| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | `supercook-planner`, or three `supercook-arena-runner` launches then `supercook-plan-judge`, or `supercook-plan-optimizer` | [pipeline/planning.md](pipeline/planning.md) |
 | 5 | Test-first: user-journey tests, committed before implementation | `supercook-test-designer` | [pipeline/implementation.md](pipeline/implementation.md) |
-| 6 | Implement: surgical chunks, parent guards, line accounting | `supercook-implementer`, one launch per slice or chunk; the coordinator runs the guards | [pipeline/implementation.md](pipeline/implementation.md) |
+| 6 | Implement: surgical chunks, parent guards, line accounting | `supercook-implementer`, one launch per slice or chunk | [pipeline/implementation.md](pipeline/implementation.md) |
 | 7 | Verify: fresh-context audit that runs the suite | `supercook-verifier`, a fresh launch | [pipeline/verification.md](pipeline/verification.md) |
-| 8 | Deliver: PR per slice, stack lifecycle, plain-language body | coordinator | [pipeline/delivery.md](pipeline/delivery.md) |
-| 9 | Merge: only on an explicit merge ask, never inferred | coordinator | [pipeline/merge.md](pipeline/merge.md) |
+| 8 | Deliver: PR per slice, stack lifecycle, plain-language body | You | [pipeline/delivery.md](pipeline/delivery.md) |
+| 9 | Merge: only on an explicit merge ask, never inferred | You | [pipeline/merge.md](pipeline/merge.md) |
+
+"Run by" names who does the phase's work. A worker row is yours only to launch, guard, and record, per [Start here](#start-here-the-launch-rule).
 
 **Phase 9 is opt-in.** Absent a merge ask, phase 8 ends the run at an open PR. A PR looking mergeable is not an ask.
 
@@ -179,10 +171,8 @@ The **Run by** column is the [launch rule](#the-launch-rule-you-coordinate-named
 diff. A supplied design becomes the contract in `plan.md`; structure tests and a
 rendered smoke enforce it. Late detection reopens any skipped planning or test rows.
 
-**Tiers.** The tier is the assessor's verdict, never the coordinator's own read of
-the task. `trivial` collapses to implement plus verify, ledger still
-written, and with a spawn path those two phases are still a `supercook-implementer`
-launch and a `supercook-verifier` launch. A
+**Tiers.** `trivial` collapses to implement plus verify, each still its worker's
+launch, ledger still written. A
 copy-only UI change keeps that light path; a supplied-design change to hierarchy,
 order, geometry, interactions, or responsive behavior is at least standard.
 `standard` runs recon, one planner, tests, implement, verify, deliver. `complex`
@@ -218,6 +208,9 @@ answers to the ask, not to the verdict.
 
 Route on the assessor's `track`, except `merge`, `implement-plan`, and `review`,
 which the user selects directly. Copy the playbook's steps verbatim into the ledger.
+A playbook step says what has to be true before the run ends, not who does it: a
+step such as "fix the smallest thing the evidence justifies" is still the
+implementer's edit, launched from the phase 6 row.
 
 | Track | When | Playbook |
 |---|---|---|
@@ -234,9 +227,9 @@ which the user selects directly. Copy the playbook's steps verbatim into the led
 
 1. **Re-read the ledger before ending any turn.** Open rows mean keep working. Ending is allowed only when every row is checked or marked `skip: <reason>`, or the only blocker is a sanctioned pause that is written down. On the investigation track there is no ledger file, so the todo list is the record and this rule reads it instead.
 2. **Done is a predicate, stated at intake.** Write it in the ledger header. A plateau is not a stop.
-3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten. When that row is a roster phase and `spawn:` is not `none`, the next action is launching its worker, per the [launch rule](#the-launch-rule-you-coordinate-named-workers-run-the-phases).
+3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten. When that row is a roster phase, the next action is launching its worker.
 4. **Report without stopping.** Send progress as a mid-turn note; do not end the turn to check in.
-5. **Resume by identity.** A new, resumed, or compacted session reads the ledger matching this repo, branch, and run-id, then continues from the first open row. Never pick "the newest ledger". It also re-reads the [launch rule](#the-launch-rule-you-coordinate-named-workers-run-the-phases) before its first action, because this file is only attached to the message that invoked it and a compacted context is where the rule gets lost.
+5. **Resume by identity.** A new, resumed, or compacted session reads the ledger matching this repo, branch, and run-id, then continues from the first open row. Never pick "the newest ledger". It also re-reads [Start here](#start-here-the-launch-rule) before its first action, because this file is attached only to the message that invoked it.
 
 ## Reference files
 
