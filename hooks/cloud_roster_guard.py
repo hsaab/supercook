@@ -6,7 +6,15 @@ import json
 import sys
 
 from cloud_roster_edit_gate import decide_edit
-from cloud_roster_ledger import first_open_owed, owed_workers, resolve_ledger
+from cloud_roster_events import print_doctor, record_event
+from cloud_roster_ledger import (
+    first_open_owed,
+    first_owed_worker,
+    owed_workers,
+    resolve_ledger,
+)
+from cloud_roster_notes import worker_return_note
+from enforce_roster import worker_name
 
 
 def followup_text(workers: list[str]) -> str:
@@ -63,7 +71,31 @@ def _handle_pre_tool_use(event: dict) -> dict:
         return {"permission": "allow"}
 
 
+def _handle_post_tool_use(event: dict) -> dict:
+    try:
+        if event.get("tool_name") != "Task":
+            return {}
+        tool_input = event.get("tool_input")
+        if not isinstance(tool_input, dict):
+            return {}
+        returned = worker_name(tool_input)
+        if not returned:
+            return {}
+        first_owed: str | None = None
+        workspace_roots = event.get("workspace_roots")
+        if isinstance(workspace_roots, list):
+            roots = [str(item) for item in workspace_roots]
+            first_owed = first_owed_worker(roots)
+        return {"additional_context": worker_return_note(returned, first_owed)}
+    except Exception:
+        return {}
+
+
 def main() -> None:
+    if sys.argv[1:] == ["doctor"]:
+        print_doctor()
+        sys.exit(0)
+
     try:
         raw = sys.stdin.read()
         event = json.loads(raw)
@@ -73,9 +105,15 @@ def main() -> None:
         print("{}", flush=True)
         sys.exit(0)
 
+    record_event(event)
+
     hook_name = event.get("hook_event_name")
     if hook_name == "preToolUse":
         print(json.dumps(_handle_pre_tool_use(event)), flush=True)
+        sys.exit(0)
+
+    if hook_name == "postToolUse":
+        print(json.dumps(_handle_post_tool_use(event)), flush=True)
         sys.exit(0)
 
     if hook_name != "stop":
