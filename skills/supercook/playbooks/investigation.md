@@ -6,6 +6,8 @@ A question to answer. Nothing ships.
 
 Track these in the todo list. This track has no ledger file, for the reason below.
 
+The explore step is a `supercook-explorer` launch on this track too. A thin or wrong explorer return is a fresh relaunch with a corrected question list and the roster model. This track stays read-only.
+
 ```
 - [ ] restate the question precisely, including what would count as an answer
 - [ ] explore with citations, file and line for every claim

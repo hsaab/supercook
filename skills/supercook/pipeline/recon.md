@@ -1,6 +1,6 @@
 # Phase 2: recon
 
-Learn the codebase without paying for it in context. Explorers read the source, the parent gets pointers.
+Learn the codebase without paying for it in context. Launch `supercook-explorer` for each recon pass. Explorers read the source, the parent gets pointers.
 
 ## Fan-out
 
@@ -8,7 +8,7 @@ Scale the number of explorers to the shape of the task, not to its importance.
 
 | Task shape | Explorers |
 |---|---|
-| One known file or function | 1, or none if the pointer is already obvious |
+| One known file or function | 1 `supercook-explorer`, or log `skip:` when the pointer is already obvious |
 | One area, several files | 1 broad, then 1 targeted |
 | Several areas or services | 1 broad, then 3 to 5 targeted, launched in parallel |
 
@@ -82,3 +82,5 @@ On the investigation track, recon **is** the work. There is no plan, no test, an
 ## When recon is not enough
 
 If the planner, an arena runner, or the plan optimizer comes back needing to explore, recon was too thin. Do not let the planning phase turn into an investigation. Launch another targeted explorer for the specific gap, log it, and re-run planning.
+
+A wrong or thin `supercook-explorer` return gets a corrected question list and a fresh relaunch of that explorer with the roster model. The parent's own scan is not the fix.
