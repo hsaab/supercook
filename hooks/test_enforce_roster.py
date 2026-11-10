@@ -206,6 +206,77 @@ class LaunchDecisionTests(HookTestCase):
         with tempfile.TemporaryDirectory() as temp:
             self.assertEqual(self.run_hook(Path(temp), json.dumps(payload)), {"permission": "allow"})
 
+    def test_subagent_start_uses_subagent_model(self):
+        roster_model = SHIPPED["implementer"]
+        wrong = "claude-opus-5-5-high"
+        task = tags("implementer")
+        directions = (
+            ("roster subagent_model, empty top-level model", "", roster_model, ALLOW),
+            ("roster subagent_model, wrong top-level model", wrong, roster_model, ALLOW),
+            ("wrong subagent_model, roster top-level model", roster_model, wrong, ("deny", roster_model)),
+            ("top-level roster model only", roster_model, OMIT, ALLOW),
+        )
+        for label, model, subagent_model, expect in directions:
+            with self.subTest(label), tempfile.TemporaryDirectory() as temp:
+                payload = {
+                    "hook_event_name": "subagentStart",
+                    "subagent_type": "supercook-implementer",
+                    "model": model,
+                    "task": task,
+                }
+                if subagent_model is not OMIT:
+                    payload["subagent_model"] = subagent_model
+                response = self.run_hook(Path(temp), json.dumps(payload))
+                message = response.get("agent_message", "")
+                seen = (response.get("permission"), *(part for part in expect[1:] if part in message))
+                self.assertEqual(seen, expect, response)
+
+    def test_subagent_start_deny_sets_user_message(self):
+        roster_model = SHIPPED["implementer"]
+        with self.subTest("untagged subagentStart"), tempfile.TemporaryDirectory() as temp:
+            payload = {
+                "hook_event_name": "subagentStart",
+                "subagent_type": "supercook-implementer",
+                "model": roster_model,
+                "task": "",
+            }
+            response = self.run_hook(Path(temp), json.dumps(payload))
+            agent_message = response.get("agent_message") or ""
+            user_message = response.get("user_message") or ""
+            self.assertEqual(response.get("permission"), "deny", response)
+            self.assertIn("supercook-role", agent_message)
+            self.assertIn("supercook-run", agent_message)
+            self.assertTrue(agent_message, response)
+            self.assertTrue(user_message, response)
+            self.assertEqual(user_message, agent_message)
+
+        with self.subTest("preToolUse deny"), tempfile.TemporaryDirectory() as temp:
+            payload = {
+                "hook_event_name": "preToolUse",
+                "tool_name": "Subagent",
+                "tool_input": {
+                    "description": "launch",
+                    "prompt": "",
+                    "subagent_type": "supercook-implementer",
+                    "model": roster_model,
+                },
+            }
+            response = self.run_hook(Path(temp), json.dumps(payload))
+            self.assertEqual(response.get("permission"), "deny", response)
+            self.assertTrue(response.get("agent_message"), response)
+            self.assertNotIn("user_message", response)
+
+        with self.subTest("allow"), tempfile.TemporaryDirectory() as temp:
+            payload = {
+                "hook_event_name": "subagentStart",
+                "subagent_type": "supercook-implementer",
+                "model": roster_model,
+                "task": tags("implementer"),
+            }
+            response = self.run_hook(Path(temp), json.dumps(payload))
+            self.assertEqual(response.get("permission"), "allow", response)
+            self.assertNotIn("user_message", response)
+
 
 class RosterSourceTests(HookTestCase):
     def test_repository_roster_beats_home_and_home_beats_shipped(self):
