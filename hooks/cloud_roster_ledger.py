@@ -42,7 +42,10 @@ def resolve_ledger(workspace_roots: list[str]) -> Path | None:
         active_path = root / ".supercook" / "active-run"
         if not active_path.is_file():
             continue
-        rel = active_path.read_text(encoding="utf-8").strip()
+        try:
+            rel = active_path.read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeDecodeError):
+            continue
         candidate = (root / rel).resolve()
         for match_root, ledger in matches:
             if match_root == root and ledger == candidate:

@@ -53,25 +53,25 @@ def main() -> None:
         print("{}", flush=True)
         sys.exit(0)
 
-    ledger_path = resolve_ledger(roots)
-    if ledger_path is None:
-        print("{}", flush=True)
-        sys.exit(0)
-
     try:
+        ledger_path = resolve_ledger(roots)
+        if ledger_path is None:
+            print("{}", flush=True)
+            sys.exit(0)
+
         ledger_text = ledger_path.read_text(encoding="utf-8")
-    except OSError:
+
+        workers = owed_workers(ledger_text)
+        if not workers:
+            print("{}", flush=True)
+            sys.exit(0)
+
+        message = followup_text(workers)
+        print(json.dumps({"followup_message": message}), flush=True)
+        sys.exit(0)
+    except Exception:
         print("{}", flush=True)
         sys.exit(0)
-
-    workers = owed_workers(ledger_text)
-    if not workers:
-        print("{}", flush=True)
-        sys.exit(0)
-
-    message = followup_text(workers)
-    print(json.dumps({"followup_message": message}), flush=True)
-    sys.exit(0)
 
 
 if __name__ == "__main__":
