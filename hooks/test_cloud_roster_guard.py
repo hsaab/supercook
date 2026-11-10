@@ -16,8 +16,9 @@ from pathlib import Path
 # discover -s hooks puts this directory on sys.path. Importing as hooks.test_* does not.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-REPO = Path(__file__).resolve().parent.parent
-GUARD = REPO / "hooks" / "cloud_roster_guard.py"
+import cloud_roster_guard
+
+GUARD = Path(cloud_roster_guard.__file__).resolve()
 
 # Checked rows name who ran, and that name must not be copied out. Open rows say
 # "not started" so the followup has to name the worker from the phase map.
@@ -84,15 +85,7 @@ def write_ledger(root, run_id, text, mtime=None):
 
 
 class CloudRosterGuardTests(unittest.TestCase):
-    def load_guard(self):
-        # Not at collection: a missing module fails this test, not the whole suite.
-        if not GUARD.is_file():
-            self.fail("hooks/cloud_roster_guard.py does not exist")
-        import cloud_roster_guard
-        return cloud_roster_guard
-
     def run_hook(self, root, stdin_text=None):
-        self.load_guard()
         if stdin_text is None:
             stdin_text = json.dumps({"hook_event_name": "stop", "workspace_roots": [str(root)]})
         done = subprocess.run(
@@ -205,6 +198,31 @@ class CloudRosterGuardTests(unittest.TestCase):
             # A pointer that names neither ledger does not pick between them either.
             (root / ".supercook" / "active-run").write_text(".supercook/missing/ledger.md\n", encoding="utf-8")
             self.assertEqual(self.run_hook(root), {})
+
+    def test_stop_with_undecodable_active_run_is_silent(self):
+        # Two ledgers force the pointer to be read. Bytes that are not UTF-8 must fail open.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger("standard", "bugfix", ("recon",)), 1_800_000_000)
+            (root / ".supercook" / "active-run").write_bytes(b"\xff\xfe\xfd")
+            self.assertEqual(self.run_hook(root), {})
+
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root ignores mode bits")
+    def test_stop_with_unreadable_active_run_is_silent(self):
+        # A mode 000 pointer is unreadable for a non-root user. Put the mode back so the temp dir can be removed.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger("standard", "bugfix", ("recon",)), 1_800_000_000)
+            pointer = root / ".supercook" / "active-run"
+            pointer.write_text(".supercook/newer/ledger.md\n", encoding="utf-8")
+            mode = pointer.stat().st_mode & 0o777
+            pointer.chmod(0o000)
+            try:
+                self.assertEqual(self.run_hook(root), {})
+            finally:
+                pointer.chmod(mode)
 
     def test_stop_uses_active_run_when_several_ledgers_exist(self):
         with tempfile.TemporaryDirectory() as temp:
