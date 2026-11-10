@@ -25,6 +25,17 @@ class Decision:
     agent_message: str | None = None
 
 
+def worker_name(tool_input: dict) -> str:
+    """Supercook roster identity from subagent_type or name when prefixed supercook-."""
+    subagent_type = tool_input.get("subagent_type")
+    if isinstance(subagent_type, str) and subagent_type.startswith("supercook-"):
+        return subagent_type
+    name = tool_input.get("name")
+    if isinstance(name, str) and name.startswith("supercook-"):
+        return name
+    return ""
+
+
 def parse_tag(prompt: str, tag: str) -> str | None:
     for match in _TAG_PATTERN.finditer(prompt):
         if match.group(1) == tag:
@@ -77,9 +88,7 @@ def decide(
     prompt = tool_input.get("prompt")
     if not isinstance(prompt, str):
         prompt = ""
-    subagent_type = tool_input.get("subagent_type")
-    if not isinstance(subagent_type, str):
-        subagent_type = ""
+    roster_worker = worker_name(tool_input)
     model = tool_input.get("model")
     if "model" in tool_input and model is not None and not isinstance(model, str):
         model = str(model)
@@ -87,7 +96,7 @@ def decide(
     role_tag = parse_tag(prompt, "supercook-role")
 
     if role_tag is None:
-        if subagent_type.startswith("supercook-"):
+        if roster_worker.startswith("supercook-"):
             return Decision(
                 "deny",
                 agent_message=(
@@ -109,7 +118,7 @@ def decide(
             ),
         )
 
-    if subagent_type.startswith("supercook-") and parse_tag(prompt, "supercook-run") is None:
+    if roster_worker.startswith("supercook-") and parse_tag(prompt, "supercook-run") is None:
         return Decision(
             "deny",
             agent_message=(
@@ -180,7 +189,14 @@ def main() -> None:
 
         tool_input = event.get("tool_input")
         if not isinstance(tool_input, dict):
-            raise TypeError("tool_input must be an object")
+            tool_input = {}
+            for key in ("subagent_type", "name", "model"):
+                value = event.get(key)
+                if value is not None:
+                    tool_input[key] = value
+            task = event.get("task")
+            if task is not None:
+                tool_input["prompt"] = task
 
         workspace_roots = event.get("workspace_roots")
         if workspace_roots is not None and not isinstance(workspace_roots, list):
