@@ -46,19 +46,18 @@ def _handle_pre_tool_use(event: dict) -> dict:
     except Exception:
         return {"permission": "allow"}
 
-    owed_phase: str | None = None
-    owed_worker: str | None = None
-    ledger_path = resolve_ledger(roots)
-    if ledger_path is not None:
-        try:
-            ledger_text = ledger_path.read_text(encoding="utf-8")
-            owed = first_open_owed(ledger_text)
-            if owed is not None:
-                owed_phase, owed_worker = owed
-        except OSError:
-            pass
-
     try:
+        owed_phase: str | None = None
+        owed_worker: str | None = None
+        ledger_path = resolve_ledger(roots)
+        if ledger_path is not None:
+            try:
+                ledger_text = ledger_path.read_text(encoding="utf-8")
+                owed = first_open_owed(ledger_text)
+                if owed is not None:
+                    owed_phase, owed_worker = owed
+            except OSError:
+                pass
         return decide_edit(event, roots, owed_phase, owed_worker)
     except Exception:
         return {"permission": "allow"}
