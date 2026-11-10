@@ -50,7 +50,7 @@ Pass these on every launch, without exception:
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
   owns rendered smoke.
-- **The model**, taken from the ledger `models-resolved:` map (see [models.md](models.md) and [pipeline/intake.md](pipeline/intake.md)), passed on every launch whose spawn tool accepts a model field, or omitted only when that role is `inherit`. Resolve once at intake, then reuse the ledger line on resume; do not re-guess per launch.
+- **The model**, per [Launch mechanism](#launch-mechanism). Resolve once at intake, then reuse the ledger `models-resolved:` line on resume; do not re-guess per launch.
 - **The plain-language rule**: its returns must name files and real consequences, and must not contain em dashes.
 
 Do not paste the whole conversation, prior agent output, or file contents that the agent can read itself. A clean context window is the reason to delegate at all.
@@ -196,28 +196,13 @@ A spawn tool is not always in the top-level tool list. Check the tool list, any 
 The tool names below are examples of what a session might list, not a required API. Map the same intent onto whichever tool you see.
 
 - **Name the worker.** If the spawn tool has a field for the subagent's type or name, set it to `supercook-<role>` when the host accepts that name; otherwise use the host's general-purpose type (or its read-only explore type for recon) and put `supercook-<role>` in the description. Either way the prompt carries the role and run tags, then the body of `agents/supercook-<role>.md`, then the brief.
-- **Pass `model`** from the ledger `models-resolved:` map when the tool has a model field; omit it only for `inherit`.
 - **Field placement for `Task` and `CreateAgent`.** When the session lists `CallDynamicTool` with a `cursor` `Task` tool, or a top-level `CreateAgent` / `Subagent`, the envelope rules and pre-flight validator are in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md). Any other spawn tool follows its own listed schema.
 
 **Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
 
-### Phase map (same contract, any path)
+### The same contract on any path
 
-| Phase | Agent file | Note |
-|---|---|---|
-| 1 assess | `agents/supercook-assessor.md` | Launched when a spawn tool exists; inline only with `spawn: none`. The parent never sets the tier from its own read of the task. |
-| 2 recon | `agents/supercook-explorer.md` | One launch per area, in parallel when the tool allows it. |
-| 4 plan | `agents/supercook-planner.md` (or arena, judge, optimizer) | Arena runners go out in one batch. |
-| 5 test-first | `agents/supercook-test-designer.md` | Tests committed before phase 6. |
-| 6 implement | `agents/supercook-implementer.md` | With a spawn tool, **never** the parent, at any tier. A trivial run is one launch for its one chunk. |
-| 7 verify | `agents/supercook-verifier.md` | With a spawn tool, a fresh worker, **never** the parent, at any tier. |
-
-For each launch:
-
-1. Read `agents/supercook-<role>.md` and use its body as the prompt, after the line-anchored `supercook-role:` and `supercook-run:` tags.
-2. Pass `model` from the ledger `models-resolved:` map when the tool accepts it; omit only for `inherit`.
-3. Keep the same inputs, done-when, returns shape, and parent-side guards from this file.
-4. Log one ledger row with the spawn tool name, the worker name, and the model slug (or `inherit`).
+The worker for each phase is the "Run by" column of [the pipeline table](SKILL.md#the-pipeline), and its prompt body is `agents/<worker name>.md`. Whichever path launches it, keep the same inputs, done-when, returns shape, and parent-side guards from this file, and log one ledger row with the spawn tool name, the worker name, and the model slug (or `inherit`).
 
 ### No spawn tool: run roles inline
 
