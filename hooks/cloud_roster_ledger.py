@@ -148,3 +148,21 @@ def owed_workers(ledger_text: str) -> list[str]:
             continue
         owed.extend(_workers_for_phase(phase, header))
     return owed
+
+
+def first_open_owed(ledger_text: str) -> tuple[str, str] | None:
+    """First open phase row and its primary worker for edit-gate decisions."""
+    header = parse_header(ledger_text)
+    rows = _phase_rows(ledger_text)
+    for phase in _PHASE_ORDER:
+        row = rows.get(phase)
+        if row is None:
+            continue
+        check, detail = row
+        if not _row_open(check, detail):
+            continue
+        workers = _workers_for_phase(phase, header)
+        if not workers:
+            continue
+        return (phase, workers[0])
+    return None
