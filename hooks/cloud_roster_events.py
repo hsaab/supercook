@@ -32,6 +32,17 @@ def _present(value: Any) -> bool:
     return isinstance(value, str) and value != ""
 
 
+def _presence(event: dict[str, Any], key: str) -> bool:
+    if _present(event.get(key)):
+        return True
+    if key not in ("subagent_type", "name"):
+        return False
+    tool_input = event.get("tool_input")
+    if isinstance(tool_input, dict):
+        return _present(tool_input.get(key))
+    return False
+
+
 def format_event_line(event: dict[str, Any]) -> str:
     event_name = event.get("hook_event_name")
     if not isinstance(event_name, str):
@@ -39,7 +50,7 @@ def format_event_line(event: dict[str, Any]) -> str:
     tool = event.get("tool_name")
     tool_bit = tool if isinstance(tool, str) and tool else "-"
     flags = " ".join(
-        f"{key}={'yes' if _present(event.get(key)) else 'no'}" for key in _PRESENCE_FIELDS
+        f"{key}={'yes' if _presence(event, key) else 'no'}" for key in _PRESENCE_FIELDS
     )
     line = f"{event_name} tool={tool_bit} {flags}"
     if len(line) > _MAX_LINE:
