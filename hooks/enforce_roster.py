@@ -173,10 +173,12 @@ def decide(
     )
 
 
-def _emit(decision: Decision) -> None:
+def _emit(decision: Decision, *, mirror_user_message: bool = False) -> None:
     payload: dict[str, str] = {"permission": decision.permission}
     if decision.agent_message:
         payload["agent_message"] = decision.agent_message
+        if mirror_user_message:
+            payload["user_message"] = decision.agent_message
     print(json.dumps(payload), flush=True)
 
 
@@ -188,12 +190,20 @@ def main() -> None:
             raise TypeError("event payload must be an object")
 
         tool_input = event.get("tool_input")
-        if not isinstance(tool_input, dict):
+        subagent_start = not isinstance(tool_input, dict)
+        if subagent_start:
             tool_input = {}
-            for key in ("subagent_type", "name", "model"):
+            for key in ("subagent_type", "name"):
                 value = event.get(key)
                 if value is not None:
                     tool_input[key] = value
+            subagent_model = event.get("subagent_model")
+            if isinstance(subagent_model, str) and subagent_model:
+                tool_input["model"] = subagent_model
+            else:
+                model = event.get("model")
+                if model is not None:
+                    tool_input["model"] = model
             task = event.get("task")
             if task is not None:
                 tool_input["prompt"] = task
@@ -220,7 +230,7 @@ def main() -> None:
                 )
 
         decision = decide(tool_input, roster, ledger_models)
-        _emit(decision)
+        _emit(decision, mirror_user_message=subagent_start)
         sys.exit(0)
     except Exception:
         _emit(Decision("allow"))
