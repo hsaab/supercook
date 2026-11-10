@@ -13,6 +13,9 @@ Done is not a feeling. It is a gate, and this is the gate.
 
 Not the implementation history, not the reasoning, not the agent conversations. The absence is the point: a verifier that watched the code get written can be talked into believing it works. One that only sees the plan and the diff cannot.
 
+A trivial run has no `plan.md`. Launch the verifier anyway, with the task text and
+the ledger's `done:` predicate as the contract.
+
 For an open-pr UI run with no `plan.md`, pass the retrospective UI contract from
 the ledger in its place. The verifier still receives a contract, never an
 unstructured design link.

@@ -1,6 +1,6 @@
 ---
 name: supercook-planner
-description: Writes the implementation plan for a standard-tier supercook run, breaking work into numbered slices that are each independently shippable and sized for review. Use after supercook recon on standard-tier tasks, where a single plan is enough and the multi-model arena would be overkill.
+description: Writes the implementation plan for a standard-tier supercook run, breaking work into numbered slices that are each independently shippable and sized for review. Always use for the plan phase of a standard-tier supercook run, after recon, where a single plan is enough and the multi-model arena would be overkill. The coordinator never writes plan.md itself.
 model: inherit
 ---
 

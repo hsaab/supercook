@@ -41,7 +41,7 @@ Use it for anything development related: bugs, features, investigations, refacto
 
 One command does not mean one heavyweight process. Supercook classifies the task first, then scales ceremony to the risk:
 
-- **Trivial.** Work directly, verify, done. No exploration phase, no arena, no test ceremony. A copy fix stays a copy fix. The one thing that can still fire here is architecture alignment, because a two-line change can still alter an interface other people depend on.
+- **Trivial.** One implementer launch, one verifier launch, done. No exploration phase, no arena, no test ceremony. A copy fix stays a copy fix. The one thing that can still fire here is architecture alignment, because a two-line change can still alter an interface other people depend on.
 - **Standard.** Targeted exploration, a short plan, tests for the real user journeys, surgical implementation, an independent verification pass, and usually one reviewable PR. Most work lands here.
 - **Complex.** Everything above plus a broad codebase map, architecture alignment when the approach needs sign-off, three models planning in parallel with a judge picking or merging, tests committed per slice, verification before every PR, and multiple coherent PRs.
 
@@ -59,7 +59,7 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 
 **Explanations name the file, the change, and the real consequence.** Written like a sharp junior engineer who just read the code, not like a changelog. "We changed `handleWebhook` in `src/api/webhook.ts` because it still referenced a `retryCount` variable the queue rewrite deleted, so any real webhook would have thrown and taken the server down." Not "improved error handling". This is the principle that makes the rest checkable, so it sits at the top of the skill. An opinionated style choice, not a research finding.
 
-**Subagents with clean context and terse return contracts.** Each role gets an objective, inputs, an effort budget, boundaries, and a fixed output shape, so results stay small and the orchestrator's context stays usable. ([Anthropic on multi-agent systems](https://www.anthropic.com/engineering/multi-agent-research-system))
+**Subagents with clean context and terse return contracts.** The agent that runs `/supercook` coordinates and the named `supercook-*` workers do each phase, at every tier, whenever the session can spawn one. Each role gets an objective, inputs, an effort budget, boundaries, and a fixed output shape, so results stay small and the orchestrator's context stays usable. ([Anthropic on multi-agent systems](https://www.anthropic.com/engineering/multi-agent-research-system))
 
 **The ledger as external memory.** Every phase and every skip is written to a file, so context resets and new sessions resume from the record rather than from a guess. ([Anthropic on context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), the structured note-taking pattern)
 
@@ -98,24 +98,33 @@ Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`,
 cursor-agent plugin marketplace update supercook-marketplace
 ```
 
-If you would rather have a checkout you can edit, install it locally instead:
+If you would rather have a checkout you can edit, clone it straight into the local plugins folder, and update it with `git pull`:
 
 ```bash
-git clone https://github.com/hsaab/supercook.git ~/Apps/supercook
-ln -s ~/Apps/supercook ~/.cursor/plugins/local/supercook
+git clone https://github.com/hsaab/supercook.git ~/.cursor/plugins/local/supercook
 ```
+
+Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugins-locally) decide whether that checkout is the one that loads. Cursor skips a link in `~/.cursor/plugins/local` that points at a checkout elsewhere on disk, so clone into the folder rather than linking to it. And a marketplace install with the same name takes precedence over the local copy, so keep one install or the other: an old marketplace install hides a newer local checkout.
 
 Either way, reload the window, then confirm you see one skill (`supercook`) and nine agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`).
 
-If the loader rejects the symlink, clone directly into `~/.cursor/plugins/local/supercook` instead, and update with `git pull`.
-
-On a host that mirrors only the skill folder rather than installing the whole plugin, also copy the agents into your user subagent directory so Cursor discovers them as named subagents (`/supercook-assessor`, `/supercook-explorer`, and so on):
+A skill folder mirrored on its own (for example a personal `~/.cursor/skills/supercook` synced to Cloud Agents) carries no agent files, because they live at the plugin root in `agents/`. On such a host, also copy the agents into your user subagent directory so Cursor lists them as named subagents (`/supercook-assessor`, `/supercook-explorer`, and so on):
 
 ```bash
-mkdir -p ~/.cursor/agents && cp ~/Apps/supercook/agents/supercook-*.md ~/.cursor/agents/
+mkdir -p ~/.cursor/agents && cp ~/.cursor/plugins/local/supercook/agents/supercook-*.md ~/.cursor/agents/
 ```
 
 Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook still launches each role as a worker named `supercook-<role>` through whatever spawn tool the session has, using the agent file as the prompt.
+
+### On Cloud Agents
+
+A cloud VM cannot see your local home directory, so three things decide whether a run gets typed `supercook-*` agents:
+
+- **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
+- **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
+- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` above in the environment's install step.
+
+To see what a run got, read the subagent types it lists. Nine `supercook-*` names means the current agents are typed. Eight, with no `supercook-plan-optimizer`, means the VM loaded an install from before that agent existed, so refresh the marketplace. None means every role goes through the session's spawn tool with its agent file as the prompt. All three run the same pipeline: the coordinator launches a worker for every roster phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
 
 One thing to know before the first run: without worktree support it works on your current branch, and in that case it needs a clean tree. It will say so rather than stashing anything.
 

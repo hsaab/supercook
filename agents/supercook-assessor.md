@@ -1,6 +1,6 @@
 ---
 name: supercook-assessor
-description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Use at the start of a supercook run, before any planning or exploration. Never launch on the review track; the parent routes review before assessor runs.
+description: Classifies a development task for the supercook workflow. Returns tier (trivial, standard, complex), track (bugfix, feature, investigation, refactor, open-pr, merge, implement-plan), and a big-change flag that decides whether architecture alignment is needed. Always use for phase 1 of a supercook run, before any planning, exploration, or edit, because the coordinator never classifies its own task. Never launch on the review track; the parent routes review before assessor runs.
 model: inherit
 readonly: true
 ---

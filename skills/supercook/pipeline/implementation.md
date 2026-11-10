@@ -65,9 +65,9 @@ Before accepting the test designer's return, run the
 
 ## Phase 6: implement
 
-One `supercook-implementer` launch per slice, or per chunk within a slice when a slice has natural internal steps.
+One `supercook-implementer` launch per slice, or per chunk within a slice when a slice has natural internal steps. A trivial run is one launch for its one chunk, briefed with the task text, the file scope, and the recorded test command, since it has no plan and no red test. When that change cannot pass without adding or changing a test, the test edit is a `supercook-test-designer` launch first: the implementer never touches tests, and neither do you.
 
-Before a trivial or other direct chunk that had no plan, record a restart point in
+Before a trivial chunk, or any other chunk that had no plan, record a restart point in
 the ledger:
 
 ```text

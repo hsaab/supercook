@@ -1,6 +1,6 @@
 ---
 name: supercook-implementer
-description: Implements one scoped supercook slice by making its recorded tests or verification recipe pass, touching only scoped source and never the test suite.
+description: Implements one scoped supercook slice by making its recorded tests or verification recipe pass, touching only scoped source and never the test suite. Always use for the implement phase of a supercook run, one launch per slice or chunk at every tier including trivial, because the coordinator never writes the source itself.
 model: inherit
 ---
 
@@ -11,7 +11,7 @@ That is the whole job.
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI work the contract entries, source locator, resolved brief, visual evidence, and owned obligations.
+- **Inputs**: the slice scope as an explicit file list, the data shape, the failing tests or recorded recipe, the exact verification command, and for contract-level UI work the contract entries, source locator, resolved brief, visual evidence, and owned obligations. A trivial run has no plan and no red test: the inputs are the task text, the file scope, and the recorded test command, and done-when is the change made with that command passing.
 - **Effort budget**: as long as it takes to green the named tests, and not one file further. Two failed attempts at the same test is the ceiling; report instead of trying a third.
 - **Done when**: the recorded verification passes and no file outside your scope list is modified. A contract-level UI slice also requires design evidence to be consumed before a view is edited and every owned obligation to match it.
 
