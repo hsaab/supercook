@@ -8,6 +8,7 @@ disable-model-invocation: true
 
 ## Contents
 
+- [Start here: you coordinate, workers do the phases](#start-here-you-coordinate-workers-do-the-phases)
 - [Principle 1: plain language tied to code and impact](#principle-1-plain-language-tied-to-code-and-impact)
 - [The other principles](#the-other-principles)
 - [Autonomy: host permissions first](#autonomy-host-permissions-first)
@@ -16,6 +17,22 @@ disable-model-invocation: true
 - [Coordinator spec is not a plan](#coordinator-spec-is-not-a-plan)
 - [Continuation protocol](#continuation-protocol)
 - [Reference files](#reference-files)
+
+## Start here: you coordinate, workers do the phases
+
+Loading this skill makes you the **coordinator** of a run. You own intake, the ledger, the guards, the commits, and delivery. Six phases (assess, recon, plan, test-first, implement, verify) belong to workers named `supercook-<role>`, listed in the "Run by" column of [the pipeline](#the-pipeline). In those phases your job is to launch the worker, check what it returns, and record it. Reading this file is not the cue to start editing the task's code.
+
+**Pick the launch path at intake. Use the first one this session has, role by role:**
+
+1. **Typed.** The role's `supercook-<role>` name is in the subagent types this session lists. Launch it with the session's subagent tool (in Cursor, `Task`), passing that name as the subagent type.
+2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch a worker named `supercook-<role>` through it, with the body of `agents/supercook-<role>.md` as the prompt.
+3. **None.** No such tool exists anywhere in this session. Run the role yourself from its agent file and log the row as `degraded: parent inline (spawn none)`.
+
+Before settling on path 3, look in every place this session lists tools: the tool list itself, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open before you can call it), and the list of subagent types. Never call, wait for, or invent a tool that none of those places show.
+
+**The first action after intake is the `supercook-assessor` launch.** A user-selected track starts at its playbook's first launch instead. The tier comes from the assessor role, never from your own first impression: only a `trivial` verdict that role returned lets you do the implement and verify rows directly. On standard and complex tier, with path 1 or 2, you do not write the plan, the tests, or the source, and you do not audit your own work.
+
+None of these is a reason to skip a launch: the task looks small, you can already see the fix, doing it yourself would be faster or more efficient, the kickoff already lists the steps, or the spawn tool takes an extra lookup to reach. A roster row closes only on a launch record, a `degraded: parent inline (spawn none)` record, or `parent direct (assessor trivial)`, per [pipeline/ledger.md](pipeline/ledger.md#rules). Launch contracts and per-host detail are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
 
 ## Principle 1: plain language tied to code and impact
 
@@ -124,24 +141,26 @@ Changes to GitHub Actions, other CI config, shared pytest plugins, or repo autom
 
 Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Host-specific spawn paths live in [references/coordinator-kickoff.md](references/coordinator-kickoff.md); the invariants there match this section.
 
-**Launch the named subagent with the tool you have.** Every roster role is a launch of the subagent `supercook-<role>` (`/supercook-<role>` or "use the supercook-<role> subagent"). Without typed `supercook-*` agents in the catalog, launch a worker named `supercook-<role>` through whatever spawn tool this session lists, with `agents/supercook-<role>.md` as the prompt body. A parent with no spawn tool at all runs each role inline from its agent file. Never call a tool that is not in your catalog, and never implement alone when a spawn tool exists. See [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+**The launch rule does not change with the host.** [Start here](#start-here-you-coordinate-workers-do-the-phases) applies to a Cursor chat, a Project worker, and a Cloud Agent alike: the named `supercook-<role>` worker through the first launch path this session has, inline only when there is no spawn tool, and never a tool that is not in your catalog.
 
 ## The pipeline
 
 Phases run in order. The assessor's verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before the assessor runs.
 
-| # | Phase | Guide |
-|---|---|---|
-| 0 | Intake: probe capabilities, decide the working tree, fix run identity, seed the ledger | [pipeline/intake.md](pipeline/intake.md) |
-| 1 | Assess: tier, track, big-change flag | [agents.md](agents.md) |
-| 2 | Recon: broad map, then targeted deep-dives, test paths and test command | [pipeline/recon.md](pipeline/recon.md) |
-| 3 | Design Doc, big changes only | [pipeline/design-doc.md](pipeline/design-doc.md) |
-| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | [pipeline/planning.md](pipeline/planning.md) |
-| 5 | Test-first: user-journey tests, committed before implementation | [pipeline/implementation.md](pipeline/implementation.md) |
-| 6 | Implement: surgical chunks, parent guards, line accounting | [pipeline/implementation.md](pipeline/implementation.md) |
-| 7 | Verify: fresh-context audit that runs the suite | [pipeline/verification.md](pipeline/verification.md) |
-| 8 | Deliver: PR per slice, stack lifecycle, plain-language body | [pipeline/delivery.md](pipeline/delivery.md) |
-| 9 | Merge: only on an explicit merge ask, never inferred | [pipeline/merge.md](pipeline/merge.md) |
+| # | Phase | Run by | Guide |
+|---|---|---|---|
+| 0 | Intake: probe capabilities, decide the working tree, fix run identity, seed the ledger | You | [pipeline/intake.md](pipeline/intake.md) |
+| 1 | Assess: tier, track, big-change flag | `supercook-assessor` | [agents.md](agents.md) |
+| 2 | Recon: broad map, then targeted deep-dives, test paths and test command | `supercook-explorer`, one launch per area | [pipeline/recon.md](pipeline/recon.md) |
+| 3 | Design Doc, big changes only | You, with the user | [pipeline/design-doc.md](pipeline/design-doc.md) |
+| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | `supercook-planner`, or three `supercook-arena-runner` launches then `supercook-plan-judge`, or `supercook-plan-optimizer` | [pipeline/planning.md](pipeline/planning.md) |
+| 5 | Test-first: user-journey tests, committed before implementation | `supercook-test-designer` | [pipeline/implementation.md](pipeline/implementation.md) |
+| 6 | Implement: surgical chunks, parent guards, line accounting | `supercook-implementer`, one launch per slice | [pipeline/implementation.md](pipeline/implementation.md) |
+| 7 | Verify: fresh-context audit that runs the suite | `supercook-verifier` | [pipeline/verification.md](pipeline/verification.md) |
+| 8 | Deliver: PR per slice, stack lifecycle, plain-language body | You | [pipeline/delivery.md](pipeline/delivery.md) |
+| 9 | Merge: only on an explicit merge ask, never inferred | You | [pipeline/merge.md](pipeline/merge.md) |
+
+"Run by" names who does the phase's work. A worker row is yours only to launch, guard, and record, per [Start here](#start-here-you-coordinate-workers-do-the-phases).
 
 **Phase 9 is opt-in.** Absent a merge ask, phase 8 ends the run at an open PR. A PR looking mergeable is not an ask.
 
@@ -186,6 +205,9 @@ answers to the ask, not to the verdict.
 
 Route on the assessor's `track`, except `merge`, `implement-plan`, and `review`,
 which the user selects directly. Copy the playbook's steps verbatim into the ledger.
+A playbook step says what has to be true before the run ends, not who does it: a
+step such as "fix the smallest thing the evidence justifies" is still the
+implementer's edit, launched from the phase 6 row.
 
 | Track | When | Playbook |
 |---|---|---|

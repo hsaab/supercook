@@ -50,11 +50,12 @@ Same invariants as above; only typical spawn paths differ.
 ### Cloud Agent on a user repo
 
 - **Who:** Cloud worker on the customer's repository with the skill available.
-- **Typed agents:** Present when the catalog lists `supercook-*` (installed plugin, or files mirrored into `~/.cursor/agents/`); otherwise record `supercook-agents: no`. Never vendor the agent files into the customer's repository to get them.
+- **Typed agents:** Present when the catalog lists `supercook-*` (installed plugin, or files mirrored into `~/.cursor/agents/` before the session started); otherwise record `supercook-agents: no`. Never vendor the agent files into the customer's repository to get them.
+- **Where the spawn tool is:** a Cloud Agent can list `Task` inside a dynamic tool catalog namespace and not in its top-level tool list. Open that catalog and read the subagent types before recording `spawn: none`.
 - **Spawn, when any spawn tool is listed:** launch the named subagent `supercook-<role>` through that tool, one launch per roster role, with the prompt = role and run tags, then the body of `agents/supercook-<role>.md`, then the brief. Set the tool's type or name field to `supercook-<role>` when it has one and accepts that name. Launch explorer, planner, test-designer, implementer, and verifier this way, not only the assessor. Prefer a same-machine option if the tool offers one; if the worker lands on its own VM, follow the separate-VM rule in [../agents.md](../agents.md#host-recipes).
 - **Spawn, when nothing is listed:** record `spawn: none` and run each role inline from its agent file ([../agents.md](../agents.md#no-spawn-tool-run-roles-inline)). Do not wait for, guess, or invent a spawn tool that your own tool list does not show.
 - **Extras:** Resolve models from repo `.supercook/models.md` when present; read plugin [../SKILL.md](../SKILL.md) on turn 1 even when the coordinator message is long.
-- **Parent job:** Log `parent-host: cloud-agent` and `spawn:` when probed; run every phase through the recorded path; do not collapse to one-pass implement on standard/complex.
+- **Parent job:** Log `parent-host: cloud-agent` and `spawn:` when probed; launch the assessor as the first action after intake; run every phase through the recorded path; do not collapse to one-pass implement on standard/complex.
 
 ### Grok Bot, voice, and other entries
 

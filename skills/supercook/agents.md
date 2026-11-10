@@ -2,6 +2,8 @@
 
 The nine agents live at the plugin root in `agents/`, not in this skill folder. Each is a Cursor custom subagent file (YAML frontmatter with `name`, `description`, `model`, `readonly`), so Cursor discovers it from the installed plugin's `agents/` directory, or from `~/.cursor/agents/` on a host that mirrors only the skill (see the README install notes), and it shows up as a named subagent the parent can launch with `/supercook-<role>` or "use the supercook-<role> subagent". Consumer repositories never need a copy in their own `.cursor/agents/`. Every name is prefixed `supercook-` so a public install cannot collide with someone's own `implementer` or `verifier`.
 
+**Finding an agent file.** `agents/supercook-<role>.md` is a path from the plugin root, two folders up from this skill folder (`../../agents/` from here), and is a different thing from this `agents.md` file. When this skill folder was mirrored on its own and has no plugin root above it, read the file from `~/.cursor/agents/`, then from `~/.cursor/plugins/local/supercook/agents/`.
+
 This file is the launch contract: what the parent passes in, when the job is done, what comes back, and what the parent checks afterwards. The prompt itself lives in the agent file.
 
 ## Contents
@@ -176,7 +178,9 @@ UI controls live in two places rather than being copied here:
 
 Every roster role is a **named subagent launch**: launch the subagent `supercook-<role>` (in Cursor terms, invoke `/supercook-<role>` or say "use the supercook-<role> subagent"), with the role and run tags, the body of `agents/supercook-<role>.md`, and this launch's brief as its prompt. This skill never requires a particular spawn tool by name. Use whatever spawn tool **this session actually lists**; hosts differ, and the same host can differ between sessions.
 
-Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
+Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does, and the catalog is fixed when the session starts. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies, role by role: a session that loaded an older install can list eight typed agents and no `supercook-plan-optimizer`, and then only that role drops to the second path.
+
+A spawn tool is not always in the top-level tool list. Check the tool list, any deferred or dynamic tool catalog (open its namespaces and read what they hold), and the subagent types before recording `none`. A real `none` does exist: Cursor lets the main agent and its direct subagents launch subagents, so a parent that is itself two levels down has no spawn tool, and hooks or tool policy can remove it as well. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in [.cursor/supercook/subagent-launch.md](../../.cursor/supercook/subagent-launch.md) applies only when that tool is in the catalog.
 
 | `spawn:` | When | How each roster role runs |
 |---|---|---|
@@ -229,5 +233,7 @@ On standard or complex tier, these ledger reasons are **invalid** unless assesso
 - `skip: user checklist`
 - `skip: coordinator spec`
 - `skip: plan included in kickoff`
+- `skip: faster inline`
+- `skip: small task`
 
-Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.
+Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Neither does a parent's own sense that the work is small or that one pass would be quicker: size is the assessor's verdict to give. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.
