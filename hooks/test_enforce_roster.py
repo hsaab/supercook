@@ -1,6 +1,7 @@
 """User-journey tests for hooks/enforce_roster.py. Run with: python3 -m unittest discover hooks
 
 Each case pipes a real-shaped preToolUse payload through the hook script in a fresh temp tree with HOME inside it.
+subagentStart cases send a top-level body with no tool_input.
 """
 
 import json
@@ -11,6 +12,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import NamedTuple
+
+# discover -s hooks puts this directory on sys.path. Importing the module as hooks.test_enforce_roster does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import enforce_roster
 import roster
@@ -40,13 +44,14 @@ def tags(role=None, run="{run}", body="Objective: map the hooks folder."):
 
 
 class Case(NamedTuple):
-    name: str
+    label: str
     prompt: str
     model: object
     subagent_type: str
     expect: tuple
     files: tuple = ()
     roots: tuple | None = ("repo",)
+    name: str = ""
 
 
 def match_and_mismatch(name, prompt, subagent_type, expected, wrong, files=(), roots=("repo",)):
@@ -66,7 +71,7 @@ class HookTestCase(unittest.TestCase):
 
     def check(self, cases):
         for case in cases:
-            with self.subTest(case.name), tempfile.TemporaryDirectory() as temp:
+            with self.subTest(case.label), tempfile.TemporaryDirectory() as temp:
                 root = Path(temp).resolve()
                 (root / "repo" / "run").mkdir(parents=True)
                 for rel, text in (("home/.supercook/models.md", HOME_MODELS), *case.files):
@@ -77,6 +82,7 @@ class HookTestCase(unittest.TestCase):
                     "prompt": case.prompt.format(run=root / "repo" / "run", root=root),
                     "subagent_type": case.subagent_type,
                     **({} if case.model is OMIT else {"model": case.model}),
+                    **({} if case.name == "" else {"name": case.name}),
                 }
                 roots = {} if case.roots is None else {"workspace_roots": [str(root / name) for name in case.roots]}
                 response = self.run_hook(root, json.dumps({"tool_name": "Subagent", "tool_input": tool_input, **roots}))
@@ -128,6 +134,77 @@ class LaunchDecisionTests(HookTestCase):
             Case("role without run", tags("explorer", run=None), "home-explorer", "supercook-explorer", ("deny", "supercook-run")),
             Case("foreign role without run stays allowed", tags("explorer", run=None), "home-explorer", "explore", ALLOW),
         ])
+
+    def test_custom_name_without_tags_is_denied(self):
+        self.check([
+            Case(
+                "custom implementer, no tags",
+                tags(run=None),
+                SHIPPED["implementer"],
+                "custom",
+                ("deny", "supercook-role", "supercook-run"),
+                name="supercook-implementer",
+            ),
+        ])
+
+    def test_custom_name_with_tags_and_roster_model_is_allowed(self):
+        self.check([
+            Case(
+                "custom implementer, both tags, roster model",
+                tags("implementer"),
+                SHIPPED["implementer"],
+                "custom",
+                ALLOW,
+                name="supercook-implementer",
+            ),
+        ])
+
+    def test_custom_name_with_wrong_model_is_denied(self):
+        self.check([
+            Case(
+                "custom implementer, wrong model",
+                tags("implementer"),
+                "claude-opus-5-5-high",
+                "custom",
+                ("deny", SHIPPED["implementer"]),
+                name="supercook-implementer",
+            ),
+        ])
+
+    def test_custom_name_missing_run_tag_is_denied(self):
+        self.check([
+            Case(
+                "custom implementer, role and no run",
+                tags("implementer", run=None),
+                SHIPPED["implementer"],
+                "custom",
+                ("deny", "supercook-run"),
+                name="supercook-implementer",
+            ),
+        ])
+
+    def test_custom_foreign_name_is_allowed(self):
+        self.check([
+            Case("custom helper, no tags", tags(run=None), "composer-2.5", "custom", ALLOW, name="my-helper"),
+        ])
+
+    def test_subagent_start_name_without_tags_is_denied(self):
+        payload = {
+            "subagent_type": "custom",
+            "name": "supercook-implementer",
+            "model": SHIPPED["implementer"],
+            "task": "",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            response = self.run_hook(Path(temp), json.dumps(payload))
+        message = response.get("agent_message", "")
+        seen = (response.get("permission"), *(part for part in ("supercook-role", "supercook-run") if part in message))
+        self.assertEqual(seen, ("deny", "supercook-role", "supercook-run"), response)
+
+    def test_subagent_start_custom_without_name_is_allowed(self):
+        payload = {"subagent_type": "custom", "task": "Objective: map the hooks folder."}
+        with tempfile.TemporaryDirectory() as temp:
+            self.assertEqual(self.run_hook(Path(temp), json.dumps(payload)), {"permission": "allow"})
 
 
 class RosterSourceTests(HookTestCase):
