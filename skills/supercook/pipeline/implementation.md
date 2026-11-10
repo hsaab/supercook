@@ -67,7 +67,7 @@ Before accepting the test designer's return, run the
 
 One `supercook-implementer` launch per slice, or per chunk within a slice when a slice has natural internal steps.
 
-Before a trivial or other direct chunk that had no plan, record a restart point in
+Before a trivial chunk, or any other chunk that had no plan, record a restart point in
 the ledger:
 
 ```text

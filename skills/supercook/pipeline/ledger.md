@@ -31,6 +31,8 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 
 Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
 
+A skip removes a phase. It never moves a phase that runs from its worker to the parent. On a run whose capability line has `spawn:` set to anything but `none`, a roster phase row is checked only when the log has that worker's launch row, at every tier including trivial. `small enough to do directly` and `faster inline` are not reasons, per the launch rule in [../SKILL.md](../SKILL.md#the-launch-rule-you-coordinate-named-workers-run-the-phases).
+
 ## Format
 
 ```markdown
@@ -38,7 +40,7 @@ Valid skips cite assessor verdict, user-selected track, tier collapse, big-chang
 run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
-capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes
+capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes | stacking gt | supercook-agents installed | spawn typed | enforce_roster yes | parent-host cursor-chat
 models-resolved: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
 models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
 test-paths: **/*.test.ts
