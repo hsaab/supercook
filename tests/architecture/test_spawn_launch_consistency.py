@@ -117,6 +117,46 @@ class SpawnLaunchConsistencyTest(unittest.TestCase):
                     f"{label} still states the named recipe without pointing at the spawn shape rule",
                 )
 
+    def test_agents_opening_defers_unlisted_roles_to_the_spawn_shape_rule(self):
+        """An unlisted role follows the spawn shape rule, not general-purpose alone."""
+        paragraphs = [
+            part.strip()
+            for part in re.split(r"\n\s*\n", read_doc(AGENTS_DOC))
+            if "role that is not listed" in part.casefold()
+        ]
+        self.assertEqual(
+            len(paragraphs),
+            1,
+            "agents.md should have one paragraph about a role that is not listed",
+        )
+        unlisted = [
+            sentence
+            for sentence in sentences_of(paragraphs[0])
+            if "role that is not listed" in sentence.casefold()
+        ]
+        self.assertEqual(
+            len(unlisted),
+            1,
+            "the unlisted-role paragraph has no single sentence about a role that is not listed",
+        )
+        sentence = unlisted[0]
+        with self.subTest(check="names the spawn shape rule"):
+            self.assertIn(
+                SPAWN_SHAPE_WORDS,
+                sentence.casefold(),
+                "unlisted-role sentence does not name the spawn shape rule: " + sentence,
+            )
+        with self.subTest(check="general-purpose is not the only outcome"):
+            # Naming general-purpose without the custom type states that type as the only outcome.
+            states_only_general_purpose = "general-purpose" in sentence and (
+                re.search(r"\bcustom\b", sentence) is None
+            )
+            self.assertFalse(
+                states_only_general_purpose,
+                "unlisted-role sentence states the general-purpose type as the only outcome: "
+                + sentence,
+            )
+
     def test_launch_rule_and_guide_reading_line_agree(self):
         """The parent may read a phase guide to write the brief, and must not do the phase."""
         skill = read_doc(SKILL_DOC)
