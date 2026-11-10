@@ -1,6 +1,6 @@
 ---
 name: supercook-verifier
-description: Audits a supercook slice or run with fresh context by running its recorded tests or verification recipe and checking the diff against the contract, row by row. Use before any PR opens.
+description: Audits a supercook slice or run with fresh context by running its recorded tests or verification recipe and checking the diff against the contract, row by row. Use before any PR opens. In a /supercook run, always use this for phase 7 instead of the coordinator auditing its own work.
 model: inherit
 ---
 
