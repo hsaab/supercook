@@ -175,6 +175,19 @@ class CloudRosterEditGateTests(unittest.TestCase):
             event = pre_tool(root, tool="Write", path=str(root / "src" / "app.py"), key="path", shape="parent")
             self.assert_allow(self.hook(root, event))
 
+    def test_parent_edit_with_undecodable_active_run_is_allowed(self):
+        # Invalid UTF-8 in the pointer: read_text raises before any ledger is chosen.
+        with tree() as root:
+            for name in ("older", "newer"):
+                path = root / ".supercook" / name / "ledger.md"
+                path.parent.mkdir(parents=True)
+                path.write_text(ledger("recon"), encoding="utf-8")
+            (root / ".supercook" / "active-run").write_bytes(b"\xff\xfe\xfd")
+            event = pre_tool(
+                root, tool="Write", path=str(root / "src" / "app.py"), key="path", shape="parent",
+            )
+            self.assert_allow(self.hook(root, event))
+
     def test_guard_failure_allows_and_does_not_follow_up(self):
         with tree("recon") as root:
             event = {
