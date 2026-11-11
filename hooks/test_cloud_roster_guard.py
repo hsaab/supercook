@@ -1,12 +1,11 @@
 """Stop-hook journeys for hooks/cloud_roster_guard.py.
 
-A parent ends a turn. The hook reads the ledger and, when workers are still owed,
-prints a followup that names them. Run: python3 -m unittest hooks.test_cloud_roster_guard
+A parent ends a turn. The hook reads the ledger and, when a roster row is still
+open, echoes the first one verbatim. Run: python3 -m unittest hooks.test_cloud_roster_guard
 """
 
 import json
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -20,59 +19,35 @@ import cloud_roster_guard
 
 GUARD = Path(cloud_roster_guard.__file__).resolve()
 
-# Checked rows name who ran, and that name must not be copied out. Open rows say
-# "not started" so the followup has to name the worker from the phase map.
-CHECKED = {
-    "assess": "supercook-assessor via Task (typed), grok-4.7-high (21:33)",
-    "recon": "supercook-explorer via Task (typed), composer-2.5 (21:52)",
-    "plan": "supercook-planner via Task (typed) (22:16)",
-    "test-first": "supercook-test-designer via Task (typed) (22:24)",
-    "implement": "supercook-implementer via Task (typed), composer-2.5 (22:31)",
+PHASE_ROWS = {
+    "assess": "supercook-assessor via Task, grok-4.7-high",
+    "recon": "supercook-explorer via Task, composer-2.5",
+    "plan": "supercook-planner via Task",
+    "test-first": "supercook-test-designer via Task",
+    "implement": "supercook-implementer, one launch per slice",
     "verify": "supercook-verifier, fresh launch",
 }
-PHASES = ("assess", "recon", "plan", "test-first", "implement", "verify")
-WORKERS = (
-    "supercook-assessor", "supercook-explorer", "supercook-planner", "supercook-plan-optimizer",
-    "supercook-arena-runner", "supercook-plan-judge", "supercook-test-designer",
-    "supercook-implementer", "supercook-verifier", "supercook-review-implementer",
-)
-SCHEMA_PHRASES = (
-    "listed type", "free value", "name field", "supercook-<role>", "general-purpose",
-    "agent file as the prompt", "plan-optimizer takes that last branch on today's older install",
-    "relaunch", "in-flight launch is recorded", "duplicated",
-)
 
 
-def others(*kept):
-    return tuple(name for name in WORKERS if name not in kept)
-
-
-def ledger(tier, track, open_labels, mode=None, replacements=None, trailing=(), started=True):
+def ledger(open_labels=(), replacements=None, trailing=()):
     """Header lines from a real run ledger, then ## Phases and top-level rows."""
     replacements = replacements or {}
-    mode_part = f" | mode: {mode}" if mode else ""
     lines = [
         "# Ledger: stop hook fixture",
         "run-id: fixture-run",
-        "repo: https://github.com/hsaab/supercook.git | branch: fixture | worktree: /tmp/fixture",
-        f"started: 2026-11-09 21:30 | tier: {tier} | track: {track}{mode_part}",
-        "capabilities: git yes | host github | tests `python3 -m unittest discover -s hooks`",
-        "models: standard grok-4.7-high | explorer composer-2.5 | implementer composer-2.5 | plan-optimizer inherit",
-        "ui-change: no | ui-source: none | render-check: none",
+        "started: 2026-11-09 21:30 | tier: standard | track: bugfix",
+        "capabilities: git yes | spawn Task | parent-host cloud-agent",
+        "models: standard grok-4.7-high | implementer composer-2.5",
         "",
         "## Phases",
     ]
-    lines = [line for line in lines if started or not line.startswith("started:")]
-    for label in PHASES:
+    for label, worker in PHASE_ROWS.items():
         if label in replacements:
             lines.append(replacements[label])
         else:
             state = " " if label in open_labels else "x"
-            detail = "not started" if label in open_labels else CHECKED[label]
-            lines.append(f"- [{state}] {label}: {detail}")
-        if label == "recon":
-            lines.append("- [~] design doc. skip: big-change no")
-    lines.extend(("- [ ] deliver", "- [~] merge. skip: no merge asked for, run ends at the open PR", *trailing))
+            lines.append(f"- [{state}] {label}: {worker}")
+    lines.extend(("- [ ] deliver", "- [~] merge. skip: no merge asked for", *trailing))
     return "\n".join(lines) + "\n"
 
 
@@ -99,103 +74,61 @@ class CloudRosterGuardTests(unittest.TestCase):
         except json.JSONDecodeError:
             self.fail(f"stdout is not JSON: {done.stdout!r}")
 
-    def followup(self, root, stdin_text=None, copies=1):
-        payload = self.run_hook(root, stdin_text, copies)
+    def followup(self, root, **kwargs):
+        payload = self.run_hook(root, **kwargs)
         self.assertEqual(set(payload), {"followup_message"}, payload)
-        message = payload["followup_message"]
-        self.assertIsInstance(message, str)
-        self.assertTrue(message.strip(), payload)
-        return message
+        return payload["followup_message"]
 
-    def spoken(self, tier, track, open_labels, copies=1, **kwargs):
+    def test_stop_echoes_the_first_open_row_verbatim(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "run", ledger(tier, track, open_labels, **kwargs))
-            return self.followup(root, copies=copies)
+            write_ledger(root, "run", ledger(("recon", "plan", "implement")))
+            message = self.followup(root)
+            self.assertIn("- [ ] recon: supercook-explorer via Task, composer-2.5", message)
+            self.assertNotIn("supercook-planner", message)
+            self.assertNotIn("supercook-implementer", message)
 
-    def assert_order(self, message, names):
-        cursor = -1
-        for name in names:
-            found = message.find(name, cursor + 1)
-            self.assertGreater(found, cursor, f"{name} missing or out of order in: {message}")
-            cursor = found
-
-    def assert_workers(self, message, names):
-        self.assert_order(message, names)
-        for name in others(*names):
-            self.assertNotIn(name, message, message)
-
-    def assert_schema_and_relaunch(self, message):
-        for phrase in SCHEMA_PHRASES:
-            self.assertIn(phrase, message)
-        self.assertIsNone(re.search(r"\bresume\b", message, re.IGNORECASE), message)
-        sentences = [part for part in re.split(r"[.!?\n]+", message) if re.search(r"\bcustom\b", part)]
-        self.assertTrue(sentences, message)
-        for sentence in sentences:
-            self.assertIn("free value", sentence, sentence)
-            self.assertIn("name field", sentence, sentence)
-
-    def test_stop_with_open_recon_names_every_remaining_worker(self):
-        owed = (
-            "supercook-explorer", "supercook-planner", "supercook-test-designer",
-            "supercook-implementer", "supercook-verifier",
-        )
-        message = self.spoken("standard", "bugfix", ("recon", "plan", "test-first", "implement", "verify"))
-        self.assert_workers(message, owed)
-        self.assert_schema_and_relaunch(message)
-
-    def test_stop_on_trivial_demands_implement_and_verify_only(self):
-        message = self.spoken("trivial", "bugfix", ("recon", "plan", "test-first", "implement", "verify"))
-        self.assert_workers(message, ("supercook-implementer", "supercook-verifier"))
-
-    def test_stop_on_implement_plan_demands_the_optimizer(self):
-        message = self.spoken("standard", "implement-plan", ("plan", "test-first", "implement", "verify"))
-        self.assert_workers(message, (
-            "supercook-plan-optimizer", "supercook-test-designer",
-            "supercook-implementer", "supercook-verifier",
-        ))
-
-    def test_stop_on_complex_plan_names_arena_then_judge(self):
-        message = self.spoken("complex", "bugfix", ("plan",))
-        self.assert_workers(message, ("supercook-arena-runner",) * 3 + ("supercook-plan-judge",))
-        self.assertEqual(message.count("supercook-arena-runner"), 3, message)
-
-    def test_stop_on_review_mode_demands_the_implementer(self):
-        for mode in ("review", "review+merge"):
-            with self.subTest(mode=mode):
-                message = self.spoken("standard", "bugfix", ("implement",), mode=mode)
-                self.assertNotIn("supercook-review-implementer", message)
-                self.assert_workers(message, ("supercook-implementer",))
-
-    def test_stop_with_the_same_root_listed_twice_names_the_explorer(self):
-        message = self.spoken("standard", "bugfix", ("recon",), copies=2)
-        self.assert_workers(message, ("supercook-explorer",))
-
-    def test_stop_with_a_missing_started_line_is_silent(self):
+    def test_stop_message_covers_launch_inline_and_sanctioned_pause(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "run", ledger("standard", "bugfix", ("recon",), started=False))
-            self.assertEqual(self.run_hook(root), {})
+            write_ledger(root, "run", ledger(("verify",)))
+            message = self.followup(root)
+            for phrase in ("Launch that worker", "run it inline", "mark the row inline", "[!]", "blocker"):
+                self.assertIn(phrase, message)
 
-    def test_stop_when_only_deliver_is_open_is_silent(self):
-        # [~] and a row whose text contains skip: are not owed. Indented checkbox
-        # lines are not phase rows. deliver, design doc, and merge are not workers.
+    def test_stop_with_the_same_root_listed_twice_still_echoes_one_row(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon",)))
+            message = self.followup(root, copies=2)
+            self.assertEqual(message.count("- [ ] recon:"), 1, message)
+
+    def test_stop_ignores_rows_that_are_not_owed(self):
+        # [~] skipped, [!] blocked, [x] done, indented rows, and rows outside the
+        # roster (deliver, design doc, merge) never trigger a followup.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             write_ledger(root, "run", ledger(
-                "standard", "bugfix", (),
                 replacements={
-                    "plan": "- [~] plan: supercook-planner",
-                    "test-first": "- [ ] test-first: skip: supercook-test-designer",
+                    "recon": "- [~] recon: supercook-explorer. skip: assessor trivial",
+                    "plan": "- [!] plan: supercook-planner blocked: waiting on design doc approval",
                 },
                 trailing=("  - [ ] recon: supercook-explorer", "  - [ ] implement: supercook-implementer"),
             ))
             self.assertEqual(self.run_hook(root), {})
 
+    def test_stop_treats_a_checked_inline_row_as_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(replacements={
+                "recon": "- [x] recon: supercook-explorer inline (spawn none)",
+            }))
+            self.assertEqual(self.run_hook(root), {})
+
     def test_stop_with_no_ledger_is_silent(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            text = ledger("standard", "bugfix", ("implement",))
+            text = ledger(("implement",))
             (root / ".supercook").mkdir()
             (root / ".supercook" / "ledger.md").write_text(text, encoding="utf-8")
             nested = root / ".supercook" / "run" / "nested"
@@ -206,8 +139,8 @@ class CloudRosterGuardTests(unittest.TestCase):
     def test_stop_with_two_ledgers_and_no_pointer_is_silent(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
-            write_ledger(root, "newer", ledger("standard", "bugfix", ("recon",)), 1_800_000_000)
+            write_ledger(root, "older", ledger(("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger(("recon",)), 1_800_000_000)
             self.assertEqual(self.run_hook(root), {})
             # A pointer that names neither ledger does not pick between them either.
             (root / ".supercook" / "active-run").write_text(".supercook/missing/ledger.md\n", encoding="utf-8")
@@ -217,8 +150,8 @@ class CloudRosterGuardTests(unittest.TestCase):
         # Two ledgers force the pointer to be read. Bytes that are not UTF-8 must fail open.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
-            write_ledger(root, "newer", ledger("standard", "bugfix", ("recon",)), 1_800_000_000)
+            write_ledger(root, "older", ledger(("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger(("recon",)), 1_800_000_000)
             (root / ".supercook" / "active-run").write_bytes(b"\xff\xfe\xfd")
             self.assertEqual(self.run_hook(root), {})
 
@@ -227,8 +160,8 @@ class CloudRosterGuardTests(unittest.TestCase):
         # A mode 000 pointer is unreadable for a non-root user. Put the mode back so the temp dir can be removed.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
-            write_ledger(root, "newer", ledger("standard", "bugfix", ("recon",)), 1_800_000_000)
+            write_ledger(root, "older", ledger(("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger(("recon",)), 1_800_000_000)
             pointer = root / ".supercook" / "active-run"
             pointer.write_text(".supercook/newer/ledger.md\n", encoding="utf-8")
             mode = pointer.stat().st_mode & 0o777
@@ -241,29 +174,32 @@ class CloudRosterGuardTests(unittest.TestCase):
     def test_stop_uses_active_run_when_several_ledgers_exist(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "older", ledger("standard", "bugfix", ("implement",)), 1_700_000_000)
-            write_ledger(
-                root, "newer",
-                ledger("standard", "bugfix", ("recon", "plan", "test-first", "implement", "verify")),
-                1_800_000_000,
-            )
+            write_ledger(root, "older", ledger(("implement",)), 1_700_000_000)
+            write_ledger(root, "newer", ledger(("recon", "plan", "implement")), 1_800_000_000)
             (root / ".supercook" / "active-run").write_text(".supercook/older/ledger.md\n", encoding="utf-8")
-            self.assert_workers(self.followup(root), ("supercook-implementer",))
-
-    def test_stop_with_spawn_none_degraded_row_does_not_demand_it(self):
-        message = self.spoken("standard", "bugfix", ("implement",), replacements={
-            "recon": "- [ ] recon: supercook-explorer degraded: parent inline (spawn none)",
-        })
-        self.assert_workers(message, ("supercook-implementer",))
+            message = self.followup(root)
+            self.assertIn("- [ ] implement:", message)
+            self.assertNotIn("recon", message)
 
     def test_stop_error_prints_an_empty_object(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            write_ledger(root, "run", ledger("standard", "bugfix", ("recon",)))
+            write_ledger(root, "run", ledger(("recon",)))
             samples = ("not json at all", "[]", json.dumps({"hook_event_name": "stop", "workspace_roots": 1}))
             for stdin_text in samples:
                 with self.subTest(stdin=stdin_text):
                     self.assertEqual(self.run_hook(root, stdin_text), {})
+
+    def test_task_post_tool_use_prints_an_empty_object(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon",)))
+            event = {
+                "hook_event_name": "postToolUse", "tool_name": "Task",
+                "tool_input": {"subagent_type": "supercook-explorer", "prompt": "map"},
+                "workspace_roots": [str(root)],
+            }
+            self.assertEqual(self.run_hook(root, json.dumps(event)), {})
 
 
 if __name__ == "__main__":

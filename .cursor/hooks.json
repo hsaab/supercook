@@ -1,39 +1,17 @@
 {
   "version": 1,
   "hooks": {
-    "subagentStart": [
-      {
-        "command": "python3 hooks/enforce_roster.py",
-        "timeout": 5
-      }
-    ],
-    "preToolUse": [
-      {
-        "command": "python3 hooks/enforce_roster.py",
-        "matcher": "Task",
-        "timeout": 5
-      },
-      {
-        "command": "python3 hooks/cloud_roster_guard.py",
-        "timeout": 5
-      }
-    ],
     "postToolUse": [
       {
         "command": "python3 hooks/cloud_roster_guard.py",
-        "timeout": 5
-      }
-    ],
-    "beforeSubmitPrompt": [
-      {
-        "command": "python3 hooks/cloud_roster_guard.py",
+        "matcher": "Task",
         "timeout": 5
       }
     ],
     "stop": [
       {
         "command": "python3 hooks/cloud_roster_guard.py",
-        "loop_limit": 5,
+        "loop_limit": 2,
         "timeout": 5
       }
     ]
