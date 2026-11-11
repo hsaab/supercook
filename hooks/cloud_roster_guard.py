@@ -1,11 +1,12 @@
-"""stop hook: nudge the parent when supercook phase workers are still open (fail open)."""
+"""Supercook project hook: stop followup and preToolUse product-edit gate (fail open)."""
 
 from __future__ import annotations
 
 import json
 import sys
 
-from cloud_roster_ledger import owed_workers, resolve_ledger
+from cloud_roster_edit_gate import decide_edit
+from cloud_roster_ledger import first_open_owed, owed_workers, resolve_ledger
 
 
 def followup_text(workers: list[str]) -> str:
@@ -36,15 +37,52 @@ def followup_text(workers: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _handle_pre_tool_use(event: dict) -> dict:
+    try:
+        workspace_roots = event.get("workspace_roots")
+        if not isinstance(workspace_roots, list):
+            raise TypeError("workspace_roots must be a list")
+        roots = [str(item) for item in workspace_roots]
+    except Exception:
+        return {"permission": "allow"}
+
+    try:
+        owed_phase: str | None = None
+        owed_worker: str | None = None
+        ledger_path = resolve_ledger(roots)
+        if ledger_path is not None:
+            try:
+                ledger_text = ledger_path.read_text(encoding="utf-8")
+                owed = first_open_owed(ledger_text)
+                if owed is not None:
+                    owed_phase, owed_worker = owed
+            except OSError:
+                pass
+        return decide_edit(event, roots, owed_phase, owed_worker)
+    except Exception:
+        return {"permission": "allow"}
+
+
 def main() -> None:
     try:
         raw = sys.stdin.read()
         event = json.loads(raw)
         if not isinstance(event, dict):
             raise TypeError("event must be an object")
-        if event.get("hook_event_name") != "stop":
-            print("{}", flush=True)
-            sys.exit(0)
+    except Exception:
+        print("{}", flush=True)
+        sys.exit(0)
+
+    hook_name = event.get("hook_event_name")
+    if hook_name == "preToolUse":
+        print(json.dumps(_handle_pre_tool_use(event)), flush=True)
+        sys.exit(0)
+
+    if hook_name != "stop":
+        print("{}", flush=True)
+        sys.exit(0)
+
+    try:
         workspace_roots = event.get("workspace_roots")
         if not isinstance(workspace_roots, list):
             raise TypeError("workspace_roots must be a list")
