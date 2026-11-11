@@ -126,6 +126,8 @@ A cloud VM cannot see your local home directory, so three things decide whether 
 
 To see what a run got, read the subagent types it lists. Nine `supercook-*` names means the current agents are typed. Eight, with no `supercook-plan-optimizer`, means the VM loaded an install from before that agent existed, so refresh the marketplace. None means every role goes through the session's spawn tool with its agent file as the prompt. All three run the same pipeline: the coordinator launches a worker for every roster phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
 
+**No spawn tool?** Some Cloud Agents never get `Task`. The run then switches to solo mode: the same phases, each handed off through a file in `.supercook/<run>/`, with red tests committed on their own, a test-diff and scope check before every commit, and a verify step that re-reads the diff from disk and runs the suite. The arena does not run. The PR says it was built in solo mode, and hosted Bugbot is the independent review. Details are in [skills/supercook/agents.md](skills/supercook/agents.md#no-spawn-tool-run-roles-inline).
+
 One thing to know before the first run: without worktree support it works on your current branch, and in that case it needs a clean tree. It will say so rather than stashing anything.
 
 The marketplace above is one you add to your own account. It is not a listing in the official Cursor Marketplace, which is a separate submission step.
@@ -153,11 +155,11 @@ curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/superco
 
 On a machine with a home roster, you can still add `<workspace-root>/.supercook/models.md` when this checkout should pin specific roles. Change the roles you want and delete the rest. Any role a higher file does not name falls through to the next tier. Write `inherit` on a role to use your session model (omit the model field on launch).
 
-At intake the orchestrator resolves all three files, validates each slug against the models your session offers (the same catalog `CreateAgent` or `Task` accepts), announces once which roles fell back, and writes **`models-resolved:`** on the run ledger (every roster key to slug or `inherit`). It also writes **`models:`** for hook and audit; unavailable slugs use `arena-b inherit (unavailable gpt-5.6-sol-max)` so later launches can omit the model without guesswork. Project and cloud coordinators must pass `model` on every `supercook-*` launch from `models-resolved:`; shipped agent frontmatter does not do that for you.
+At intake the orchestrator resolves all three files and writes one **`models:`** line on the run ledger (every roster key to slug or `inherit`). It does not pre-validate slugs: if a launch rejects a model, the parent drops the field, relaunches on the session model, and records `inherit` on the launch row. Project and cloud coordinators pass `model` on every `supercook-*` launch from that line; shipped agent frontmatter does not do that for you.
 
 Example slugs from the shipped roster (validate on your plan): `grok-4.7-high`, `grok-4.7-medium`, `composer-2.5`. Shipped defaults put `grok-4.7-high` on `arena-a` and `arena-c`, and `composer-2.5` on `arena-b`.
 
-**Tags and hook.** Every supercook subagent launch carries `supercook-role: <roster-key>` and `supercook-run: <run folder>` in the prompt. The plugin's `preToolUse` hook (`hooks/enforce_roster.py`) reads the same three-tier roster and the ledger header. It **denies** mismatched models or missing tags on `supercook-*` launches; it does not rewrite prompts or models. If the hook script errors or the hook command fails, the launch **fails open** and proceeds so unrelated work is not blocked. Details live in [skills/supercook/models.md](skills/supercook/models.md).
+**Models are a preference, not a gate.** No hook checks a launch's model. Tell the run "use opus for the implementer" at any point and it applies from the next launch on; the parent updates the ledger `models:` line and keeps going. Details live in [skills/supercook/models.md](skills/supercook/models.md).
 
 **Keep the arena diverse:** if you override the contestants, keep them different. Three contestants on one model mostly agree with themselves, and the disagreement is the entire value of a cook-off.
 
@@ -215,7 +217,7 @@ After plan mode, `/supercook use this plan` in the same chat is enough. No path 
 ```
 .cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
 agents/                       nine discoverable subagents, all supercook- prefixed
-hooks/                        roster resolution and preToolUse enforcement (deny only, fail open)
+hooks/                        stop-hook and event-log scripts used by this repo's own .cursor/hooks.json (the plugin ships no hooks)
 assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy

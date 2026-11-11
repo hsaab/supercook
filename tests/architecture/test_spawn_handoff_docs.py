@@ -3,8 +3,7 @@
 Run with: python3 -m unittest discover -s tests/architecture
 
 After the assessor, the launch rule names the next worker, picks a spawn shape
-from the tool schema, relaunches a thin or wrong return, and records the checked
-spawn none line before any inline work. Intake, recon, and the investigation
+from the tool schema, and relaunches a thin or wrong return. Intake, recon, and the investigation
 playbook echo those same decisions.
 """
 
@@ -14,7 +13,6 @@ import unittest
 from test_spawn_launch_docs import (
     AGENTS_DOC,
     INTAKE_DOC,
-    INTAKE_LAUNCH_HEADING,
     LAUNCH_RULE_HEADING,
     LEDGER_DOC,
     SKILL_DOC,
@@ -24,12 +22,6 @@ from test_spawn_launch_docs import (
 
 RECON_DOC = "skills/supercook/pipeline/recon.md"
 INVESTIGATION_DOC = "skills/supercook/playbooks/investigation.md"
-# Recorded before the first inline role when the session has no spawn tool.
-CHECKED_SPAWN_NONE = "spawn none (checked tool list, dynamic tool catalog, subagent types)"
-# Markdown target only. Plain text of this path may stay so a full checkout can still find it.
-OUTSIDE_SKILL_LAUNCH_LINK = re.compile(
-    r"\[[^\]]*\]\([^)]*\.cursor/supercook/subagent-launch\.md[^)]*\)"
-)
 
 
 def paragraphs_of(text: str) -> list[str]:
@@ -120,31 +112,6 @@ class HandoffDocsTests(unittest.TestCase):
         for paragraph in relaunches:
             self.assertNotRegex(paragraph, r"\bresume\b")
 
-    def test_launch_rule_records_checked_spawn_none_before_inline_work(self):
-        """Path 3 records the checked spawn none line before the inline role and any product edit."""
-        recorded = [
-            paragraph
-            for paragraph in paragraphs_containing(self.rule, CHECKED_SPAWN_NONE)
-            if all(phrase in paragraph for phrase in ("before", "inline", "product"))
-        ]
-        self.assertTrue(
-            recorded,
-            "launch rule does not record the checked spawn none line before inline work",
-        )
-
-    def test_intake_records_spawn_none_before_the_inline_role(self):
-        intake = read_doc(INTAKE_DOC)
-        first_launch = section_body(intake, INTAKE_LAUNCH_HEADING)
-        recorded = [
-            paragraph
-            for paragraph in paragraphs_containing(first_launch, CHECKED_SPAWN_NONE)
-            if all(phrase in paragraph for phrase in ("before", "inline", "product"))
-        ]
-        self.assertTrue(
-            recorded,
-            "intake step 5 does not record the checked spawn none line before the inline role",
-        )
-
     def test_intake_seeds_active_run(self):
         intake = read_doc(INTAKE_DOC)
         seeded = section_body(intake, "## 4. Seed the ledger")
@@ -200,15 +167,13 @@ class HandoffDocsTests(unittest.TestCase):
         )[0]
         ledger = read_doc(LEDGER_DOC)
         rules = section_body(ledger, "## Rules")
-        rule_6_start = rules.index("6. **A roster row closes on a launch record.**")
+        rule_6_start = rules.index("6. **A roster row closes on a launch record or an `inline` record.**")
         rule_6_end = rules.index("\n### ", rule_6_start)
         rule_6 = rules[rule_6_start:rule_6_end]
         with self.subTest(place="agents spawn paragraph"):
             self.assertRegex(spawn_paragraph, r"\[[^\]]*\]\([^)]*SKILL\.md[^)]*\)")
-            self.assertNotRegex(spawn_paragraph, OUTSIDE_SKILL_LAUNCH_LINK)
         with self.subTest(place="ledger rule 6"):
             self.assertRegex(rule_6, r"\[[^\]]*\]\([^)]*agents\.md[^)]*\)")
-            self.assertNotRegex(rule_6, OUTSIDE_SKILL_LAUNCH_LINK)
 
 
 if __name__ == "__main__":

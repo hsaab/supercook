@@ -11,7 +11,7 @@ Slice PRs exist. Run the external reviewers on each one, implement the real find
 - `review`: review, fix, verify, and stop at healthy open PRs with a findings summary per PR.
 - `review and merge`: the same work, then continue into phase 9 per [merge.md](merge.md) and [../pipeline/merge.md](../pipeline/merge.md).
 
-A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong. On the same header, write `models:` as one ` | `-separated line listing **every** roster key with its resolved form, the same rule as [../pipeline/intake.md](../pipeline/intake.md) and [../pipeline/ledger.md](../pipeline/ledger.md): `<role> <slug>` when the slug will be passed, or `<role> inherit (unavailable <slug>)` when intake announced a fallback. Resolve once at intake per [../models.md](../models.md) so a resume launches with the same models instead of re-resolving.
+A clean review never upgrades itself into a merge. Record `mode: review` or `mode: review+merge` in the ledger header so a resumed session cannot guess wrong. On the same header, write `models:` as one ` | `-separated line listing **every** roster key with its slug or `inherit`, the same rule as [../pipeline/intake.md](../pipeline/intake.md) and [../pipeline/ledger.md](../pipeline/ledger.md). Resolve once at intake per [../models.md](../models.md) so a resume launches with the same models instead of re-resolving.
 
 **Entry: continue a run if one exists, otherwise open one.**
 
@@ -112,7 +112,7 @@ Record each reviewer's source (`pending` until it resolves), the head SHA it was
 
 ## The reviewer fan-out
 
-Up to four reviewers per PR, launched in parallel in one message, each with a fresh context: both thermo reviewers always, plus `bugbot` and `security-review` when their source is `local`. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on every launch, including the confirmation pass. `inherit` means omit the model field, same as every other role. A `hosted` reviewer runs on its own service, so no model applies. Tag every local reviewer launch with `supercook-role: reviewer` and `supercook-run: <run folder>` (same run folder as the parent supercook run). Tag the finding-fix launch with `supercook-role: review-implementer` and the same run tag.
+Up to four reviewers per PR, launched in parallel in one message, each with a fresh context: both thermo reviewers always, plus `bugbot` and `security-review` when their source is `local`. These are host subagents with their own fixed contracts, not supercook agents, but they still take a model from the roster: pass the resolved `reviewer` slug from [../models.md](../models.md) on every launch, including the confirmation pass. `inherit` means omit the model field, same as every other role. A `hosted` reviewer runs on its own service, so no model applies. The user can change the `reviewer` or `review-implementer` model at any point, per [../models.md](../models.md#changing-a-model-mid-run).
 
 **Parallel means one batch.** All local reviewer launches go out as a single batch of Task calls; the one exception is a pending hosted reviewer that falls back to `local` after the batch went out. Never launch one reviewer, wait for it, then launch the next; none of them depends on another's output, so a sequential fan-out multiplies the wall time for nothing. The confirmation pass follows the same rule: every reviewer being rerun locally launches in one batch. Parallelism stays within one PR because the diff-computing reviewers read the checked-out working tree and only one PR branch can be checked out at a time, so it is one PR at a time, all local reviewers at once within it.
 
@@ -124,16 +124,13 @@ First check out the PR's branch (`gh pr checkout <n>`), because the diff-computi
 Full Repository Path: <absolute path to this run's working tree>
 Diff: branch changes
 Base Branch: <this PR's base branch>
-Custom Instructions:
-supercook-role: reviewer
-supercook-run: <run folder>
 ```
 
-The roster hook parses the first line-anchored `supercook-role:` and `supercook-run:` in the prompt, including inside `Custom Instructions:`, so the tags must stay in that block without altering the required fields above.
+Omit `Custom Instructions` unless the user gave specific review instructions.
 
 **`Base Branch` is what scopes a stacked slice.** A child PR's base is the previous slice's branch, not the default branch. Omitting it makes every reviewer see the whole stack's diff and report the parent slices' code as this PR's, so the findings land on the wrong PR.
 
-**`thermo-nuclear-review-subagent`** and **`thermo-nuclear-code-quality-review-subagent`** do not compute the diff. Gather it first (`git diff <base-branch>...HEAD` plus the full contents of the changed files that need context) and pass it in the prompt, asking each for prioritized findings with file references and evidence. Put the same `supercook-role: reviewer` and `supercook-run: <run folder>` tags at the top of that prompt (before the diff material).
+**`thermo-nuclear-review-subagent`** and **`thermo-nuclear-code-quality-review-subagent`** do not compute the diff. Gather it first (`git diff <base-branch>...HEAD` plus the full contents of the changed files that need context) and pass it in the prompt, asking each for prioritized findings with file references and evidence.
 
 **When a reviewer subagent is not installed on this host**, run the ones that exist, and record the gap as a ledger row and one line in the findings summary. Never fabricate a review, and never substitute a generic agent pretending to be one.
 
@@ -146,7 +143,7 @@ Dedupe findings across every reviewer that reported, hosted and local, first: ov
 - **Wrong about the code**: decline, naming the file and line that disproves it.
 - **Out of scope for this slice**: note it as a follow-up, keep it out of this diff.
 
-**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. The one exception is a session with no spawn tool at all (`spawn: none`), where the implementer role runs inline from its agent file per [../agents.md](../agents.md#no-spawn-tool-run-roles-inline). That launch carries `supercook-role: review-implementer` and `supercook-run: <run folder>` like any other supercook subagent. Launch after every local reviewer has returned, every hosted reviewer's findings are collected, and triage is done, per the contract in [../agents.md](../agents.md), carrying:
+**Fixes always run in a subagent: one `supercook-implementer` launch per PR, on the `review-implementer` model.** The parent never edits source inline, not even for a one-line finding; the subagent is what keeps the fix on the right model with a clean context. The one exception is a session with no spawn tool at all (`spawn: none`), where the implementer role runs inline from its agent file per [../agents.md](../agents.md#no-spawn-tool-run-roles-inline). That launch names the roster key `review-implementer` in its prompt. Launch after every local reviewer has returned, every hosted reviewer's findings are collected, and triage is done, per the contract in [../agents.md](../agents.md), carrying:
 
 - the full deduped in-scope findings list, one entry per finding with the file, the claim, and the evidence that survived triage
 - the scope list: the union of files those findings name

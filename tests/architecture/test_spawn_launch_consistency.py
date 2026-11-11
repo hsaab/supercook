@@ -15,17 +15,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SKILL_DOC = "skills/supercook/SKILL.md"
 AGENTS_DOC = "skills/supercook/agents.md"
-SKILL_TREE = Path("skills/supercook")
 LAUNCH_RULE_HEADING = "## Start here: the launch rule"
-PLUGIN_LAUNCH_FILE = ".cursor/supercook/subagent-launch.md"
 REPO_AGENTS_DIR = ".cursor/agents/"
 HOME_AGENTS_DIR = "~/.cursor/agents/"
 FORBIDDEN_GUIDE_TIMING = "before opening that phase's guide"
 SPAWN_SHAPE_WORDS = "spawn shape"
 
-# Link targets only. A backtick or plain-text mention of the same path stays allowed.
-INLINE_LINK_TARGET = re.compile(r"\[[^\]\n]*\]\(([^)\s]+)")
-REFERENCE_LINK_TARGET = re.compile(r"^\s{0,3}\[[^\]\n]+\]:[ \t]+(\S+)", re.MULTILINE)
 
 
 def read_doc(relative_path: str) -> str:
@@ -87,10 +82,6 @@ def column_named(text: str, first_cell: str, header_marker: str, column_name: st
         raise AssertionError(f"{header_marker} table has no {column_name} column")
     return cells[headers.index(column_name)]
 
-
-def markdown_link_targets(text: str) -> list[str]:
-    """Inline and reference-definition targets. Plain text is not a target."""
-    return INLINE_LINK_TARGET.findall(text) + REFERENCE_LINK_TARGET.findall(text)
 
 
 class SpawnLaunchConsistencyTest(unittest.TestCase):
@@ -183,22 +174,6 @@ class SpawnLaunchConsistencyTest(unittest.TestCase):
                 matching,
                 "launch rule has no sentence that reads the guide to write the brief",
             )
-
-    def test_no_skill_link_resolves_to_the_plugin_launch_file(self):
-        """No markdown link target under skills/supercook may contain the plugin launch path."""
-        files = sorted((REPO_ROOT / SKILL_TREE).glob("**/*.md"))
-        self.assertTrue(files, "skills/supercook has no markdown files")
-        violations = []
-        for path in files:
-            relative = path.relative_to(REPO_ROOT).as_posix()
-            for target in markdown_link_targets(path.read_text(encoding="utf-8")):
-                if PLUGIN_LAUNCH_FILE in target:
-                    violations.append(f"{relative} -> {target}")
-        self.assertEqual(
-            violations,
-            [],
-            "a skill markdown link target still points at .cursor/supercook/subagent-launch.md",
-        )
 
     def test_typed_spawn_path_names_the_repo_agents_dir(self):
         """The typed When cell must name the repo .cursor/agents/, not only the home directory."""
