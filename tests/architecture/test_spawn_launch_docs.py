@@ -27,8 +27,6 @@ LAUNCH_DOCS = (
     INTAKE_DOC,
     LEDGER_DOC,
     "skills/supercook/references/coordinator-kickoff.md",
-    ".cursor/rules/supercook-subagent-launch.mdc",
-    ".cursor/supercook/subagent-launch.md",
 )
 PINNED_TOOL_NAMES = ("task_v2",)
 
@@ -40,9 +38,8 @@ YAML_PLAIN_SCALAR_BREAKERS = (": ", " #")
 
 LAUNCH_RULE_HEADING = "## Start here: the launch rule"
 INTAKE_LAUNCH_HEADING = "## 5. Launch the first worker"
-LAUNCH_PATHS_IN_ORDER = ("1. **Typed.**", "2. **Any listed spawn tool.**", "3. **None.**")
-# A Cloud Agent can list its spawn tool only inside a dynamic catalog, so the probe names every place.
-TOOL_LISTING_PLACES = ("tool list", "dynamic tool catalog", "subagent types")
+LAUNCH_PATHS_IN_ORDER = ("1. **Typed.**", "2. **Any listed spawn tool.**", "3. **Solo mode.**")
+SOLO_MODE_LINK = "agents.md#no-spawn-tool-run-roles-inline"
 # Which named worker each roster phase launches, keyed by the pipeline table's phase number.
 WORKERS_BY_PHASE = {
     "1": ("supercook-assessor",),
@@ -130,20 +127,16 @@ class SkillLaunchRuleTest(unittest.TestCase):
     def test_launch_rule_lists_the_three_paths_in_order(self):
         positions = [self.rule.index(path) for path in LAUNCH_PATHS_IN_ORDER]
         self.assertEqual(positions, sorted(positions))
-        self.assertIn("`degraded: parent inline (spawn none)`", self.rule)
-
-    def test_launch_rule_says_where_a_session_lists_its_tools(self):
-        for place in TOOL_LISTING_PLACES:
-            with self.subTest(place=place):
-                self.assertIn(place, self.rule)
-        self.assertIn("Never call, wait for, or invent a tool", self.rule)
+        self.assertIn("Retry ladder", self.rule)
+        self.assertIn("`inline`", self.rule)
+        self.assertIn(SOLO_MODE_LINK, self.rule)
 
     def test_launch_rule_covers_every_tier(self):
         self.assertIn("Every roster phase that runs is a launch", self.rule)
         self.assertIn("decide which phases run, never who runs them", self.rule)
         self.assertIn("first action after intake is the `supercook-assessor` launch", self.rule)
         self.assertIn("still a `supercook-implementer` launch and a `supercook-verifier` launch", self.rule)
-        self.assertIn("faster or more efficient", self.rule)
+        self.assertIn("While a spawn tool works, do not do a roster phase yourself", self.rule)
 
     def test_pipeline_table_names_the_worker_for_every_roster_phase(self):
         rows = pipeline_table_rows(self.skill)
@@ -174,27 +167,21 @@ class LaunchRuleEchoTest(unittest.TestCase):
         self.assertIn(INTAKE_LAUNCH_HEADING, intake)
         first_launch = section_body(intake, INTAKE_LAUNCH_HEADING)
         self.assertIn("`supercook-assessor`", first_launch)
-        self.assertIn("`degraded: parent inline (spawn none)`", first_launch)
-
-    def test_spawn_probe_names_every_place_tools_are_listed(self):
-        intake = read_doc(INTAKE_DOC)
-        for place in TOOL_LISTING_PLACES:
-            with self.subTest(place=place):
-                self.assertIn(place, intake)
-        self.assertIn("spawn none (checked tool list, dynamic tool catalog, subagent types)", intake)
+        self.assertIn("`inline`", first_launch)
 
     def test_ledger_closes_roster_rows_only_on_a_launch_record(self):
         ledger = read_doc(LEDGER_DOC)
-        self.assertIn("**A roster row closes on a launch record.**", ledger)
+        self.assertIn("**A roster row closes on a launch record or an `inline` record.**", ledger)
         self.assertIn("That holds at every tier, trivial included.", ledger)
         self.assertIn("`faster inline` / `small task`", ledger)
 
-    def test_forbidden_skips_cover_speed_and_size(self):
+    def test_forbidden_skips_point_at_the_ledger_list_once(self):
         agents_doc = read_doc(AGENTS_DOC)
         forbidden = agents_doc[agents_doc.index("### Forbidden skips") :]
+        self.assertIn("pipeline/ledger.md#invalid-skip-reasons", forbidden)
         for reason in ("`faster inline`", "`small task`"):
             with self.subTest(reason=reason):
-                self.assertIn(reason, forbidden)
+                self.assertNotIn(reason, forbidden)
 
     def test_agents_doc_says_where_agent_files_live_for_a_mirrored_skill(self):
         agents_doc = read_doc(AGENTS_DOC)

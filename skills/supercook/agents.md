@@ -19,7 +19,7 @@ Whether to launch is already decided by [Start here](SKILL.md#start-here-the-lau
 
 ## Launch mechanism
 
-Pick the spawn path from the tools this session actually lists, per [Spawn paths](#spawn-paths-when-typed-agents-are-missing). Whatever the tool, pass an explicit **`model`** argument when the tool accepts one. Take the slug from the intake **`models-resolved:`** ledger line (or the same map you just validated at intake) for that agent's roster key in [models.md](models.md). **Omit `model` only when that role resolved to `inherit`.** The `model: inherit` frontmatter in an agent file does not select a model; the parent must pass it on the launch call or the session default runs and the roster hook may deny the launch.
+Pick the spawn path from the tools this session actually lists, per [Spawn paths](#spawn-paths-when-typed-agents-are-missing). Pass the **`model`** argument when the tool accepts one, taking the slug from the ledger `models:` line for that agent's roster key in [models.md](models.md). Omit `model` for a role that is `inherit`. The `model: inherit` frontmatter in an agent file does not select a model; the parent passes it on the launch call. Models are a preference: if a launch rejects the model, the retry ladder in [SKILL.md](SKILL.md#start-here-the-launch-rule) drops the field and relaunches.
 
 **Arena (complex tier):** launch three `supercook-arena-runner` subagents in parallel in one message. Pass `arena-a`, `arena-b`, and `arena-c` models respectively (omit `model` only for a role that resolved to `inherit`).
 
@@ -43,14 +43,14 @@ The review track also launches up to four host reviewer subagents (`bugbot`, `se
 
 Pass these on every launch, without exception:
 
-- **`supercook-role:` and `supercook-run:` tags**, line-anchored in the prompt body. Use the roster key from the table above (`standard` for assessor, planner, test-designer, and verifier; `explorer`, `implementer`, `arena-a`, `arena-b`, and `arena-c` as separate keys; a review-track implementer launch uses `review-implementer`, not `implementer`). The run tag is this run's folder path (absolute, or relative to the workspace). Host reviewers on the review track follow [playbooks/review.md](playbooks/review.md) for placement inside fixed prompt shapes.
+- **The roster key**, so the launch row and a resumed session can tell which `models:` entry applied: take it from the **Role in models.md** column in [The roster](#the-roster) and the fenced block in [models.md](models.md#the-roster) (`plan-judge` and `plan-optimizer` are their own keys, not `standard`). Say it in the prompt as plain text (`roster key: explorer`).
 - **The objective**, in one sentence, specific to this run.
 - **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
   owns rendered smoke.
-- **The model**, per [Launch mechanism](#launch-mechanism). Resolve once at intake, then reuse the ledger `models-resolved:` line on resume; do not re-guess per launch.
+- **The model**, per [Launch mechanism](#launch-mechanism): the `models:` ledger entry for this role, unless the user changed it mid-run.
 - **The plain-language rule**: its returns must name files and real consequences, and must not contain em dashes.
 
 Do not paste the whole conversation, prior agent output, or file contents that the agent can read itself. A clean context window is the reason to delegate at all.
@@ -150,7 +150,7 @@ A boundary written in a prompt is a request. These checks are what make it a con
 | After | Guard |
 |---|---|
 | Any roster phase | Before checking its ledger row, confirm the launch record that [ledger rule 6](pipeline/ledger.md#rules) requires. Without one, reopen the row and launch the worker. |
-| Any launch | Model enforcement already ran in the preToolUse roster hook (see [models.md](models.md)). After the agent returns, log the model slug actually passed on every launch row in the ledger (or `inherit` when omitted). |
+| Any launch | After the agent returns, log the model actually used on the launch row (`inherit` when the field was omitted or dropped). No hook checks it against the roster. |
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
 | `supercook-planner` / `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception. For contract UI, run the plan-completeness guard in `pipeline/ui.md`. |
@@ -179,11 +179,11 @@ UI controls live in two places rather than being copied here:
 
 ## Spawn paths when typed agents are missing
 
-Every roster role is a **named subagent launch**: launch the subagent `supercook-<role>` (in Cursor terms, invoke `/supercook-<role>` or say "use the supercook-<role> subagent"), with the role and run tags, the body of `agents/supercook-<role>.md`, and this launch's brief as its prompt. This skill never requires a particular spawn tool by name. Use whatever spawn tool **this session actually lists**; hosts differ, and the same host can differ between sessions.
+Every roster role is a **named subagent launch**: launch the subagent `supercook-<role>` (in Cursor terms, invoke `/supercook-<role>` or say "use the supercook-<role> subagent"), with the roster key and run folder path from [What every launch includes](#what-every-launch-includes), the body of `agents/supercook-<role>.md`, and this launch's brief as its prompt. This skill never requires a particular spawn tool by name. Use whatever spawn tool **this session actually lists**; hosts differ, and the same host can differ between sessions.
 
 Typed `supercook-*` subagents are sometimes missing from the host catalog, for instance on a Cloud Agent VM, a Project worker, or a skill-only copy. Agent files on disk do not by themselves make them typed agents: only the catalog does, and the catalog is fixed when the session starts. Intake records which path applies as `spawn:` on the capability line ([pipeline/intake.md](pipeline/intake.md#1-probe-capabilities)). Use the first path that applies, role by role: a session that loaded an older install can list eight typed agents and no `supercook-plan-optimizer`, and then only that role drops to the second path.
 
-A spawn tool is not always in the top-level tool list. Check the tool list, any deferred or dynamic tool catalog (open its namespaces and read what they hold), and the subagent types before recording `none`. A real `none` does exist: a parent that was itself launched as a subagent often has no spawn tool, and hooks or tool policy can remove it. Never call a tool, namespace, or envelope you cannot see, and never wait for, guess, or invent a spawn tool that is not listed: a coordinator's `CallDynamicTool` / `Task` shape in `.cursor/supercook/subagent-launch.md` applies only when that tool is in the catalog. The spawn shape rule is in [SKILL.md](SKILL.md#start-here-the-launch-rule).
+A spawn tool is not always in the top-level tool list. Check the tool list, any deferred or dynamic tool catalog (open its namespaces and read what they hold), and the subagent types before recording `none`. A real `none` does exist: a parent that was itself launched as a subagent often has no spawn tool, and tool policy can remove it. Never call a tool, namespace, or envelope you cannot see. The spawn shape rule and retry ladder are in [SKILL.md](SKILL.md#start-here-the-launch-rule).
 
 | `spawn:` | When | How each roster role runs |
 |---|---|---|
@@ -195,8 +195,8 @@ A spawn tool is not always in the top-level tool list. Check the tool list, any 
 
 The tool names below are examples of what a session might list, not a required API. Map the same intent onto whichever tool you see.
 
-- **Name the worker.** Read the spawn tool's own schema, per [SKILL.md](SKILL.md#start-here-the-launch-rule). When `supercook-<role>` is a listed type, launch it as that listed type. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the host's general-purpose type and put `supercook-<role>` in the description, with the agent file body as the prompt. Either way the prompt carries the role and run tags, then the body of `agents/supercook-<role>.md`, then the brief.
-- **Field placement for `Task` and `CreateAgent`.** When the session lists `CallDynamicTool` with a `cursor` `Task` tool, or a top-level `CreateAgent` / `Subagent`, the envelope rules and pre-flight validator are in `.cursor/supercook/subagent-launch.md` in a full plugin checkout. Any other spawn tool follows its own listed schema.
+- **Name the worker.** Read the spawn tool's own schema, per [SKILL.md](SKILL.md#start-here-the-launch-rule). When `supercook-<role>` is a listed type, launch it as that listed type. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the host's general-purpose type and put `supercook-<role>` in the description, with the agent file body as the prompt. Either way the prompt carries the roster key and run folder path from [What every launch includes](#what-every-launch-includes), then the body of `agents/supercook-<role>.md`, then the brief.
+- **Field placement for `Task` and `CreateAgent`.** Through `CallDynamicTool` (`namespace: cursor`, `toolName: Task`), every launch field (`description`, `subagent_type`, `prompt`, optional `model`) goes under `arguments`, and `prompt` is a plain string, not a file path. A top-level `CreateAgent` or `Subagent` takes the same fields at the top level. If a launch fails with `prompt ... undefined`, build it with `python3 scripts/validate_subagent_launch.py task --prompt-file <file>` and paste the printed JSON. Any other spawn tool follows its own listed schema.
 
 **Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
 
@@ -206,15 +206,23 @@ The worker for each phase is the "Run by" column of [the pipeline table](SKILL.m
 
 ### No spawn tool: run roles inline
 
-When `spawn: none`, every roster role runs in the parent from its agent file body. This is the original Supercook fallback, and it is the honest one: do not invent launch ceremony or rows for launches that never happened.
+This is solo mode. It applies when `spawn: none`, and for the rest of a run once the retry ladder ends in solo mode. The phases, tier collapse, and ledger rows are the same as a normal run. What changes is who does the work, so the guarantees come from files and git instead of a second agent. Mark each row `inline`. At each phase, work from that role's contract in this file, and open `agents/supercook-<role>.md` only when the contract is not enough.
 
-1. At the start of each roster phase, read `agents/supercook-<role>.md` and do that role's job under its contract: the same inputs, effort budget, boundaries, done-when, and returns shape.
-2. Write the role's return into the ledger as if a worker had returned it, on a row marked `degraded: parent inline (spawn none)`. Tags and model fields do not apply.
-3. Run the parent-side guard for that role exactly as after a launch. The pipeline still runs in full on standard and complex tier: recon pointers, `plan.md`, red tests committed before source, implementation inside the scope list, and a verifier pass.
-4. Run the verifier role with a fresh read: re-open `plan.md`, the ledger, and `git diff` from disk instead of relying on what you remember writing, then run the test command and quote its output.
+Every phase hands off through a file in the run folder, never through chat memory:
+
+- **Assess.** Run inline and write the 4-line verdict on the row. It stays first because the tier decides how much of the rest runs.
+- **Recon** (standard and complex). One area at a time, about 10 tool calls per area. Write `recon.md` with pointers and the test command, no file dumps.
+- **Design doc.** Unchanged: the parent always ran it with the user.
+- **Plan.** Write `plan.md` in the planner format: numbered slices, a scope file list, a named verification, and a line estimate. Then review it once against the judge criteria in [pipeline/planning.md](pipeline/planning.md): correct against the code, slice size and independence, surgical scope, risk named honestly. Add `## Strongest objection` with what changed because of it. On complex tier the arena does not run: log `arena: n/a (solo)`. On `implement-plan`, tighten `user-plan.md` and add `## Changes from your plan`, like the optimizer.
+- **Test-first.** Unchanged. Run the tests, confirm they fail for the intended reason, commit them alone, and record that SHA on the row.
+- **Implement.** One slice at a time, inside that slice's scope list. Before each commit, `git diff --name-only <tests-sha>..HEAD -- <test paths>` must print nothing, and `git status --porcelain --untracked-files=all` must show only scope files.
+- **Verify.** Run it after the slice is committed, so it audits the artifact and not your memory. Re-open `plan.md` and `git diff <base>...HEAD` from disk, run the test command, and write one line per plan row (landed, missing, or partial) plus the quoted output to `verify.md`. The gap loop and escape rule in [pipeline/verification.md](pipeline/verification.md) are unchanged.
+- **Deliver.** The PR body says "built in solo mode: verify was a self-audit". A hosted Bugbot run on the PR is the independent review. On the review track only hosted reviewers run, since local reviewers need a spawn tool.
+
+Want a human check on the plan? `/supercook plan only <task>`, read `plan.md`, then `/supercook use this plan`. That flow works in solo mode too.
+
+Write each return into the ledger as if a worker had returned it. Do not invent launch rows for launches that never happened.
 
 ### Forbidden skips
 
-A skip removes a phase. It never moves a phase that runs from its worker to the parent, at any tier. The invalid ledger reasons are listed once, in [pipeline/ledger.md](pipeline/ledger.md#invalid-skip-reasons): `agents not installed`, `user checklist`, `coordinator spec`, `plan in kickoff`, `faster inline`, `small task`, and `assessor already launched` are the ones a parent reaches for here.
-
-Missing agents change who runs a role, never whether it runs. A Project or cloud assignment that pastes the implementation is still intake plus assessor first. Checklist text does not waive explorer, planner, implementer, test-designer, or verifier, whichever path runs them. Size is the assessor's verdict, and a trivial verdict removes recon, plan, and test-first, not the implementer launch or the verifier launch. Having a spawn tool and implementing alone anyway is the failure this section exists to stop.
+A skip removes a phase. It never moves a phase from its worker to the parent while a spawn tool works. The invalid ledger reasons are listed once, in [pipeline/ledger.md](pipeline/ledger.md#invalid-skip-reasons). Solo mode is the only case where the parent runs a roster role.

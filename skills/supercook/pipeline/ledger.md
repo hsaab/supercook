@@ -17,7 +17,7 @@ The ledger is the run's memory and its audit trail. It is the thing that makes a
 3. **Mutable, never lossy.** Rows get appended and checked. They never get deleted or quietly edited away.
 4. **No silent skips.** Work that is not done gets `skip: <reason>`. An unexplained missing row is a defect.
 5. **Plain language, no em dashes.** Every row names files and real consequences, the same as any other output.
-6. **A roster row closes on a launch record.** The assess, recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model (`supercook-implementer via Task, composer-2.5`), or says `degraded: parent inline (spawn none)`. That holds at every tier, trivial included. The one other degraded record is a platform error after a retried, validated launch, with the error quoted, per [agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing) (a full checkout can still use `.cursor/supercook/subagent-launch.md#on-failure`). A roster row checked with none of these is a silent skip, even when the work itself is good.
+6. **A roster row closes on a launch record or an `inline` record.** The assess, recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model actually used (`supercook-implementer via Task, composer-2.5`, or `inherit` when the model field was dropped), or says `inline` with the reason (`spawn none`, or the launch error quoted after the retry ladder in [SKILL.md](../SKILL.md#start-here-the-launch-rule)). The older `degraded: parent inline (spawn none)` still counts. That holds at every tier, trivial included. A roster row checked with none of these is a silent skip, even when the work itself is good. Solo mode is in [agents.md](../agents.md#no-spawn-tool-run-roles-inline).
 
 ### Invalid skip reasons
 
@@ -33,7 +33,7 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 
 Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
 
-A skip removes a phase. It never moves a phase that runs from its worker to the parent (rule 6).
+A `[~]` skip removes a phase from the roster. It does not reopen that work on the parent while the row stays skipped. Solo parent work is valid only when rule 6 closes the row with an `inline` record on a checked row (`spawn none`, a quoted launch error after the retry ladder, or the older `degraded: parent inline (spawn none)` wording).
 
 ## Format
 
@@ -42,8 +42,7 @@ A skip removes a phase. It never moves a phase that runs from its worker to the 
 run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
-capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes | stacking gt | supercook-agents installed | spawn typed | enforce_roster yes | parent-host cursor-chat
-models-resolved: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
+capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes | stacking gt | supercook-agents installed | spawn typed | parent-host cursor-chat
 models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
 test-paths: **/*.test.ts
 ui-change: no | ui-source: none | render-check: none

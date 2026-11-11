@@ -26,9 +26,11 @@ Loading this skill makes you the **coordinator**. You own intake, the ledger, th
 
 1. **Typed.** `supercook-<role>` is in the subagent types this session lists. Launch it with the session's subagent tool (in Cursor, `Task`), passing that name as the subagent type.
 2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch `supercook-<role>` through it, picking the fields by the spawn shape rule below, with the body of `agents/supercook-<role>.md` as the prompt.
-3. **None.** No such tool exists anywhere in this session. Run the role yourself from its agent file and log the row as `degraded: parent inline (spawn none)`.
+3. **Solo mode.** No spawn tool is listed, or launches keep failing (see the retry ladder). Run each remaining role yourself under [solo mode](agents.md#no-spawn-tool-run-roles-inline), and mark each of those rows `inline`.
 
-Before settling on path 3, look in every place this session lists tools: the tool list itself, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open before you can call it), and the subagent types. Never call, wait for, or invent a tool that none of those places show. On path 3, write `spawn none (checked tool list, dynamic tool catalog, subagent types)` on the capability line before the first inline role and before any product edit.
+Look for a spawn tool in the tool list, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open), and the subagent types. Never call or invent a tool that none of those show. The assessor launch is the probe: if a spawn tool is listed, launch through it and see.
+
+**Retry ladder, for every launch.** Launch with the roster model. If the launch fails, retry once with only `description`, `subagent_type`, and `prompt` (no `model`). If that also fails, log the exact error once and run the rest of the run in solo mode. A failed launch is never a reason to do one phase inline and keep launching the others.
 
 Pick the spawn fields from the tool schema this session actually lists, role by role. When `supercook-<role>` is a listed type on this session's spawn tool, use that listed type as path 1. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the tool's general-purpose type, put `supercook-<role>` in the description, and use the agent file body as the prompt. A role missing from an older install, including plan-optimizer today, takes that last branch.
 
@@ -36,9 +38,9 @@ The next action after any worker returns is the next open row's launch; the pare
 
 **Tier and track decide which phases run, never who runs them.** The tier is the assessor's verdict, not your first impression, so the first action after intake is the `supercook-assessor` launch (a user-selected track starts at its playbook's first launch instead). A `trivial` verdict removes recon, plan, and test-first. What is left is still a `supercook-implementer` launch and a `supercook-verifier` launch.
 
-None of these is a reason to do a roster phase yourself while path 1 or 2 exists: the task looks small, you can already see the fix, doing it yourself would be faster or more efficient, the kickoff already lists the steps, the typed agents are not installed, you already launched the assessor, or the spawn tool takes an extra lookup to reach. The rule is what makes the other controls real: a verifier that wrote the code is not an independent check, the test-integrity guard needs an implementer whose diff you inspect, and your context is the run's memory.
+While a spawn tool works, do not do a roster phase yourself. Looking small, being faster, or already seeing the fix is the assessor's call, not yours: a verifier that wrote the code is not an independent check, the test-integrity guard needs an implementer whose diff you inspect, and your context is the run's memory. Before you check off a roster row, confirm it has a launch record or an `inline` record, per rule 6 in [pipeline/ledger.md](pipeline/ledger.md#rules). Launch contracts, host recipes, and solo mode are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
 
-**Check yourself twice.** Before you write source or test code, name the worker that owns that edit and launch it. Before you check off a roster row, confirm it has a launch record or a `degraded: parent inline (spawn none)` record, per rule 6 in [pipeline/ledger.md](pipeline/ledger.md#rules), which also covers a launch the platform itself fails. Launch contracts and per-host detail are in [agents.md](agents.md#spawn-paths-when-typed-agents-are-missing).
+**Models are a preference, not a gate.** The roster in [models.md](models.md) sets the default model per role. Say "use opus for the implementer" at any point and that wins from the next launch on.
 
 ## Principle 1: plain language tied to code and impact
 
@@ -70,7 +72,7 @@ Rules that follow:
 3. **Delegate atomic work with a clean context.** Delegating is the [launch rule](#start-here-the-launch-rule), not a judgment call. Each agent gets an objective, its inputs, an effort budget, boundaries, one done-when predicate, and a terse returns shape. See [agents.md](agents.md).
 4. **The ledger is the memory.** Every phase and every skip is written down. Silent skips are banned. See [pipeline/ledger.md](pipeline/ledger.md).
 5. **Own every diff.** Review each subagent's changes yourself before committing. Their summary is a claim, not evidence.
-6. **Boundaries are enforced, not requested.** Every rule that matters has a parent-side check after the agent returns.
+6. **Boundaries are parent-checked after returns.** Every rule that matters has a parent-side guard once the agent returns. Hooks deny only where the project registers them; this repo's stop hook does not deny edits or launches.
 7. **Prove it on the real artifact.** Run the command, read the output, quote it. Never infer that tests pass. For UI work, the real artifact is the rendered route in a representative state, not only the unit suite.
 8. **DRY and simple.** Name the data shape before the logic. Prefer the boring solution the next reader will follow.
 9. **Match the codebase.** Its conventions beat your preferences. Read neighboring files first.
@@ -230,7 +232,7 @@ implementer's edit, launched from the phase 6 row.
 ## Reference files
 
 - [references/coordinator-kickoff.md](references/coordinator-kickoff.md): good vs bad kickoff copy, per-host spawn notes, and parent invariants (intake + assessor before edits, checklist is not a plan).
-- [models.md](models.md): which model each role uses, and how to change it. The preToolUse hook denies a launch that does not match that roster.
+- [models.md](models.md): which model each role uses by default, and how to change it at any point in a run.
 - [agents.md](agents.md): the launch contract for all nine agents, the parent-side guard per role, and the spawn path per host when the agents are not installed. Read it before the first launch.
 - [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
   resolution, structure-test guards, and rendered smoke.
