@@ -125,6 +125,18 @@ class CloudRosterGuardTests(unittest.TestCase):
             }))
             self.assertEqual(self.run_hook(root), {})
 
+    def test_stop_ignores_malformed_open_rows_with_skip_or_inline_markers(self):
+        # A top-level `- [ ]` row that carries skip/inline text is not owed work.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(
+                replacements={
+                    "recon": "- [ ] recon: supercook-explorer. skip: assessor trivial",
+                    "plan": "- [ ] plan: supercook-planner inline (spawn none)",
+                },
+            ))
+            self.assertEqual(self.run_hook(root), {})
+
     def test_stop_with_no_ledger_is_silent(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

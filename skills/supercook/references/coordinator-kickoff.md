@@ -37,7 +37,7 @@ Same invariants as above; only typical spawn paths differ.
 ### Cursor chat (parent agent)
 
 - **Who:** User `@supercook` or skill-loaded parent in the editor.
-- **Spawn:** The named plugin `supercook-*` subagents when installed; else whatever spawn tool the session lists (often `Task`), launching a worker named `supercook-<role>` with the `agents/*.md` body and roster tags from intake.
+- **Spawn:** The named plugin `supercook-*` subagents when installed; else whatever spawn tool the session lists (often `Task`), launching a worker named `supercook-<role>` with the `agents/*.md` body, the roster key, and the run folder path from ledger intake (the `models:` line is optional when intake already recorded it).
 - **Hooks:** the project stop hook (when registered) echoes the first open ledger row if you end a turn early. Nothing blocks a launch or a model.
 - **Parent job:** Read SKILL.md, run intake, launch assessor (or valid user-selected track), never treat the user's long message as permission to skip phase 1.
 

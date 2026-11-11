@@ -33,7 +33,7 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 
 Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
 
-A skip removes a phase. It never moves a phase that runs from its worker to the parent (rule 6).
+A `[~]` skip removes a phase from the roster. It does not reopen that work on the parent while the row stays skipped. Solo parent work is valid only when rule 6 closes the row with an `inline` record on a checked row (`spawn none`, a quoted launch error after the retry ladder, or the older `degraded: parent inline (spawn none)` wording).
 
 ## Format
 

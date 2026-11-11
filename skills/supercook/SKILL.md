@@ -72,7 +72,7 @@ Rules that follow:
 3. **Delegate atomic work with a clean context.** Delegating is the [launch rule](#start-here-the-launch-rule), not a judgment call. Each agent gets an objective, its inputs, an effort budget, boundaries, one done-when predicate, and a terse returns shape. See [agents.md](agents.md).
 4. **The ledger is the memory.** Every phase and every skip is written down. Silent skips are banned. See [pipeline/ledger.md](pipeline/ledger.md).
 5. **Own every diff.** Review each subagent's changes yourself before committing. Their summary is a claim, not evidence.
-6. **Boundaries are enforced, not requested.** Every rule that matters has a parent-side check after the agent returns.
+6. **Boundaries are parent-checked after returns.** Every rule that matters has a parent-side guard once the agent returns. Hooks deny only where the project registers them; this repo's stop hook does not deny edits or launches.
 7. **Prove it on the real artifact.** Run the command, read the output, quote it. Never infer that tests pass. For UI work, the real artifact is the rendered route in a representative state, not only the unit suite.
 8. **DRY and simple.** Name the data shape before the logic. Prefer the boring solution the next reader will follow.
 9. **Match the codebase.** Its conventions beat your preferences. Read neighboring files first.

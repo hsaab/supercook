@@ -75,7 +75,7 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 
 **Test-driven, with the suite protected.** Failing tests are committed first, the implementing agent is forbidden from touching them, and the orchestrator restores any test file that gets modified anyway. That last part matters: an instruction alone does not stop an agent bending a test until it passes. ([Cursor's agent best practices](https://cursor.com/blog/agent-best-practices))
 
-**Boundaries are enforced, not requested.** Every rule that matters has a check that runs after the agent returns. Prompts express intent; the checks are what make it a control.
+**Boundaries are parent-checked after returns.** Every rule that matters has a parent-side guard once the agent returns. Prompts express intent; those checks are the control. Hooks deny only where the project registers them (this repo's stop hook echoes the ledger and does not deny edits or launches).
 
 **Designed UI is checked twice.** Semantic regions, counts, and DOM order are
 test-first. Geometry, responsive behavior, visible data, and interactions are
