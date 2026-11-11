@@ -166,3 +166,17 @@ def first_open_owed(ledger_text: str) -> tuple[str, str] | None:
             continue
         return (phase, workers[0])
     return None
+
+
+def first_owed_worker(roots: list[str]) -> str | None:
+    ledger_path = resolve_ledger(roots)
+    if ledger_path is None:
+        return None
+    try:
+        ledger_text = ledger_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    owed = first_open_owed(ledger_text)
+    if owed is None:
+        return None
+    return owed[1]
