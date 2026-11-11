@@ -86,6 +86,6 @@ Splitting someone else's uncommitted work is a reversible write that can lose ch
 
 ## The PR body
 
-Same three sections as any other delivery, from [../pipeline/delivery.md](../pipeline/delivery.md): why we did this, what the outcome is, operational tasks.
+Same three sections as any other delivery, plus `## Evidence`, from [../pipeline/delivery.md](../pipeline/delivery.md): why we did this, what the outcome is, operational tasks. An open-pr run has no red-first block; Evidence states retrospective verification instead.
 
 Write it from the diff, in the house style: name files and functions, connect each change to real consequence. Where you had to ask the author what something did, use their answer rather than paraphrasing it into vagueness.

@@ -15,13 +15,14 @@ to you.
 ## Inputs, budget, and done-when
 
 - **Inputs**: the slice, the journeys it serves, the test command, the repo's test conventions from recon, any referenced UI contract entries plus owned obligations, `mode: red-first | retrospective-open-pr`, and `verification: tests | recipe`.
-- **Effort budget**: as long as the journeys need, and no implementation. If you are writing source code to make an import resolve, you are past your budget.
+- **Effort budget**: as long as the journeys need, and no implementation. If you are writing source code that will be committed, you are past your budget. A temporary stub is the one exception, per "Verify the failure".
 - **Done when**: the named journeys have tests or an executable recipe, and the selected verification runs. In red-first mode it fails for the right reason. In retrospective-open-pr mode each assertion is reported honestly as pass or as a gap against the existing source. A contract-level UI slice also pins every owned region, count, grouping, and interaction, plus global logical order when it is the named owner.
 
 ## Boundaries
 
 - With `verification: tests`, write test files only. Never write or edit source
-  code, not even the smallest stub needed to make an import resolve. With
+  code that stays in the tree. The only allowed source is a temporary stub (see
+  "Verify the failure"), deleted before you return. With
   `verification: recipe`, write no source or test files; return the recipe so the
   parent can write it to the run folder and record its path in `plan.md` or the
   open-pr ledger.
@@ -79,8 +80,22 @@ If you find yourself writing `it("returns undefined when passed undefined")` for
 
 A new test or recipe that fails for the wrong reason is worthless, and it will send
 the implementer chasing a phantom. Run the selected verification and check it fails
-because the behavior is missing, not because of a typo, bad import, unavailable
-command, or misconfigured fixture.
+on its own assertions because the behavior is missing, not because of a typo, bad
+import, unavailable command, or misconfigured fixture.
+
+When the first run stops at an import or collection error, add a temporary stub at
+the import path with the planned signatures returning empty or default values.
+Never commit it, and never leave it for the parent. Rerun, record each failing test
+name with its assertion line, and rewrite or drop any test that passes against the
+stub. Each `red-evidence` line must name the journey assertion that fails, not a setup
+assertion that only fails because the stub exists. A test that fails only on setup is
+rewritten. Save the stub alone as a patch at `.supercook/<run-id>/red-stub.patch` in the
+untracked run folder (`git add -N -- <path>` when the stub is new, then
+`git diff -- <path> > .supercook/<run-id>/red-stub.patch`, then `git reset -- <path>` when
+it was new), then delete
+the stub: `git checkout -- <path>` when the module already existed, or remove the file
+when it was new. Run `git status --porcelain --untracked-files=all`,
+which must list only test paths.
 
 ### Retrospective open-pr mode
 
@@ -96,6 +111,10 @@ Plain language, no em dashes:
 ```
 paths: <the test files you created or extended | none>
 verification: <tests | recipe>
+stub: <path, deleted | not needed>
+stub-patch: <run-folder>/red-stub.patch | not needed
+red-evidence:
+  - <test name>: <assertion line that fails>
 command: <the exact command that runs the selected verification>
 recipe: <setup, executable assertions, expected output, cleanup, or "not applicable">
 record-in: <run-folder path, linked from plan.md or open-pr ledger | not applicable>
@@ -107,7 +126,7 @@ ui-contract:
 skipped: <edge cases you deliberately did not test, one line, or "none">
 ```
 
-Every failure reason must name the real cause: `fails because src/rate-limit/bucket.ts does not exist yet`, not `fails as expected`.
+Every failure reason must name the real cause: `fails because allowRequest returned true for the 101st request`, not `fails as expected` and not `fails because src/rate-limit/bucket.ts does not exist yet`.
 
 ## When called for an amendment
 

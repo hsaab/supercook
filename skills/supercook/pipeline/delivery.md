@@ -5,16 +5,18 @@ One PR per slice, opened as each slice closes. Not one batch at the end.
 ## Contents
 
 - [PR body format](#pr-body-format)
+- [Evidence section](#evidence-section)
 - [UI delivery guard](#ui-delivery-guard)
 - [Branching and stacking](#branching-and-stacking)
 - [The stack lifecycle](#the-stack-lifecycle)
 - [Slice size fail-closed](#slice-size-fail-closed)
+- [Pre-PR check](#pre-pr-check)
 - [Splitting as a backstop](#splitting-as-a-backstop)
 - [Handoff](#handoff)
 
 ## PR body format
 
-Three sections, in plain language. This is the most-read output the whole workflow produces, so it gets the house style at full strength.
+Three sections, in plain language, plus the `## Evidence` section below. Evidence always applies. This is the most-read output the whole workflow produces, so it gets the house style at full strength.
 
 ```markdown
 ## Why we did this
@@ -37,7 +39,7 @@ Not this:
 
 > Fixed webhook handling and improved retry logic for better reliability.
 
-**When the repo has a PR template**, treat these three sections as the minimum content and fit them into the template's fields. Do not overwrite a template the team relies on.
+**When the repo has a PR template**, treat these three sections as the minimum content and fit them into the template's fields. Carry `## Evidence` into the template as its own section or field. Do not overwrite a template the team relies on.
 
 No em dashes, here or anywhere.
 
@@ -64,6 +66,34 @@ ledger still existing.
 When an executable recipe replaces a test runner, include the exact recipe or a
 durable repository link plus its expected checksum in `Operational tasks`. The
 run-folder copy is not available to a cold merge session.
+
+## Evidence section
+
+A fourth section, `## Evidence`, makes the proof durable on the PR. The ledger and run folder are untracked, so a cold reviewer or merge session cannot read them.
+
+```markdown
+## Evidence
+<!-- only when red-first ran; omit on trivial and open-pr -->
+Red first (test commit <sha>, tests only):
+- <test name>: <assertion line that failed before the code existed>
+
+Those assertion lines were recorded against a temporary stub. Checking out that SHA
+fails at import by design. On squash-only repos the SHA may disappear, so the test
+names and assertion lines here are the durable proof.
+
+<!-- only when acceptance.md exists -->
+| Acceptance criterion (verbatim) | Test or check | Passing output |
+|---|---|---|
+| AC-1: <text from acceptance.md> | <test name or command> | <quoted passing line> |
+
+<!-- only on a solo run -->
+Built in solo mode, no independent review: verify was a self-audit.
+```
+
+- **Red first** lines come from the test-first row's `red-evidence`. Open-pr retrospective and trivial runs have no red test, so they omit the block and say so.
+- **The table** appears only when `acceptance.md` exists. Every row quotes the verifier's proof. A row without proof means the PR does not open.
+- **The solo line** appears only on solo runs, and links a hosted Bugbot run when one exists.
+- **Proof lives here or in a PR comment, never in the diff.** QA notes, logs, width-sweep output, regen scripts, and test stubs stay out of the branch.
 
 ## UI delivery guard
 
@@ -194,6 +224,17 @@ Every slice PR open in this section, whether under budget, opened with a logged 
 This gate applies to a planned slice that is already openable: under budget, or over budget with a logged cohesion exception. Use [Splitting as a backstop](#splitting-as-a-backstop) and [open-pr.md](../playbooks/open-pr.md) only when there is no planned slice with a logged cohesion exception, for example an oversized diff without a plan exception or the open-pr track. Those paths do not invent a plan exception.
 
 The parent-side guard runs here even when the plan named only one slice.
+
+## Pre-PR check
+
+Before `gh pr create`, `gt submit`, or any PR open, in every mode and on every tier, run this check from the run's working tree. It fails closed: any failure means the PR is not opened and the row that owns the gap reopens.
+
+1. **Every row is settled.** Each ledger row above deliver is `[x]`, `[~]` with a valid reason, or a sanctioned `[!]`.
+2. **The diff holds only scoped files.** Every path in `git diff --name-only <BASE>...HEAD` is in a plan slice's scope list or the test-first commit of its slice. On trivial tier, it is in the implementer's scope list, or the test paths the test designer returned when a trivial change needed a test. A QA note, log, sweep output, regen script, or leftover stub fails the check. Move it to the run folder and cite it in the PR body.
+3. **Every criterion has proof.** When `acceptance.md` exists, each criterion has a passing line in the verifier's output.
+4. **The Evidence section is filled** per [Evidence section](#evidence-section), including the solo line on a solo run.
+
+Log the result on the deliver row, naming the checks that ran.
 
 ## Splitting as a backstop
 

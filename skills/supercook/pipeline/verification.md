@@ -9,12 +9,16 @@ Done is not a feeling. It is a gate, and this is the gate.
 - `plan.md`
 - the ledger
 - the diff
+- `acceptance.md`, when the run folder has one
 - the test command or recorded executable verification recipe plus its ledger checksum
 
 Not the implementation history, not the reasoning, not the agent conversations. The absence is the point: a verifier that watched the code get written can be talked into believing it works. One that only sees the plan and the diff cannot.
 
-A trivial run has no `plan.md`. Launch the verifier anyway, with the task text and
-the ledger's `done:` predicate as the contract.
+Only a ledger `tier: trivial` has no `plan.md`. Launch the verifier anyway, with the
+task text and the ledger's `done:` predicate as the contract. On standard or
+complex tier a missing `plan.md` is `verdict: gaps found` and reopens the plan row.
+Open-pr has no `plan.md` by design: the `open-pr scope` baseline in the ledger (see
+`playbooks/open-pr.md`) is the contract, and a missing baseline is `verdict: gaps found`.
 
 For an open-pr UI run with no `plan.md`, pass the retrospective UI contract from
 the ledger in its place. The verifier still receives a contract, never an
@@ -27,14 +31,17 @@ unstructured design link.
 2. **The recorded verification, actually run.** It executes the test command or
    recipe and quotes real output. A verdict reasoned from the diff alone gets
    rejected and re-run because a pass cannot be inferred.
-3. **Out of scope**: anything in the diff no plan slice asked for. On open-pr, use
+3. **Acceptance criteria**, when `acceptance.md` exists: each criterion is proven by
+   a named test or check with its quoted passing output, or marked missing. An
+   unproven criterion is `gaps found`.
+4. **Out of scope**: anything in the diff no plan slice asked for. On open-pr, use
    the task plus the ledger's initial diff inventory and deliberate retrospective
    tests as the scope baseline. A later stray refactor, reformatted file, or changed
    dependency is still a finding.
-4. **Tests untouched**: any test file in the diff that was not part of a deliberate
+5. **Tests untouched**: any test file in the diff that was not part of a deliberate
    test-designer commit, red-first or retrospective. This is a serious finding.
-5. **Explanations name real code.** A PR body, ledger row, or commit message that describes the work without naming a file, or that asserts a benefit with no consequence attached, is a finding like any other. "Improved error handling" and "for robustness" are the shapes to catch. This is the enforcement arm of the first principle in `SKILL.md`, and without a check here that principle is only a suggestion.
-6. **UI contract, when present.** Each slice's owned regions, anchors, counts,
+6. **Explanations name real code.** A PR body, ledger row, or commit message that describes the work without naming a file, or that asserts a benefit with no consequence attached, is a finding like any other. "Improved error handling" and "for robustness" are the shapes to catch. This is the enforcement arm of the first principle in `SKILL.md`, and without a check here that principle is only a suggestion.
+7. **UI contract, when present.** Each slice's owned regions, anchors, counts,
    semantic containment, and interactions landed in source and verification. The
    global logical order landed on its named owner. Any unapproved deviation is a
    finding. The return says
