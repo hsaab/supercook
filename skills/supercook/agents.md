@@ -43,7 +43,7 @@ The review track also launches up to four host reviewer subagents (`bugbot`, `se
 
 Pass these on every launch, without exception:
 
-- **The roster key**, so the launch row and a resumed session can tell which `models:` entry applied: `standard` for assessor, planner, test-designer, and verifier; `explorer`, `implementer`, `arena-a`, `arena-b`, and `arena-c` as their own keys; `review-implementer` for a review-track implementer launch. Say it in the prompt as plain text (`roster key: explorer`).
+- **The roster key**, so the launch row and a resumed session can tell which `models:` entry applied: take it from the **Role in models.md** column in [The roster](#the-roster) and the fenced block in [models.md](models.md#the-roster) (`plan-judge` and `plan-optimizer` are their own keys, not `standard`). Say it in the prompt as plain text (`roster key: explorer`).
 - **The objective**, in one sentence, specific to this run.
 - **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
