@@ -15,8 +15,12 @@ DELIVERY_DOC = "skills/supercook/pipeline/delivery.md"
 IMPLEMENTATION_DOC = "skills/supercook/pipeline/implementation.md"
 PLANNING_DOC = "skills/supercook/pipeline/planning.md"
 VERIFICATION_DOC = "skills/supercook/pipeline/verification.md"
+OPEN_PR_DOC = "skills/supercook/playbooks/open-pr.md"
 README_DOC = "README.md"
 TEST_DESIGNER = "agents/supercook-test-designer.md"
+PLANNER = "agents/supercook-planner.md"
+PLAN_JUDGE = "agents/supercook-plan-judge.md"
+GAPS_SENTENCE = "A criterion no slice proves goes under Gaps, never silently dropped."
 PLAN_WRITERS = (
     "agents/supercook-planner.md",
     "agents/supercook-plan-judge.md",
@@ -48,6 +52,17 @@ class RedFirstStubTests(unittest.TestCase):
         self.assertIn("stub: <path, deleted | not needed>", returns)
         self.assertIn("red-evidence:", returns)
 
+    def test_test_designer_returns_include_a_stub_patch_line(self):
+        returns = self.designer[self.designer.index("## Returns") :]
+        self.assertIn("stub-patch: <run-folder>/red-stub.patch | not needed", returns)
+
+    def test_test_designer_guard_applies_stub_patch_on_a_journey_assertion(self):
+        guards = section_body(read_doc(AGENTS_DOC), "## Parent-side guards")
+        guard = next(line for line in guards.splitlines() if line.startswith("| `supercook-test-designer` |"))
+        self.assertIn("When `stub-patch` names a patch, apply it", guard)
+        self.assertIn("journey assertion", guard)
+        self.assertIn("not a setup assertion", guard)
+
     def test_implementation_guide_runs_tests_against_an_uncommitted_stub(self):
         guide = section_body(read_doc(IMPLEMENTATION_DOC), "## Phase 5: test-first")
         for phrase in ("temporary stub", "never a committed one", "red-evidence", "tests only"):
@@ -73,6 +88,12 @@ class AcceptanceCriteriaTests(unittest.TestCase):
                 self.assertIn("acceptance.md", read_doc(path))
         planning = section_body(read_doc(PLANNING_DOC), "## Acceptance criteria")
         self.assertIn("slice <n>, <named test or check>", planning)
+
+    def test_plan_judge_sends_an_unproven_criterion_under_gaps(self):
+        planner = between(read_doc(PLANNER), "## Acceptance criteria", "## Risks")
+        judge = between(read_doc(PLAN_JUDGE), "## Acceptance criteria", "## Risks")
+        self.assertIn(GAPS_SENTENCE, planner)
+        self.assertIn(GAPS_SENTENCE, judge)
 
     def test_verifier_proves_each_criterion(self):
         verification = read_doc(VERIFICATION_DOC)
@@ -115,6 +136,19 @@ class EvidenceAndPreflightTests(unittest.TestCase):
         for phrase in ("QA note", "log", "sweep output", "regen script", "leftover stub"):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, check)
+
+    def test_pre_pr_diff_item_counts_the_test_first_commit(self):
+        check = section_body(self.delivery, "## Pre-PR check")
+        item = next(line for line in check.splitlines() if line.startswith("2. "))
+        self.assertIn("test-first commit of its slice", item)
+
+    def test_pr_body_format_says_evidence_always_applies(self):
+        intro = section_body(self.delivery, "## PR body format")
+        self.assertIn("Evidence always applies.", intro)
+
+    def test_open_pr_body_includes_the_evidence_heading(self):
+        body = section_body(read_doc(OPEN_PR_DOC), "## The PR body")
+        self.assertIn("`## Evidence`", body)
 
     def test_readme_no_longer_calls_hosted_bugbot_the_independent_review(self):
         readme = read_doc(README_DOC)

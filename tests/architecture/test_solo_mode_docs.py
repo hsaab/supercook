@@ -62,6 +62,21 @@ class SoloGateTests(unittest.TestCase):
         self.assertIn("**Gate:** no product file is created or changed until `ledger.md` exists", step)
         self.assertIn("closed `inline`", step)
 
+    def test_assess_gate_accepts_a_user_selected_track(self):
+        gate = solo_step(1).split("**Gate:**", 1)[1]
+        self.assertIn("`[~]` with reason `user-selected track`", gate)
+
+    def test_design_doc_step_skips_when_big_change_is_off(self):
+        self.assertIn("[~] skip: big-change off", solo_step(3))
+
+    def test_test_first_step_is_standard_and_complex(self):
+        self.assertIn("**Test-first** (standard and complex)", solo_step(5))
+
+    def test_launch_rule_path_three_names_user_selected_track(self):
+        rule = section_body(read_doc(SKILL_DOC), LAUNCH_RULE_HEADING)
+        path_three = next(line for line in rule.splitlines() if line.startswith("3. **Solo mode.**"))
+        self.assertIn("[~] skip: user-selected track", path_three)
+
     def test_no_test_commit_until_plan_md_exists(self):
         step = solo_step(4)
         self.assertIn("**Gate:** no test file is written or committed until `plan.md` exists", step)
@@ -105,6 +120,19 @@ class VerifierPlanContractTests(unittest.TestCase):
                 self.assertIn("Only a ledger `tier: trivial` has no `plan.md`", text)
                 self.assertIn("`verdict: gaps found`", text)
                 self.assertNotIn("A trivial run has no `plan.md`", text)
+
+    def test_open_pr_scope_baseline_is_the_contract(self):
+        expected = (
+            "the `open-pr scope` baseline in the ledger "
+            "(see `playbooks/open-pr.md`) is the contract"
+        )
+        docs = {
+            "verification.md": read_doc(VERIFICATION_DOC),
+            "supercook-verifier.md": read_doc(VERIFIER_AGENT),
+        }
+        for name, text in docs.items():
+            with self.subTest(doc=name):
+                self.assertIn(expected, " ".join(text.split()))
 
 
 if __name__ == "__main__":
