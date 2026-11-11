@@ -25,10 +25,14 @@ Loading this skill makes you the **coordinator**. You own intake, the ledger, th
 **Every roster phase that runs is a launch, through the first path this session has, role by role:**
 
 1. **Typed.** `supercook-<role>` is in the subagent types this session lists. Launch it with the session's subagent tool (in Cursor, `Task`), passing that name as the subagent type.
-2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch a worker named `supercook-<role>` through it, with the body of `agents/supercook-<role>.md` as the prompt.
+2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch `supercook-<role>` through it, picking the fields by the spawn shape rule below, with the body of `agents/supercook-<role>.md` as the prompt.
 3. **None.** No such tool exists anywhere in this session. Run the role yourself from its agent file and log the row as `degraded: parent inline (spawn none)`.
 
-Before settling on path 3, look in every place this session lists tools: the tool list itself, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open before you can call it), and the subagent types. Never call, wait for, or invent a tool that none of those places show.
+Before settling on path 3, look in every place this session lists tools: the tool list itself, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open before you can call it), and the subagent types. Never call, wait for, or invent a tool that none of those places show. On path 3, write `spawn none (checked tool list, dynamic tool catalog, subagent types)` on the capability line before the first inline role and before any product edit.
+
+Pick the spawn fields from the tool schema this session actually lists, role by role. When `supercook-<role>` is a listed type on this session's spawn tool, use that listed type as path 1. When the type field accepts a free value and the tool has a separate name field, set the type to `custom` and the name to `supercook-<role>`. Otherwise use the tool's general-purpose type, put `supercook-<role>` in the description, and use the agent file body as the prompt. A role missing from an older install, including plan-optimizer today, takes that last branch.
+
+The next action after any worker returns is the next open row's launch; the parent may open that phase's guide to write the worker's brief, and does not do the phase itself. After the assessor returns, launch `supercook-explorer` on standard and complex tier, and on trivial tier the next roster launches are still `supercook-implementer` and `supercook-verifier` because the assessor removes recon, plan, and test-first but not who runs implement and verify. A thin or wrong worker return is a fresh relaunch of that same worker, with a corrected brief and the roster model. The parent does not rebuild the result.
 
 **Tier and track decide which phases run, never who runs them.** The tier is the assessor's verdict, not your first impression, so the first action after intake is the `supercook-assessor` launch (a user-selected track starts at its playbook's first launch instead). A `trivial` verdict removes recon, plan, and test-first. What is left is still a `supercook-implementer` launch and a `supercook-verifier` launch.
 

@@ -123,6 +123,8 @@ Skip the write entirely when the probe says this is not a git repo.
 
 Finally, mirror the phase rows into the todo list so progress is visible live.
 
+When a track seeds a ledger, write `.supercook/active-run` with that ledger's relative path. Delete that file when deliver is checked or the run is abandoned. The investigation track does not write it.
+
 ## 5. Launch the first worker
 
 Intake ends on a launch, not on an edit. With the ledger seeded (or the todo list, on the investigation track), the next action is one of these:
@@ -132,7 +134,7 @@ Intake ends on a launch, not on an edit. With the ledger seeded (or the todo lis
 - **`review`:** start the reviewer fan-out in [../playbooks/review.md](../playbooks/review.md).
 - **`merge`:** no roster phase up front. The merge loop in [merge.md](merge.md) is the coordinator's own work.
 
-With `spawn none`, run that same role inline from its agent file, logged as `degraded: parent inline (spawn none)`.
+With `spawn none`, run that same role inline from its agent file, logged as `degraded: parent inline (spawn none)`. Before the first inline role and before any product edit, record `spawn none (checked tool list, dynamic tool catalog, subagent types)` on the capability line.
 
 Until that first worker has returned, do not open the task's source to start on the work and do not settle on a tier. A task that already looks small enough for one pass is exactly the call the assessor exists to make, and every roster phase after it is its own launch too, per [../SKILL.md](../SKILL.md#start-here-the-launch-rule).
 
