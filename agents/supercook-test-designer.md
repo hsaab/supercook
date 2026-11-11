@@ -89,9 +89,10 @@ Never commit it, and never leave it for the parent. Rerun, record each failing t
 name with its assertion line, and rewrite or drop any test that passes against the
 stub. Each `red-evidence` line must name the journey assertion that fails, not a setup
 assertion that only fails because the stub exists. A test that fails only on setup is
-rewritten. Save the stub as a patch at `.supercook/<run-id>/red-stub.patch` in the
-untracked run folder (`git add -N <path>` then `git diff > .supercook/<run-id>/red-stub.patch`
-and `git reset -- <path>` when the stub was new, so it appears in the diff), then delete
+rewritten. Save the stub alone as a patch at `.supercook/<run-id>/red-stub.patch` in the
+untracked run folder (`git add -N -- <path>` when the stub is new, then
+`git diff -- <path> > .supercook/<run-id>/red-stub.patch`, then `git reset -- <path>` when
+it was new), then delete
 the stub: `git checkout -- <path>` when the module already existed, or remove the file
 when it was new. Run `git status --porcelain --untracked-files=all`,
 which must list only test paths.

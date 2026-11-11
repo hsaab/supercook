@@ -73,6 +73,7 @@ A fourth section, `## Evidence`, makes the proof durable on the PR. The ledger a
 
 ```markdown
 ## Evidence
+<!-- only when red-first ran; omit on trivial and open-pr -->
 Red first (test commit <sha>, tests only):
 - <test name>: <assertion line that failed before the code existed>
 
@@ -80,10 +81,12 @@ Those assertion lines were recorded against a temporary stub. Checking out that 
 fails at import by design. On squash-only repos the SHA may disappear, so the test
 names and assertion lines here are the durable proof.
 
+<!-- only when acceptance.md exists -->
 | Acceptance criterion (verbatim) | Test or check | Passing output |
 |---|---|---|
 | AC-1: <text from acceptance.md> | <test name or command> | <quoted passing line> |
 
+<!-- only on a solo run -->
 Built in solo mode, no independent review: verify was a self-audit.
 ```
 
@@ -227,7 +230,7 @@ The parent-side guard runs here even when the plan named only one slice.
 Before `gh pr create`, `gt submit`, or any PR open, in every mode and on every tier, run this check from the run's working tree. It fails closed: any failure means the PR is not opened and the row that owns the gap reopens.
 
 1. **Every row is settled.** Each ledger row above deliver is `[x]`, `[~]` with a valid reason, or a sanctioned `[!]`.
-2. **The diff holds only scoped files.** Every path in `git diff --name-only <BASE>...HEAD` is in a plan slice's scope list or the test-first commit of its slice. On trivial tier, it is in the implementer's scope list, or the test-first commit when a test-designer ran because the change needed a test. A QA note, log, sweep output, regen script, or leftover stub fails the check. Move it to the run folder and cite it in the PR body.
+2. **The diff holds only scoped files.** Every path in `git diff --name-only <BASE>...HEAD` is in a plan slice's scope list or the test-first commit of its slice. On trivial tier, it is in the implementer's scope list, or the test paths the test designer returned when a trivial change needed a test. A QA note, log, sweep output, regen script, or leftover stub fails the check. Move it to the run folder and cite it in the PR body.
 3. **Every criterion has proof.** When `acceptance.md` exists, each criterion has a passing line in the verifier's output.
 4. **The Evidence section is filled** per [Evidence section](#evidence-section), including the solo line on a solo run.
 
