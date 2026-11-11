@@ -12,14 +12,12 @@ _STARTED_LINE = re.compile(
     r"started:.*\btier:\s*(\S+).*?\btrack:\s*(\S+)",
     re.IGNORECASE,
 )
-_MODE_IN_STARTED = re.compile(r"\bmode:\s*(\S+)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class LedgerHeader:
     tier: str
     track: str
-    mode: str | None
 
 
 def resolve_ledger(workspace_roots: list[str]) -> Path | None:
@@ -29,7 +27,9 @@ def resolve_ledger(workspace_roots: list[str]) -> Path | None:
         root = Path(root_str).resolve()
         for ledger in root.glob(".supercook/*/ledger.md"):
             if ledger.is_file():
-                matches.append((root, ledger.resolve()))
+                pair = (root, ledger.resolve())
+                if pair not in matches:
+                    matches.append(pair)
 
     if not matches:
         return None
@@ -49,28 +49,25 @@ def resolve_ledger(workspace_roots: list[str]) -> Path | None:
         candidate = (root / rel).resolve()
         for match_root, ledger in matches:
             if match_root == root and ledger == candidate:
-                chosen.append(ledger)
+                if ledger not in chosen:
+                    chosen.append(ledger)
 
     if len(chosen) == 1:
         return chosen[0]
     return None
 
 
-def parse_header(ledger_text: str) -> LedgerHeader:
-    tier = "standard"
-    track = "bugfix"
-    mode: str | None = None
+def parse_header(ledger_text: str) -> LedgerHeader | None:
     for line in ledger_text.splitlines():
-        if line.startswith("started:"):
-            tier_match = _STARTED_LINE.search(line)
-            if tier_match:
-                tier = tier_match.group(1).strip()
-                track = tier_match.group(2).strip().rstrip("|")
-            mode_match = _MODE_IN_STARTED.search(line)
-            if mode_match:
-                mode = mode_match.group(1).strip().rstrip("|")
-            break
-    return LedgerHeader(tier=tier, track=track, mode=mode)
+        if not line.startswith("started:"):
+            continue
+        tier_match = _STARTED_LINE.search(line)
+        if not tier_match:
+            return None
+        tier = tier_match.group(1).strip()
+        track = tier_match.group(2).strip().rstrip("|")
+        return LedgerHeader(tier=tier, track=track)
+    return None
 
 
 def _phase_rows(ledger_text: str) -> dict[str, tuple[str, str]]:
@@ -130,8 +127,6 @@ def _workers_for_phase(phase: str, header: LedgerHeader) -> list[str]:
             return []
         return ["supercook-test-designer"]
     if phase == "implement":
-        if header.mode == "review":
-            return ["supercook-review-implementer"]
         return ["supercook-implementer"]
     if phase == "verify":
         return ["supercook-verifier"]
@@ -140,6 +135,8 @@ def _workers_for_phase(phase: str, header: LedgerHeader) -> list[str]:
 
 def owed_workers(ledger_text: str) -> list[str]:
     header = parse_header(ledger_text)
+    if header is None:
+        return []
     rows = _phase_rows(ledger_text)
     owed: list[str] = []
     for phase in _PHASE_ORDER:
