@@ -13,8 +13,7 @@ from cloud_roster_ledger import (
     owed_workers,
     resolve_ledger,
 )
-from cloud_roster_notes import worker_return_note
-from enforce_roster import worker_name
+from cloud_roster_notes import launched_worker, worker_return_note
 
 
 def followup_text(workers: list[str]) -> str:
@@ -78,7 +77,7 @@ def _handle_post_tool_use(event: dict) -> dict:
         tool_input = event.get("tool_input")
         if not isinstance(tool_input, dict):
             return {}
-        returned = worker_name(tool_input)
+        returned = launched_worker(tool_input)
         if not returned:
             return {}
         first_owed: str | None = None

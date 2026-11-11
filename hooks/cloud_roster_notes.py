@@ -3,6 +3,15 @@
 from __future__ import annotations
 
 
+def launched_worker(tool_input: dict) -> str:
+    """Return the supercook- worker name from subagent_type or name, else ""."""
+    for key in ("subagent_type", "name"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and value.startswith("supercook-"):
+            return value
+    return ""
+
+
 def worker_return_note(
     returned_worker: str,
     first_owed_worker: str | None,
