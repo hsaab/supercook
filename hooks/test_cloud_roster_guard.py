@@ -47,7 +47,7 @@ def others(*kept):
     return tuple(name for name in WORKERS if name not in kept)
 
 
-def ledger(tier, track, open_labels, mode=None, replacements=None, trailing=()):
+def ledger(tier, track, open_labels, mode=None, replacements=None, trailing=(), started=True):
     """Header lines from a real run ledger, then ## Phases and top-level rows."""
     replacements = replacements or {}
     mode_part = f" | mode: {mode}" if mode else ""
@@ -62,6 +62,7 @@ def ledger(tier, track, open_labels, mode=None, replacements=None, trailing=()):
         "",
         "## Phases",
     ]
+    lines = [line for line in lines if started or not line.startswith("started:")]
     for label in PHASES:
         if label in replacements:
             lines.append(replacements[label])
@@ -85,9 +86,9 @@ def write_ledger(root, run_id, text, mtime=None):
 
 
 class CloudRosterGuardTests(unittest.TestCase):
-    def run_hook(self, root, stdin_text=None):
+    def run_hook(self, root, stdin_text=None, copies=1):
         if stdin_text is None:
-            stdin_text = json.dumps({"hook_event_name": "stop", "workspace_roots": [str(root)]})
+            stdin_text = json.dumps({"hook_event_name": "stop", "workspace_roots": [str(root)] * copies})
         done = subprocess.run(
             [sys.executable, str(GUARD)], input=stdin_text, capture_output=True,
             text=True, timeout=10, cwd=root,
@@ -98,19 +99,19 @@ class CloudRosterGuardTests(unittest.TestCase):
         except json.JSONDecodeError:
             self.fail(f"stdout is not JSON: {done.stdout!r}")
 
-    def followup(self, root):
-        payload = self.run_hook(root)
+    def followup(self, root, stdin_text=None, copies=1):
+        payload = self.run_hook(root, stdin_text, copies)
         self.assertEqual(set(payload), {"followup_message"}, payload)
         message = payload["followup_message"]
         self.assertIsInstance(message, str)
         self.assertTrue(message.strip(), payload)
         return message
 
-    def spoken(self, tier, track, open_labels, **kwargs):
+    def spoken(self, tier, track, open_labels, copies=1, **kwargs):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             write_ledger(root, "run", ledger(tier, track, open_labels, **kwargs))
-            return self.followup(root)
+            return self.followup(root, copies=copies)
 
     def assert_order(self, message, names):
         cursor = -1
@@ -159,9 +160,22 @@ class CloudRosterGuardTests(unittest.TestCase):
         self.assert_workers(message, ("supercook-arena-runner",) * 3 + ("supercook-plan-judge",))
         self.assertEqual(message.count("supercook-arena-runner"), 3, message)
 
-    def test_stop_on_review_mode_demands_the_review_implementer(self):
-        message = self.spoken("standard", "bugfix", ("implement",), mode="review")
-        self.assert_workers(message, ("supercook-review-implementer",))
+    def test_stop_on_review_mode_demands_the_implementer(self):
+        for mode in ("review", "review+merge"):
+            with self.subTest(mode=mode):
+                message = self.spoken("standard", "bugfix", ("implement",), mode=mode)
+                self.assertNotIn("supercook-review-implementer", message)
+                self.assert_workers(message, ("supercook-implementer",))
+
+    def test_stop_with_the_same_root_listed_twice_names_the_explorer(self):
+        message = self.spoken("standard", "bugfix", ("recon",), copies=2)
+        self.assert_workers(message, ("supercook-explorer",))
+
+    def test_stop_with_a_missing_started_line_is_silent(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger("standard", "bugfix", ("recon",), started=False))
+            self.assertEqual(self.run_hook(root), {})
 
     def test_stop_when_only_deliver_is_open_is_silent(self):
         # [~] and a row whose text contains skip: are not owed. Indented checkbox
