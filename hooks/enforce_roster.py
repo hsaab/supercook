@@ -1,4 +1,6 @@
-"""preToolUse hook: deny subagent launches whose model does not match the roster (fail open)."""
+"""preToolUse and subagentStart hook: deny supercook subagent launches whose model
+does not match the roster. On any parse or validation error, fail open (allow).
+"""
 
 from __future__ import annotations
 
@@ -23,6 +25,15 @@ _TAG_PATTERN = re.compile(
 class Decision:
     permission: str
     agent_message: str | None = None
+
+
+def is_supercook_launch(tool_input: dict) -> bool:
+    """True when subagent_type or name is a supercook- prefixed worker launch."""
+    for key in ("subagent_type", "name"):
+        value = tool_input.get(key)
+        if isinstance(value, str) and value.startswith("supercook-"):
+            return True
+    return False
 
 
 def parse_tag(prompt: str, tag: str) -> str | None:
@@ -69,17 +80,29 @@ def resolve_paths(
     return run_folder, repo_override
 
 
+def _ledger_inherit_fallback(
+    role: str,
+    ledger_models: dict[str, LedgerModel],
+) -> bool:
+    entry = ledger_models.get(role)
+    return (
+        entry is not None
+        and entry.slug == "inherit"
+        and bool(entry.rejected_slug)
+    )
+
+
 def decide(
     tool_input: dict,
     roster: dict[str, str],
     ledger_models: dict[str, LedgerModel],
+    *,
+    model_from_host: bool = False,
 ) -> Decision:
     prompt = tool_input.get("prompt")
     if not isinstance(prompt, str):
         prompt = ""
-    subagent_type = tool_input.get("subagent_type")
-    if not isinstance(subagent_type, str):
-        subagent_type = ""
+    roster_worker = is_supercook_launch(tool_input)
     model = tool_input.get("model")
     if "model" in tool_input and model is not None and not isinstance(model, str):
         model = str(model)
@@ -87,7 +110,7 @@ def decide(
     role_tag = parse_tag(prompt, "supercook-role")
 
     if role_tag is None:
-        if subagent_type.startswith("supercook-"):
+        if roster_worker:
             return Decision(
                 "deny",
                 agent_message=(
@@ -109,7 +132,7 @@ def decide(
             ),
         )
 
-    if subagent_type.startswith("supercook-") and parse_tag(prompt, "supercook-run") is None:
+    if roster_worker and parse_tag(prompt, "supercook-run") is None:
         return Decision(
             "deny",
             agent_message=(
@@ -122,7 +145,7 @@ def decide(
     expected = roster.get(role, "")
 
     if expected == "inherit":
-        if model is None:
+        if model_from_host or model is None:
             return Decision("allow")
         return Decision(
             "deny",
@@ -134,13 +157,11 @@ def decide(
     if model == expected:
         return Decision("allow")
 
+    if model_from_host and _ledger_inherit_fallback(role, ledger_models):
+        return Decision("allow")
+
     if model is None:
-        entry = ledger_models.get(role)
-        if (
-            entry is not None
-            and entry.slug == "inherit"
-            and entry.rejected_slug
-        ):
+        if _ledger_inherit_fallback(role, ledger_models):
             return Decision("allow")
         fallback_hint = ""
         if expected:
@@ -164,10 +185,32 @@ def decide(
     )
 
 
-def _emit(decision: Decision) -> None:
+def build_subagent_start_tool_input(event: dict) -> dict:
+    """Map a subagentStart hook body to the tool_input shape decide() expects."""
+    tool_input: dict = {}
+    for key in ("subagent_type", "name"):
+        value = event.get(key)
+        if value is not None:
+            tool_input[key] = value
+    subagent_model = event.get("subagent_model")
+    if isinstance(subagent_model, str) and subagent_model:
+        tool_input["model"] = subagent_model
+    else:
+        model = event.get("model")
+        if model is not None:
+            tool_input["model"] = model
+    task = event.get("task")
+    if task is not None:
+        tool_input["prompt"] = task
+    return tool_input
+
+
+def _emit(decision: Decision, *, mirror_user_message: bool = False) -> None:
     payload: dict[str, str] = {"permission": decision.permission}
     if decision.agent_message:
         payload["agent_message"] = decision.agent_message
+        if mirror_user_message:
+            payload["user_message"] = decision.agent_message
     print(json.dumps(payload), flush=True)
 
 
@@ -178,9 +221,14 @@ def main() -> None:
         if not isinstance(event, dict):
             raise TypeError("event payload must be an object")
 
-        tool_input = event.get("tool_input")
-        if not isinstance(tool_input, dict):
-            raise TypeError("tool_input must be an object")
+        hook_event = event.get("hook_event_name")
+        subagent_start = hook_event == "subagentStart"
+        if subagent_start:
+            tool_input = build_subagent_start_tool_input(event)
+        else:
+            tool_input = event.get("tool_input")
+            if not isinstance(tool_input, dict):
+                raise TypeError("tool_input must be a dict")
 
         workspace_roots = event.get("workspace_roots")
         if workspace_roots is not None and not isinstance(workspace_roots, list):
@@ -203,8 +251,13 @@ def main() -> None:
                     ledger_path.read_text(encoding="utf-8")
                 )
 
-        decision = decide(tool_input, roster, ledger_models)
-        _emit(decision)
+        decision = decide(
+            tool_input,
+            roster,
+            ledger_models,
+            model_from_host=subagent_start,
+        )
+        _emit(decision, mirror_user_message=subagent_start)
         sys.exit(0)
     except Exception:
         _emit(Decision("allow"))

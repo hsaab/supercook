@@ -12,6 +12,9 @@ import unittest
 from pathlib import Path
 from typing import NamedTuple
 
+# discover -s hooks puts this directory on sys.path. Importing the module as hooks.test_enforce_roster does not.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import enforce_roster
 import roster
 
@@ -40,20 +43,23 @@ def tags(role=None, run="{run}", body="Objective: map the hooks folder."):
 
 
 class Case(NamedTuple):
-    name: str
+    label: str
     prompt: str
     model: object
     subagent_type: str
     expect: tuple
     files: tuple = ()
     roots: tuple | None = ("repo",)
+    name: object = OMIT
+    subagent_model: object = OMIT
+    tool_input: object = OMIT
 
 
-def match_and_mismatch(name, prompt, subagent_type, expected, wrong, files=(), roots=("repo",)):
+def match_and_mismatch(label, prompt, subagent_type, expected, wrong, files=(), roots=("repo",)):
     """The expected slug is allowed and a wrong slug is denied with the expected slug named."""
     return [
-        Case(f"{name}: expected", prompt, expected, subagent_type, ALLOW, files, roots),
-        Case(f"{name}: wrong", prompt, wrong, subagent_type, ("deny", expected), files, roots),
+        Case(f"{label}: expected", prompt, expected, subagent_type, ALLOW, files, roots),
+        Case(f"{label}: wrong", prompt, wrong, subagent_type, ("deny", expected), files, roots),
     ]
 
 
@@ -64,24 +70,57 @@ class HookTestCase(unittest.TestCase):
         self.assertEqual(done.returncode, 0, done.stderr)
         return json.loads(done.stdout)
 
+    def _prepare(self, root, case):
+        (root / "repo" / "run").mkdir(parents=True)
+        for rel, text in (("home/.supercook/models.md", HOME_MODELS), *case.files):
+            (root / rel).parent.mkdir(parents=True, exist_ok=True)
+            (root / rel).write_text(text, encoding="utf-8")
+        prompt = case.prompt.format(run=root / "repo" / "run", root=root)
+        if case.roots is None:
+            return prompt, {}
+        return prompt, {"workspace_roots": [str(root / name) for name in case.roots]}
+
+    def _assert_seen(self, response, expect):
+        message = response.get("agent_message", "")
+        seen = (response.get("permission"), *(part for part in expect[1:] if part in message))
+        self.assertEqual(seen, expect, response)
+
     def check(self, cases):
         for case in cases:
-            with self.subTest(case.name), tempfile.TemporaryDirectory() as temp:
+            with self.subTest(case.label), tempfile.TemporaryDirectory() as temp:
                 root = Path(temp).resolve()
-                (root / "repo" / "run").mkdir(parents=True)
-                for rel, text in (("home/.supercook/models.md", HOME_MODELS), *case.files):
-                    (root / rel).parent.mkdir(parents=True, exist_ok=True)
-                    (root / rel).write_text(text, encoding="utf-8")
+                prompt, roots = self._prepare(root, case)
                 tool_input = {
                     "description": "launch", "run_in_background": False,
-                    "prompt": case.prompt.format(run=root / "repo" / "run", root=root),
+                    "prompt": prompt,
                     "subagent_type": case.subagent_type,
                     **({} if case.model is OMIT else {"model": case.model}),
+                    **({} if case.name is OMIT else {"name": case.name}),
                 }
-                roots = {} if case.roots is None else {"workspace_roots": [str(root / name) for name in case.roots]}
-                response = self.run_hook(root, json.dumps({"tool_name": "Subagent", "tool_input": tool_input, **roots}))
-                seen = (response.get("permission"), *(p for p in case.expect[1:] if p in response.get("agent_message", "")))
-                self.assertEqual(seen, case.expect, response)
+                payload = {"tool_name": "Subagent", "tool_input": tool_input, **roots}
+                self._assert_seen(self.run_hook(root, json.dumps(payload)), case.expect)
+
+    def check_start(self, cases):
+        """Build a subagentStart body and apply the same seen check as check()."""
+        responses = []
+        for case in cases:
+            with self.subTest(case.label), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp).resolve()
+                task, roots = self._prepare(root, case)
+                payload = {
+                    "hook_event_name": "subagentStart",
+                    "subagent_type": case.subagent_type,
+                    "task": task,
+                    **({} if case.model is OMIT else {"model": case.model}),
+                    **({} if case.subagent_model is OMIT else {"subagent_model": case.subagent_model}),
+                    **({} if case.name is OMIT else {"name": case.name}),
+                    **({} if case.tool_input is OMIT else {"tool_input": case.tool_input}),
+                    **roots,
+                }
+                response = self.run_hook(root, json.dumps(payload))
+                self._assert_seen(response, case.expect)
+                responses.append(response)
+        return responses
 
 
 class LaunchDecisionTests(HookTestCase):
@@ -175,6 +214,16 @@ class FailOpenTests(HookTestCase):
         for stdin_text in ("not json at all", "", "[]", '{"tool_name": "Subagent"}', '{"tool_input": "a string"}'):
             with self.subTest(stdin=stdin_text), tempfile.TemporaryDirectory() as temp:
                 self.assertEqual(self.run_hook(Path(temp), stdin_text), {"permission": "allow"})
+
+    def test_pretooluse_string_tool_input_fails_open(self):
+        payload = json.dumps({
+            "hook_event_name": "preToolUse",
+            "tool_input": "a string",
+            "subagent_type": "supercook-implementer",
+            "task": "",
+        })
+        with tempfile.TemporaryDirectory() as temp:
+            self.assertEqual(self.run_hook(Path(temp), payload), {"permission": "allow"})
 
 
 if __name__ == "__main__":
