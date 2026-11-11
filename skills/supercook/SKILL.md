@@ -26,7 +26,7 @@ Loading this skill makes you the **coordinator**. You own intake, the ledger, th
 
 1. **Typed.** `supercook-<role>` is in the subagent types this session lists. Launch it with the session's subagent tool (in Cursor, `Task`), passing that name as the subagent type.
 2. **Any listed spawn tool.** The name is not listed, but a tool that starts another agent is. Launch `supercook-<role>` through it, picking the fields by the spawn shape rule below, with the body of `agents/supercook-<role>.md` as the prompt.
-3. **Solo mode.** No spawn tool is listed, or launches keep failing (see the retry ladder). Run each remaining role yourself under [solo mode](agents.md#no-spawn-tool-run-roles-inline), and mark each of those rows `inline`.
+3. **Solo mode.** No spawn tool is listed, or launches keep failing (see the retry ladder). Run each remaining role yourself under [solo mode](agents.md#no-spawn-tool-run-roles-inline), and mark each of those rows `inline`. Solo mode still starts at phase 0: `.supercook/<run-id>/ledger.md` exists with the assess row closed `inline` before any product file changes.
 
 Look for a spawn tool in the tool list, any deferred or dynamic tool catalog (a `Task` tool can sit inside a namespace you have to open), and the subagent types. Never call or invent a tool that none of those show. The assessor launch is the probe: if a spawn tool is listed, launch through it and see.
 

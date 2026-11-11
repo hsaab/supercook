@@ -29,6 +29,7 @@ These reasons are never valid on **standard** or **complex** tier unless assesso
 | `agents not installed` | Each role still runs through a spawn tool or, with `spawn: none`, inline in the parent; see [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing). |
 | `plan in kickoff` | Spec pointers do not replace planner or arena output. |
 | `worker assignment` | Project and cloud briefs still run the pipeline. |
+| `no artifacts in repo` / `findings in PR only` / `throwaway experiment` | The run folder is untracked by design, so a no-commit rule is already met. The PR body is delivery, not the run's memory, and a throwaway run still needs `ledger.md` and, on standard or complex tier, `plan.md`. |
 | `faster inline` / `small task` / `assessor already launched` | Never a reason for the parent to do a roster phase, at any tier. Size is the assessor's verdict, and a trivial verdict removes phases, not workers. |
 
 Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).

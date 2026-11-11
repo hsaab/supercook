@@ -7,6 +7,7 @@ The plan is a contract. Slices are PRs. Sizing happens here, because a finished 
 - [Standard tier: one planner](#standard-tier-one-planner)
 - [Complex tier: the arena](#complex-tier-the-arena)
 - [Supplied plan: the optimizer](#supplied-plan-the-optimizer)
+- [Acceptance criteria](#acceptance-criteria)
 - [UI contract gate](#ui-contract-gate)
 - [Slices are PRs](#slices-are-prs)
 - [Notify and continue](#notify-and-continue)
@@ -47,6 +48,10 @@ The `implement-plan` track does not use the planner or the arena. The user alrea
 `plan.md` uses the same format as the planner, plus `## Changes from your plan`. `no changes beyond slicing` is a valid section body.
 
 The UI contract gate and the slice budget still apply. An oversized or incomplete contract plan does not survive the optimizer any more than it would survive the judge.
+
+## Acceptance criteria
+
+When `acceptance.md` exists in the run folder, `plan.md` carries an `## Acceptance criteria` block: one line per criterion, `AC-1: <criterion verbatim> -> slice <n>, <named test or check>`. Every criterion maps to a slice and to a test or check that can show it passing. A criterion no slice proves is listed under Gaps and raised, not dropped. The parent confirms this when the planner, judge, or optimizer returns.
 
 ## UI contract gate
 

@@ -35,7 +35,9 @@ Do not add a browser framework or pixel snapshots only for this gate.
 
 Single-slice work collapses to the simple case: whole suite committed first.
 
-**Verify the failure before moving on.** Each new test must fail because the behavior is missing, not because of a typo or a bad import. A test failing for the wrong reason sends the implementer chasing a phantom.
+**Verify the failure before moving on.** Each new test must fail on its own assertion because the behavior is missing, not because of a typo, a bad import, or a module that does not exist yet. A test failing for the wrong reason sends the implementer chasing a phantom.
+
+**Real failures come from a temporary stub, never a committed one.** When the first run stops at an import or collection error (module not found, missing export), add a stub at the import path with the planned signatures returning empty or default values. Rerun and record every failing test name with its assertion line as `red-evidence`. A test that passes against the stub is rewritten or dropped. Then delete the stub and check `git status --porcelain --untracked-files=all` lists only test paths. The first commit holds tests only, with no new source file, so tests-first holds. The `red-evidence` lines go into the PR `## Evidence` section.
 
 **Open-pr retrospective exception.** Existing contract-level UI can be missing its
 structural assertions even though source already landed. Launch the test designer
@@ -50,7 +52,7 @@ stack a revert on top of the implementation commit and call that test-first.
 Preserve unrelated user work, run the contract verification red, then re-delegate
 implementation. Retrospective mode is not a shortcut for source this run authored.
 
-**Where every commit must be green.** Some repos require it. Keep the red evidence in the ledger, then squash the test commit together with the implementation commit before pushing. The discipline survives; only the history shape changes.
+**Where every commit must be green.** Some repos require it. Keep the red evidence in the ledger and the PR body, then squash the test commit together with the implementation commit before pushing. The discipline survives; only the history shape changes.
 
 **Where there is no test runner.** The test designer returns an executable recipe:
 a script or command sequence with setup, assertions, expected output, and cleanup.

@@ -45,7 +45,7 @@ Pass these on every launch, without exception:
 
 - **The roster key**, so the launch row and a resumed session can tell which `models:` entry applied: take it from the **Role in models.md** column in [The roster](#the-roster) and the fenced block in [models.md](models.md#the-roster) (`plan-judge` and `plan-optimizer` are their own keys, not `standard`). Say it in the prompt as plain text (`roster key: explorer`).
 - **The objective**, in one sentence, specific to this run.
-- **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
+- **The run folder path**, so the agent can read `plan.md`, `user-plan.md`, `acceptance.md`, and `design-doc.md` when relevant. Never ask an agent to write the ledger.
 - **Its inputs**: file pointers from recon, the scope list, the test command, whatever that role needs.
 - **Its UI inputs, when relevant**: only the resolved brief, evidence, contract
   entries, and owned obligations that role needs. The parent retrieves designs and
@@ -89,7 +89,7 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 - **Inputs**: task, tier, track, recon pointers, the Design Doc when one exists, the resolved UI brief and evidence when one exists, the slice budget.
 - **Effort budget**: one pass. Plan, do not explore. If it needs to explore, recon was too thin.
-- **Done when**: `plan.md` exists with numbered slices, each carrying scope, a named verification, and a reviewable-line estimate. Contract-level UI also has complete source-of-truth entries, owned obligations on each UI slice, and exactly one reachable order-test owner per contract.
+- **Done when**: `plan.md` exists with numbered slices, each carrying scope, a named verification, and a reviewable-line estimate, plus an `## Acceptance criteria` block when `acceptance.md` exists. Contract-level UI also has complete source-of-truth entries, owned obligations on each UI slice, and exactly one reachable order-test owner per contract.
 - **Returns**: the slice list, one line each, and the total estimate.
 
 ### supercook-arena-runner
@@ -119,8 +119,8 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 - **Inputs**: the slice, the journeys it serves, the test command, the repo's test conventions from recon, referenced UI contract entries plus owned obligations, `mode: red-first | retrospective-open-pr`, and `verification: tests | recipe`.
 - **Effort budget**: as long as the journeys need, but no implementation.
-- **Done when**: the named journeys have tests or an executable recipe and the selected verification runs. Red-first verification fails for the intended missing behavior; retrospective-open-pr verification reports an honest pass or gap. Contract-level UI pins each slice's owned anchors, counts, grouping, and interactions; only the named owner pins the global order.
-- **Returns**: verification kind, test paths or recipe, one line per journey, the exact command and result, the run-folder destination the parent records for a recipe, and UI contract coverage when present.
+- **Done when**: the named journeys have tests or an executable recipe and the selected verification runs. Red-first verification fails on the tests' own assertions for the intended missing behavior, never at an import or collection error (a temporary stub, deleted before return, is how it gets there); retrospective-open-pr verification reports an honest pass or gap. Contract-level UI pins each slice's owned anchors, counts, grouping, and interactions; only the named owner pins the global order.
+- **Returns**: verification kind, test paths or recipe, one line per journey, the exact command and result, `red-evidence` (failing test name plus assertion line, per test), `stub` (`<path>, deleted` or `not needed`), the run-folder destination the parent records for a recipe, and UI contract coverage when present.
 - **Owns every test edit for the whole run.** A test that needs changing comes back here, never to the implementer.
 - **Open-pr retrospective mode**: contract tests are allowed to pass against source
   that already existed. Label the evidence retrospective rather than claiming a
@@ -137,10 +137,10 @@ Do not paste the whole conversation, prior agent output, or file contents that t
 
 ### supercook-verifier
 
-- **Inputs**: `plan.md`, the ledger, the diff, and the test command or recorded executable recipe plus its expected checksum. Open-pr supplies its initial diff inventory and can supply its retrospective ledger contract instead of `plan.md`. A trivial run has no `plan.md`: the task text and the ledger's `done:` predicate are the contract instead. Fresh context only, no implementation history.
+- **Inputs**: `plan.md`, the ledger, the diff, and the test command or recorded executable recipe plus its expected checksum. Open-pr supplies its initial diff inventory and can supply its retrospective ledger contract instead of `plan.md`. Only a ledger `tier: trivial` has no `plan.md`: the task text and the ledger's `done:` predicate are the contract instead. On standard or complex tier (open-pr uses its retrospective ledger contract instead) a missing `plan.md` is `verdict: gaps found`. The run folder's `acceptance.md` is also an input when it exists. Fresh context only, no implementation history.
 - **Effort budget**: enough to run the recorded verification and check every contract row.
-- **Done when**: every plan row, or every retrospective ledger row on open-pr, is marked landed or missing with evidence, the tests or recipe have run in this session, and any UI contract obligations are checked in source and verification.
-- **Returns**: a verdict line, one line per contract row, out-of-scope findings, `ui-contract: ok | mismatch | not applicable`, recipe checksum status when relevant, then the quoted verification output. It never returns `visual: ok`; the parent renders.
+- **Done when**: every plan row, or every retrospective ledger row on open-pr, is marked landed or missing with evidence, every acceptance criterion in `acceptance.md` is proven by a named test with quoted passing output or marked missing, the tests or recipe have run in this session, and any UI contract obligations are checked in source and verification.
+- **Returns**: a verdict line, one line per contract row, one line per acceptance criterion, out-of-scope findings, `ui-contract: ok | mismatch | not applicable`, recipe checksum status when relevant, then the quoted verification output. It never returns `visual: ok`; the parent renders.
 - It must **run** the command. A verdict reasoned from the diff alone gets rejected and re-run.
 
 ## Parent-side guards
@@ -153,9 +153,9 @@ A boundary written in a prompt is a request. These checks are what make it a con
 | Any launch | After the agent returns, log the model actually used on the launch row (`inherit` when the field was omitted or dropped). No hook checks it against the roster. |
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
-| `supercook-planner` / `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception. For contract UI, run the plan-completeness guard in `pipeline/ui.md`. |
+| `supercook-planner` / `supercook-plan-judge` | Confirm every slice has an estimate inside budget or a logged exception, and that `plan.md` maps every criterion in `acceptance.md` to a slice and a named test. For contract UI, run the plan-completeness guard in `pipeline/ui.md`. |
 | `supercook-plan-optimizer` | Same slice-budget and UI plan-completeness check as planner and judge. Also confirm `## Changes from your plan` exists, and that every change line references something real: a recon pointer or the user's plan text. `no changes beyond slicing` is a valid section body. |
-| `supercook-test-designer` | Confirm the selected tests or recipe fail for the intended reason, except labeled open-pr retrospective verification. Run the anchor and order guard in `pipeline/implementation.md`. |
+| `supercook-test-designer` | Confirm the selected tests or recipe fail on their own assertions, except labeled open-pr retrospective verification. Run `git status --porcelain --untracked-files=all` and confirm only test paths changed, so no stub is left behind. Run the anchor and order guard in `pipeline/implementation.md`. |
 | `supercook-implementer` | Run recipe-checksum, test-integrity, and scope guards. Contract UI also requires a valid `design-evidence` return. Run before committing. |
 | `supercook-verifier` | Confirm fresh test or recipe output is quoted and any recipe checksum matched. Contract UI requires `ui-contract: ok`, and any visual claim is rejected. |
 
@@ -208,16 +208,17 @@ The worker for each phase is the "Run by" column of [the pipeline table](SKILL.m
 
 This is solo mode. It applies when `spawn: none`, and for the rest of a run once the retry ladder ends in solo mode. The phases, tier collapse, and ledger rows are the same as a normal run. What changes is who does the work, so the guarantees come from files and git instead of a second agent. Mark each row `inline`. At each phase, work from that role's contract in this file, and open `agents/supercook-<role>.md` only when the contract is not enough.
 
-Every phase hands off through a file in the run folder, never through chat memory:
+Each step leaves a file on disk, and the next step does not start until that file exists. Nothing passes through chat memory. The steps are numbered by pipeline phase, so a solo parent cannot skip the first one.
 
-- **Assess.** Run inline and write the 4-line verdict on the row. It stays first because the tier decides how much of the rest runs.
-- **Recon** (standard and complex). One area at a time, about 10 tool calls per area. Write `recon.md` with pointers and the test command, no file dumps.
-- **Design doc.** Unchanged: the parent always ran it with the user.
-- **Plan.** Write `plan.md` in the planner format: numbered slices, a scope file list, a named verification, and a line estimate. Then review it once against the judge criteria in [pipeline/planning.md](pipeline/planning.md): correct against the code, slice size and independence, surgical scope, risk named honestly. Add `## Strongest objection` with what changed because of it. On complex tier the arena does not run: log `arena: n/a (solo)`. On `implement-plan`, tighten `user-plan.md` and add `## Changes from your plan`, like the optimizer.
-- **Test-first.** Unchanged. Run the tests, confirm they fail for the intended reason, commit them alone, and record that SHA on the row.
-- **Implement.** One slice at a time, inside that slice's scope list. Before each commit, `git diff --name-only <tests-sha>..HEAD -- <test paths>` must print nothing, and `git status --porcelain --untracked-files=all` must show only scope files.
-- **Verify.** Run it after the slice is committed, so it audits the artifact and not your memory. Re-open `plan.md` and `git diff <base>...HEAD` from disk, run the test command, and write one line per plan row (landed, missing, or partial) plus the quoted output to `verify.md`. The gap loop and escape rule in [pipeline/verification.md](pipeline/verification.md) are unchanged.
-- **Deliver.** The PR body says "built in solo mode: verify was a self-audit". A hosted Bugbot run on the PR is the independent review. On the review track only hosted reviewers run, since local reviewers need a spawn tool.
+0. **Intake (blocking).** Create `.supercook/<run-id>/`, add the `info/exclude` entry, and write `ledger.md` with `spawn: none` on the capability line, per [intake step 4](pipeline/intake.md#4-seed-the-ledger). A user rule against committing logs, transcripts, or notes does not skip this step: the folder is untracked, never committed. When the task or its ticket lists acceptance criteria, pin them to `acceptance.md` there.
+1. **Assess.** Run inline and write the 4-line verdict on the row. It stays first because the tier decides how much of the rest runs. **Gate:** no product file is created or changed until `ledger.md` exists and this row is closed `inline`.
+2. **Recon** (standard and complex). One area at a time, about 10 tool calls per area. Write `recon.md` with pointers and the test command, no file dumps.
+3. **Design doc.** Unchanged: the parent always ran it with the user.
+4. **Plan** (standard and complex). Write `plan.md` in the planner format: numbered slices, a scope file list, a named verification, and a line estimate. Then review it once against the judge criteria in [pipeline/planning.md](pipeline/planning.md): correct against the code, slice size and independence, surgical scope, risk named honestly. Add `## Strongest objection` with what changed because of it. On complex tier the arena does not run: log `arena: n/a (solo)`. On `implement-plan`, tighten `user-plan.md` and add `## Changes from your plan`, like the optimizer. **Gate:** no test file is written or committed until `plan.md` exists and this row is closed `inline`. A long brief, a file list, or a pytest snippet is a spec pointer, not this file.
+5. **Test-first.** Write the tests, then give them real failures with the temporary stub procedure in [pipeline/implementation.md](pipeline/implementation.md#phase-5-test-first). Commit the tests alone, and record that SHA and the `red-evidence` lines on the row.
+6. **Implement.** One slice at a time, inside that slice's scope list. Before each commit, `git diff --name-only <tests-sha>..HEAD -- <test paths>` must print nothing, and `git status --porcelain --untracked-files=all` must show only scope files.
+7. **Verify.** Run it after the slice is committed, so it audits the artifact and not your memory. Re-open `plan.md` and `git diff <base>...HEAD` from disk, run the test command, and write one line per plan row (landed, missing, or partial), one line per acceptance criterion, and the quoted output to `verify.md`. The gap loop and escape rule in [pipeline/verification.md](pipeline/verification.md) are unchanged.
+8. **Deliver.** Run the [pre-PR check](pipeline/delivery.md#pre-pr-check), then write the PR `## Evidence` section. It says "built in solo mode, no independent review: verify was a self-audit". A hosted Bugbot run on the PR is linked when it exists, and is the only independent signal. On the review track only hosted reviewers run, since local reviewers need a spawn tool.
 
 Want a human check on the plan? `/supercook plan only <task>`, read `plan.md`, then `/supercook use this plan`. That flow works in solo mode too.
 

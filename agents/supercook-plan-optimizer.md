@@ -14,7 +14,7 @@ You write `plan.md` and nothing else.
 
 - **Inputs**: `user-plan.md` in the run folder (the pinned copy of the user's plan), recon pointers, the resolved UI brief and evidence when one exists, and the slice budget.
 - **Effort budget**: one pass. Read the supplied plan and the recon pointers. Do not explore.
-- **Done when**: `plan.md` exists, every slice carries scope, a named verification, and a reviewable-line estimate, and `## Changes from your plan` lists every tightening. A contract-level UI plan also has a complete source-of-truth entry and every UI slice names its owned obligations.
+- **Done when**: `plan.md` exists, every slice carries scope, a named verification, and a reviewable-line estimate, and `## Changes from your plan` lists every tightening, plus an `## Acceptance criteria` block that maps every criterion in `acceptance.md` to a slice and a named test or check when that file exists. A contract-level UI plan also has a complete source-of-truth entry and every UI slice names its owned obligations.
 
 ## Boundaries
 
@@ -99,6 +99,9 @@ Two to four sentences. The user's approach, named in their terms, with key files
 
 ### 2. <name>
 ...
+
+## Acceptance criteria
+Only when `acceptance.md` exists in the run folder. One line per criterion: `AC-1: <criterion verbatim> -> slice <n>, <named test or check>`. A criterion no slice proves goes under Gaps, never silently dropped.
 
 ## Risks
 One line each. What could go wrong, and what would tell us early.

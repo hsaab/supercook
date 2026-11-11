@@ -10,9 +10,9 @@ Decide whether the work actually landed. You get the plan, the ledger, and the d
 
 ## Inputs, budget, and done-when
 
-- **Inputs**: `plan.md`, the ledger, the diff, and either the test command or the recorded executable verification recipe plus its expected checksum. An open-pr run supplies its initial diff inventory and may supply a retrospective UI contract from the ledger instead of `plan.md`. A trivial run has no `plan.md`: the task text and the ledger's `done:` predicate are the contract instead. Fresh context, no implementation history.
+- **Inputs**: `plan.md`, the ledger, the diff, and either the test command or the recorded executable verification recipe plus its expected checksum. An open-pr run supplies its initial diff inventory and may supply a retrospective UI contract from the ledger instead of `plan.md`. Only a ledger `tier: trivial` has no `plan.md`: the task text and the ledger's `done:` predicate are the contract instead. On standard or complex tier (open-pr uses its retrospective ledger contract instead) a missing `plan.md` is `verdict: gaps found`. When the run folder has `acceptance.md`, it is an input too. Fresh context, no implementation history.
 - **Effort budget**: enough to run the recorded verification and check every contract row. You are auditing, not exploring.
-- **Done when**: every plan row, or every retrospective ledger contract row on open-pr, is marked landed, missing, or partial with evidence, and the recorded tests or recipe have run in this session. When a UI contract exists, every owned obligation is also checked in source and verification.
+- **Done when**: every plan row, or every retrospective ledger contract row on open-pr, is marked landed, missing, or partial with evidence, every acceptance criterion in `acceptance.md` is proven or marked missing, and the recorded tests or recipe have run in this session. When a UI contract exists, every owned obligation is also checked in source and verification.
 
 ## Boundaries
 
@@ -78,6 +78,9 @@ rows:
   2. <slice name>: missing. plan asked for <thing>, no change in <expected file>.
   3. <slice name>: partial. <what is there>, but <what is not>.
 
+acceptance criteria (only when acceptance.md exists):
+  - AC-1: <proven by <test name>: <passing output line> | missing: <what proof is absent>>
+
 out of scope:
   - <path>: <what changed that nothing asked for>, or "none"
 
@@ -94,7 +97,7 @@ verification:
   <the last few lines of real output, verbatim>
 ```
 
-`verdict: pass` requires every row landed, nothing out of scope, tests untouched,
+`verdict: pass` requires every row landed, every acceptance criterion proven, nothing out of scope, tests untouched,
 explanations that name real code, the recorded verification passing, and
 `ui-contract: ok` when a contract applies. Anything less is `gaps found`. Use
 `blocked` only when you could not run the recorded verification at all, and say

@@ -94,6 +94,8 @@ Resume depends entirely on this, so write it down before anything else happens.
 
 Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
 
+**A rule against committing evidence does not skip this step.** A user or repo rule that forbids committing logs, transcripts, or probe notes is already met by the `info/exclude` write below, because the run folder stays untracked. Only `keep ledger` commits it. A run that reports its findings in the PR body still keeps its run folder: the PR is delivery, not the run's memory.
+
 Name the worker on every roster row as you seed it, for example `- [ ] implement: supercook-implementer, one launch per slice`. A resumed or compacted session re-reads the ledger, not this skill, so the row is where the next turn learns that the phase is a launch and not its own to-do.
 
 **The merge track does not get the investigation exception.** It changes the repo and it can span sessions while checks run, so it needs the record more than most runs, not less. Seed the ledger, with the target PR number in the header.
@@ -108,6 +110,8 @@ Name the worker on every roster row as you seed it, for example `- [ ] implement
 Assessor (phase 1) does not run on this track.
 
 **On `implement-plan`, pin the supplied plan next.** Once the run folder exists, copy the resolved plan source verbatim to `user-plan.md` in that folder and echo the plan title. Later phases read that file, not chat scrollback. See [../playbooks/implement-plan.md](../playbooks/implement-plan.md).
+
+**Pin acceptance criteria next.** When the task or its linked ticket (Linear, Jira, or a GitHub issue) lists acceptance criteria, copy them verbatim to `acceptance.md` in the run folder, numbered `AC-1` onward, and echo the count. Planning maps them to tests, verify proves them, and delivery tables them in the PR. A ticket that cannot be read is the sanctioned pause for missing access.
 
 Keep the run folder out of git without touching `.gitignore`:
 
