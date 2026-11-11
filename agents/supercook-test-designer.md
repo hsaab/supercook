@@ -87,7 +87,13 @@ When the first run stops at an import or collection error, add a temporary stub 
 the import path with the planned signatures returning empty or default values.
 Never commit it, and never leave it for the parent. Rerun, record each failing test
 name with its assertion line, and rewrite or drop any test that passes against the
-stub. Then delete the stub and run `git status --porcelain --untracked-files=all`,
+stub. Each `red-evidence` line must name the journey assertion that fails, not a setup
+assertion that only fails because the stub exists. A test that fails only on setup is
+rewritten. Save the stub as a patch at `.supercook/<run-id>/red-stub.patch` in the
+untracked run folder (`git add -N <path>` then `git diff > .supercook/<run-id>/red-stub.patch`
+and `git reset -- <path>` when the stub was new, so it appears in the diff), then delete
+the stub: `git checkout -- <path>` when the module already existed, or remove the file
+when it was new. Run `git status --porcelain --untracked-files=all`,
 which must list only test paths.
 
 ### Retrospective open-pr mode
@@ -105,6 +111,7 @@ Plain language, no em dashes:
 paths: <the test files you created or extended | none>
 verification: <tests | recipe>
 stub: <path, deleted | not needed>
+stub-patch: <run-folder>/red-stub.patch | not needed
 red-evidence:
   - <test name>: <assertion line that fails>
 command: <the exact command that runs the selected verification>

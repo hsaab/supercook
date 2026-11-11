@@ -14,7 +14,7 @@ Merging beats picking when the candidates are strong in different places, which 
 
 - **Inputs**: all three candidate plans, the recon pointers, the resolved UI brief and evidence when one exists, and the slice budget.
 - **Effort budget**: read, compare, decide, write. No new exploration.
-- **Done when**: `plan.md` is written, every slice is inside the budget or carries a logged cohesion exception, every criterion in `acceptance.md` is mapped to a slice and a named test when that file exists, and every required UI contract is complete with owned obligations on each UI slice.
+- **Done when**: `plan.md` is written, every slice is inside the budget or carries a logged cohesion exception, `## Acceptance criteria` maps every criterion in `acceptance.md` to a slice and a named test or check when that file exists, and every required UI contract is complete with owned obligations on each UI slice.
 
 ## Boundaries
 
@@ -65,7 +65,7 @@ Two to four sentences. Name the key files.
 - exception: <only if this slice stays oversized because splitting would break the branch>
 
 ## Acceptance criteria
-(only when `acceptance.md` exists: `AC-1: <criterion verbatim> -> slice <n>, <test or check>`)
+Only when `acceptance.md` exists in the run folder. One line per criterion: `AC-1: <criterion verbatim> -> slice <n>, <named test or check>`. A criterion no slice proves goes under Gaps, never silently dropped.
 ## Risks
 ## Gaps
 ## Out of scope

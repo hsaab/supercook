@@ -16,7 +16,7 @@ One PR per slice, opened as each slice closes. Not one batch at the end.
 
 ## PR body format
 
-Three sections, in plain language, plus the `## Evidence` section below when it applies. This is the most-read output the whole workflow produces, so it gets the house style at full strength.
+Three sections, in plain language, plus the `## Evidence` section below. Evidence always applies. This is the most-read output the whole workflow produces, so it gets the house style at full strength.
 
 ```markdown
 ## Why we did this
@@ -39,7 +39,7 @@ Not this:
 
 > Fixed webhook handling and improved retry logic for better reliability.
 
-**When the repo has a PR template**, treat these three sections as the minimum content and fit them into the template's fields. Do not overwrite a template the team relies on.
+**When the repo has a PR template**, treat these three sections as the minimum content and fit them into the template's fields. Carry `## Evidence` into the template as its own section or field. Do not overwrite a template the team relies on.
 
 No em dashes, here or anywhere.
 
@@ -75,6 +75,10 @@ A fourth section, `## Evidence`, makes the proof durable on the PR. The ledger a
 ## Evidence
 Red first (test commit <sha>, tests only):
 - <test name>: <assertion line that failed before the code existed>
+
+Those assertion lines were recorded against a temporary stub. Checking out that SHA
+fails at import by design. On squash-only repos the SHA may disappear, so the test
+names and assertion lines here are the durable proof.
 
 | Acceptance criterion (verbatim) | Test or check | Passing output |
 |---|---|---|
@@ -223,7 +227,7 @@ The parent-side guard runs here even when the plan named only one slice.
 Before `gh pr create`, `gt submit`, or any PR open, in every mode and on every tier, run this check from the run's working tree. It fails closed: any failure means the PR is not opened and the row that owns the gap reopens.
 
 1. **Every row is settled.** Each ledger row above deliver is `[x]`, `[~]` with a valid reason, or a sanctioned `[!]`.
-2. **The diff holds only scoped files.** Every path in `git diff --name-only <BASE>...HEAD` is in a plan slice's scope list or the test-first commit. On trivial tier, it is in the implementer's scope list. A QA note, log, sweep output, regen script, or leftover stub fails the check. Move it to the run folder and cite it in the PR body.
+2. **The diff holds only scoped files.** Every path in `git diff --name-only <BASE>...HEAD` is in a plan slice's scope list or the test-first commit of its slice. On trivial tier, it is in the implementer's scope list, or the test-first commit when a test-designer ran because the change needed a test. A QA note, log, sweep output, regen script, or leftover stub fails the check. Move it to the run folder and cite it in the PR body.
 3. **Every criterion has proof.** When `acceptance.md` exists, each criterion has a passing line in the verifier's output.
 4. **The Evidence section is filled** per [Evidence section](#evidence-section), including the solo line on a solo run.
 

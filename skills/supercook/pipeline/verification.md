@@ -16,8 +16,9 @@ Not the implementation history, not the reasoning, not the agent conversations. 
 
 Only a ledger `tier: trivial` has no `plan.md`. Launch the verifier anyway, with the
 task text and the ledger's `done:` predicate as the contract. On standard or
-complex tier (open-pr uses its retrospective ledger contract instead), a missing `plan.md` is `verdict: gaps found` and reopens the plan row:
-the task text is never a substitute contract there.
+complex tier a missing `plan.md` is `verdict: gaps found` and reopens the plan row.
+Open-pr has no `plan.md` by design: the `open-pr scope` baseline in the ledger (see
+`playbooks/open-pr.md`) is the contract, and a missing baseline is `verdict: gaps found`.
 
 For an open-pr UI run with no `plan.md`, pass the retrospective UI contract from
 the ledger in its place. The verifier still receives a contract, never an
