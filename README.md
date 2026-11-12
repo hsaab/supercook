@@ -142,7 +142,7 @@ Ten roster keys, one line each in the fenced block: `standard` (assessor, planne
 | 2 | `~/.supercook/models.md` your choices across repos |
 | 3 | shipped `skills/supercook/models.md` |
 
-Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. Run artifacts under `.supercook/` stay untracked in git (see this repo's `.gitignore`); only an optional `models.md` there is meant to be committed when you want the roster to travel with the checkout.
+Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. Run artifacts under `.supercook/` stay untracked in git (intake writes `.supercook/*` and `!.supercook/models.md` to the repo's local git exclude file); only an optional `models.md` there is visible to git, so you can commit it when you want the roster to travel with the checkout.
 
 **Cloud agents and other clones without a home file** should commit and maintain `<workspace-root>/.supercook/models.md` so tier 1 resolves on every VM. Use the same fenced roster shape as the shipped file; merge rules and hook behavior are documented in [skills/supercook/models.md](skills/supercook/models.md).
 
@@ -174,7 +174,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 | The plugin's agents | Each role still launches as a worker named `supercook-<role>` through whatever spawn tool the session lists, with its agent file as the prompt; with no spawn tool, roles run inline from the agent file bodies |
 | A renderer for a changed UI route | Writes a fully specified manual smoke and asks once for confirmation. A PR can disclose missing visual evidence, but never calls the route visually verified |
 
-**One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger.
+**One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger. The exception is `.supercook/models.md`: git sees it, and it reaches cloud agents once you commit it.
 
 ## Usage
 

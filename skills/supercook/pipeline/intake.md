@@ -110,12 +110,18 @@ Assessor (phase 1) does not run on this track.
 
 **On `implement-plan`, pin the supplied plan next.** Once the run folder exists, copy the resolved plan source verbatim to `user-plan.md` in that folder and echo the plan title. Later phases read that file, not chat scrollback. See [../playbooks/implement-plan.md](../playbooks/implement-plan.md).
 
-Keep the run folder out of git without touching `.gitignore`:
+Keep run artifacts out of git without touching `.gitignore`, while leaving `.supercook/models.md` visible so a repo roster can be committed for cloud agents:
 
 ```bash
 EXCLUDE=$(git rev-parse --git-path info/exclude)
-grep -qxF '.supercook/' "$EXCLUDE" 2>/dev/null || printf '\n.supercook/\n' >> "$EXCLUDE"
+if ! grep -qxF '!.supercook/models.md' "$EXCLUDE" 2>/dev/null; then
+  mkdir -p "$(dirname "$EXCLUDE")"
+  { grep -vxF -e '.supercook/' -e '.supercook/*' "$EXCLUDE" 2>/dev/null
+    printf '.supercook/*\n!.supercook/models.md\n'; } > "$EXCLUDE.tmp" && mv "$EXCLUDE.tmp" "$EXCLUDE"
+fi
 ```
+
+Never write the bare `.supercook/` pattern: git cannot re-include a file under an excluded folder, so the negation would do nothing. The snippet removes that older entry when it finds one, which migrates repos that intake set up before this change.
 
 Use `git rev-parse --git-path`, never a literal `.git/info/exclude`: a linked worktree has a `.git` **file**, not a directory, so the literal path would create a stray file that excludes nothing. The write is idempotent, and it lands in the **shared** exclude file, so the entry covers every worktree of the repo and outlives this run.
 

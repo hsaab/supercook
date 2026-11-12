@@ -21,7 +21,7 @@ mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`; run artifacts there stay untracked, but you can commit `models.md` so cloud agents and other clones pick up tier 1 without a home file.
+The repository file is optional: create `<workspace-root>/.supercook/models.md` with the same fenced roster shape when this checkout should pin models for your session. That path lives under repo `.supercook/`; run artifacts there stay untracked, but intake's git exclude entry leaves `models.md` visible, so you can commit it and cloud agents and other clones pick up tier 1 without a home file. A cloud agent only sees the repo roster once it is committed. For a private per-checkout override, use `~/.supercook/models.md` instead, so a broad `git add` cannot publish it.
 
 Then change the roles you want and delete the lines you do not. Any role a higher file does not name falls through to the next tier, so a home file naming two roles changes exactly those two only when the repository file does not name those roles. Write `inherit` on a role to put it back on the session model.
 
