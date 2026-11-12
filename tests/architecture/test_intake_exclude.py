@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 INTAKE_DOC = REPO_ROOT / "skills/supercook/pipeline/intake.md"
 EXCLUDE_ANCHOR = "Keep run artifacts out of git"
 LEGACY_ENTRY = ".supercook/"
-LINES = (".supercook/*", "!.supercook/models.md")
+LINES = ("**/.supercook/*", "!**/.supercook/models.md")
 
 
 def exclude_snippet() -> str:
@@ -100,6 +100,60 @@ class IntakeExcludeTest(unittest.TestCase):
         for line in LINES:
             self.assertIn(line, self.exclude_lines(self.repo))
         self.assert_roster_visible_artifacts_ignored()
+
+    def test_subdirectory_workspace_ignores_artifacts_but_not_roster(self):
+        pkg = self.repo / "pkg"
+        (pkg / ".supercook" / "run-1").mkdir(parents=True)
+        (pkg / ".supercook" / "run-1" / "ledger.md").write_text("x")
+        (pkg / ".supercook" / "models.md").write_text("x")
+
+        run_snippet(pkg)
+
+        self.assertTrue(is_ignored(pkg, ".supercook/run-1/ledger.md"))
+        self.assertFalse(is_ignored(pkg, ".supercook/models.md"))
+        self.assert_roster_visible_artifacts_ignored()
+
+    def test_bare_line_appended_by_older_plugin_is_migrated_again(self):
+        run_snippet(self.repo)
+        exclude = self.repo / ".git" / "info" / "exclude"
+        with exclude.open("a") as handle:
+            handle.write("\n.supercook/\n")
+        self.assertTrue(is_ignored(self.repo, ".supercook/models.md"))
+
+        run_snippet(self.repo)
+
+        lines = self.exclude_lines(self.repo)
+        self.assertNotIn(LEGACY_ENTRY, lines)
+        for line in LINES:
+            self.assertEqual(lines.count(line), 1)
+        self.assert_roster_visible_artifacts_ignored()
+
+    def test_symlinked_exclude_stays_a_symlink_and_target_gets_the_lines(self):
+        target = self.root / "real_exclude"
+        target.write_text("# shared by dotfiles\n")
+        exclude = self.repo / ".git" / "info" / "exclude"
+        exclude.unlink(missing_ok=True)
+        exclude.parent.mkdir(exist_ok=True)
+        exclude.symlink_to(target)
+
+        run_snippet(self.repo)
+
+        self.assertTrue(exclude.is_symlink())
+        content = target.read_text().splitlines()
+        self.assertIn("# shared by dotfiles", content)
+        for line in LINES:
+            self.assertIn(line, content)
+
+    def test_hand_written_variants_are_left_alone(self):
+        exclude = self.repo / ".git" / "info" / "exclude"
+        exclude.parent.mkdir(exist_ok=True)
+        exclude.write_text(".supercook\n/.supercook/\n")
+
+        run_snippet(self.repo)
+
+        lines = self.exclude_lines(self.repo)
+        self.assertIn(".supercook", lines)
+        self.assertIn("/.supercook/", lines)
 
 
 if __name__ == "__main__":
