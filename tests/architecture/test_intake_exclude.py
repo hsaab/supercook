@@ -32,7 +32,8 @@ def run(cmd, cwd, **kwargs):
 
 
 def run_snippet(cwd: Path) -> None:
-    run(["bash", "-c", exclude_snippet()], cwd)
+    # -e: an agent shell may run strict, so a failing grep must not abort the write
+    run(["bash", "-e", "-c", exclude_snippet()], cwd)
 
 
 def is_ignored(cwd: Path, rel: str) -> bool:
@@ -81,6 +82,38 @@ class IntakeExcludeTest(unittest.TestCase):
         lines = self.exclude_lines(self.repo)
         self.assertNotIn(LEGACY_ENTRY, lines)
         self.assertIn("node_modules/", lines)
+
+    def test_missing_exclude_file_is_created(self):
+        exclude = self.repo / ".git" / "info" / "exclude"
+        exclude.unlink()
+
+        run_snippet(self.repo)
+
+        self.assertEqual(self.exclude_lines(self.repo), list(LINES))
+        self.assert_roster_visible_artifacts_ignored()
+
+    def test_exclude_file_with_only_the_legacy_entry_is_migrated(self):
+        exclude = self.repo / ".git" / "info" / "exclude"
+        exclude.write_text(".supercook/\n")
+
+        run_snippet(self.repo)
+
+        self.assertEqual(self.exclude_lines(self.repo), list(LINES))
+        self.assert_roster_visible_artifacts_ignored()
+
+    def test_legacy_anchored_pair_is_migrated(self):
+        exclude = self.repo / ".git" / "info" / "exclude"
+        exclude.parent.mkdir(exist_ok=True)
+        exclude.write_text(".supercook/*\n!.supercook/models.md")
+
+        run_snippet(self.repo)
+
+        lines = self.exclude_lines(self.repo)
+        self.assertNotIn(".supercook/*", lines)
+        self.assertNotIn("!.supercook/models.md", lines)
+        for line in LINES:
+            self.assertEqual(lines.count(line), 1)
+        self.assert_roster_visible_artifacts_ignored()
 
     def test_second_run_adds_nothing(self):
         run_snippet(self.repo)
@@ -154,6 +187,8 @@ class IntakeExcludeTest(unittest.TestCase):
         lines = self.exclude_lines(self.repo)
         self.assertIn(".supercook", lines)
         self.assertIn("/.supercook/", lines)
+        # documented consequence: the variants keep hiding the roster until the owner removes them
+        self.assertTrue(is_ignored(self.repo, ".supercook/models.md"))
 
 
 if __name__ == "__main__":
