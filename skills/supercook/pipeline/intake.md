@@ -118,7 +118,7 @@ if grep -qxF -e '.supercook/' -e '.supercook/*' "$EXCLUDE" 2>/dev/null \
    || ! grep -qxF '!**/.supercook/models.md' "$EXCLUDE" 2>/dev/null; then
   mkdir -p "$(dirname "$EXCLUDE")"
   KEPT=$(grep -vxF -e '.supercook/' -e '.supercook/*' -e '!.supercook/models.md' \
-    -e '**/.supercook/*' -e '!**/.supercook/models.md' "$EXCLUDE" 2>/dev/null)
+    -e '**/.supercook/*' -e '!**/.supercook/models.md' "$EXCLUDE" 2>/dev/null || true)
   { [ -n "$KEPT" ] && printf '%s\n' "$KEPT"
     printf '**/.supercook/*\n!**/.supercook/models.md\n'; } > "$EXCLUDE"
 fi
