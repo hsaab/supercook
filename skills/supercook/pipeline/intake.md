@@ -114,14 +114,19 @@ Keep run artifacts out of git without touching `.gitignore`, while leaving `.sup
 
 ```bash
 EXCLUDE=$(git rev-parse --git-path info/exclude)
-if ! grep -qxF '!.supercook/models.md' "$EXCLUDE" 2>/dev/null; then
+if grep -qxF -e '.supercook/' -e '.supercook/*' "$EXCLUDE" 2>/dev/null \
+   || ! grep -qxF '!**/.supercook/models.md' "$EXCLUDE" 2>/dev/null; then
   mkdir -p "$(dirname "$EXCLUDE")"
-  { grep -vxF -e '.supercook/' -e '.supercook/*' "$EXCLUDE" 2>/dev/null
-    printf '.supercook/*\n!.supercook/models.md\n'; } > "$EXCLUDE.tmp" && mv "$EXCLUDE.tmp" "$EXCLUDE"
+  KEPT=$(grep -vxF -e '.supercook/' -e '.supercook/*' -e '!.supercook/models.md' \
+    -e '**/.supercook/*' -e '!**/.supercook/models.md' "$EXCLUDE" 2>/dev/null)
+  { [ -n "$KEPT" ] && printf '%s\n' "$KEPT"
+    printf '**/.supercook/*\n!**/.supercook/models.md\n'; } > "$EXCLUDE"
 fi
 ```
 
-Never write the bare `.supercook/` pattern: git cannot re-include a file under an excluded folder, so the negation would do nothing. The snippet removes that older entry when it finds one, which migrates repos that intake set up before this change.
+Never write the bare `.supercook/` pattern: git cannot re-include a file under an excluded folder, so the negation would do nothing. The `**/` prefix matters too: a pattern with a slash in the middle, such as `.supercook/*`, is anchored to the repo root, so it misses a workspace in a subdirectory like `pkg/.supercook/`.
+
+The snippet migrates only the exact lines intake itself wrote: `.supercook/`, `.supercook/*`, `!.supercook/models.md`, and the unanchored pair `**/.supercook/*` and `!**/.supercook/models.md`. It rewrites them whenever a bare `.supercook/` or `.supercook/*` is present, even if the negation line is already there, so an older plugin version that appends the bare entry later is migrated again. Hand-written variants such as `.supercook` or `/.supercook/` are left alone and still hide `models.md` until the owner removes them. The write goes through the exclude path itself, with no temp file and no `mv`, so a symlinked exclude file stays a symlink.
 
 Use `git rev-parse --git-path`, never a literal `.git/info/exclude`: a linked worktree has a `.git` **file**, not a directory, so the literal path would create a stray file that excludes nothing. The write is idempotent, and it lands in the **shared** exclude file, so the entry covers every worktree of the repo and outlives this run.
 

@@ -142,7 +142,7 @@ Ten roster keys, one line each in the fenced block: `standard` (assessor, planne
 | 2 | `~/.supercook/models.md` your choices across repos |
 | 3 | shipped `skills/supercook/models.md` |
 
-Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. Run artifacts under `.supercook/` stay untracked in git (intake writes `.supercook/*` and `!.supercook/models.md` to the repo's local git exclude file); only an optional `models.md` there is visible to git, so you can commit it when you want the roster to travel with the checkout.
+Edit override files, not the plugin copy. A marketplace install lives in a commit-pinned cache that the next update replaces, so edits inside the plugin do not survive `plugin marketplace update`. Run artifacts under `.supercook/` stay untracked in git (intake writes `**/.supercook/*` and `!**/.supercook/models.md` to the repo's local git exclude file); only an optional `models.md` there is visible to git, so you can commit it when you want the roster to travel with the checkout.
 
 **Cloud agents and other clones without a home file** should commit and maintain `<workspace-root>/.supercook/models.md` so tier 1 resolves on every VM. Use the same fenced roster shape as the shipped file; merge rules and hook behavior are documented in [skills/supercook/models.md](skills/supercook/models.md).
 
