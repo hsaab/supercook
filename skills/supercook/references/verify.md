@@ -11,7 +11,7 @@ Done is a gate, and this is the gate. Launch `supercook-verifier` fresh, with th
 
 ## When it runs
 
-On multi-slice work, before each slice's PR opens, against that slice's plan rows and diff. Then a final pass over the whole plan, so nothing falls between slices. Verifying only at the end means shipping three PRs before finding out slice 1 missed half its plan.
+At every tier, before each slice's PR opens, against that slice's plan rows and diff. Then a final pass over the whole plan once the last slice closes, so nothing falls between slices; on one-slice work the slice's launch is that pass, recorded on both rows. Verifying only at the end means shipping three PRs before finding out slice 1 missed half its plan.
 
 ## After it returns
 

@@ -25,6 +25,6 @@ Contract-level UI adds the `## UI source of truth` entries and per-slice ownersh
 
 When `plan.md` lands:
 
-1. Append each slice as a nested row under the implement step.
+1. Name slice 1's block after its slice, and add one slice block per further slice, per [ledger.md](ledger.md#seed).
 2. Send the user the approach in a sentence, the slice list, and the total estimate. On implement-plan, add the changes from their plan and any dissent.
 3. Keep working. The summary is a notification, not an approval gate. Only the sanctioned pauses stop here.

@@ -56,7 +56,9 @@ The verdict's tier pre-fills skips on the playbook's steps:
 
 - **trivial**: skip the recon, plan, and test steps (`skip: tier trivial`). Implement and verify are still launches.
 - **standard**: every step, with one planner.
-- **complex**: the plan step runs the arena, and every slice is verified before its PR opens.
+- **complex**: the plan step runs the arena.
+
+At every tier, a slice closes through its own verify and PR before the next slice starts.
 
 `big-change: yes` adds the design-doc step at any tier. At the first sign of UI work in the task, recon, or diff, load [references/ui.md](references/ui.md); it adds its own steps.
 

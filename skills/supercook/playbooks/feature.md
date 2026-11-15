@@ -4,16 +4,18 @@ New or changed behavior.
 
 ## Steps
 
-Copy these into the ledger verbatim. The reason after a worker is why the step is not yours.
+Copy these into the ledger verbatim, with the slice block once per slice per references/ledger.md. The reason after a worker is why the step is not yours.
 
 ```
 - [ ] map the code the feature touches: supercook-explorer, a broad launch then one per area in parallel (its clean context reads the repo so yours holds the task)
 - [ ] design doc, big-change only (yours, with the user), per references/design-doc.md
 - [ ] plan.md names the data shape and the user journeys: supercook-planner, or three supercook-arena-runner launches then supercook-plan-judge on complex, per references/plan.md (you check the plan, so you do not write it)
-- [ ] journey tests land red before the code: supercook-test-designer, per references/test-first.md (it owns every test edit, so the implementer cannot bend them)
-- [ ] implement slice by slice: supercook-implementer, one launch per slice, per references/implement.md (you check and commit each diff)
-- [ ] the feature works end to end: supercook-verifier, a fresh launch, per references/verify.md (it did not write the code)
-- [ ] open one PR per slice (yours), per references/deliver.md
+- [ ] each slice in plan order, closed before the next starts (yours)
+  - [ ] slice <n> journey tests land red before the code: supercook-test-designer, per references/test-first.md (it owns every test edit, so the implementer cannot bend them)
+  - [ ] slice <n> code: supercook-implementer, per references/implement.md (you check and commit its diff)
+  - [ ] slice <n> matches its plan rows: supercook-verifier, a fresh launch, per references/verify.md (it did not write the code)
+  - [ ] slice <n> PR opens (yours), per references/deliver.md
+- [ ] the feature works end to end across every slice: supercook-verifier, a fresh launch, per references/verify.md
 ```
 
 ## Rules

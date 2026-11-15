@@ -4,16 +4,18 @@ Same behavior, better structure. If behavior changes, this is not a refactor.
 
 ## Steps
 
-Copy these into the ledger verbatim. The reason after a worker is why the step is not yours.
+Copy these into the ledger verbatim, with the slice block once per slice per references/ledger.md. The reason after a worker is why the step is not yours.
 
 ```
 - [ ] map the current shape: supercook-explorer (understanding it is the prerequisite)
 - [ ] plan small slices, each green on its own: supercook-planner, per references/plan.md
-- [ ] pin current behavior before moving anything: supercook-test-designer in characterization mode, per references/test-first.md (it owns the tests, so the move cannot quietly rewrite them)
-- [ ] those tests pass against the code as it is today (yours: run them and quote the output)
-- [ ] move structure in small steps, suite green after each: supercook-implementer, one launch per slice, per references/implement.md (you check each diff for a behavior change)
-- [ ] behavior is unchanged: supercook-verifier, a fresh launch, per references/verify.md (it did not do the move)
-- [ ] say concretely what got easier, then open the PR (yours), per references/deliver.md
+- [ ] each slice in plan order, closed before the next starts (yours)
+  - [ ] slice <n> behavior pinned before anything moves: supercook-test-designer in characterization mode, per references/test-first.md (it owns the tests, so the move cannot quietly rewrite them)
+  - [ ] slice <n> pins pass against the code as it is today (yours: run them and quote the output)
+  - [ ] slice <n> structure moves in small steps, suite green after each: supercook-implementer, per references/implement.md (you check its diff for a behavior change)
+  - [ ] slice <n> behavior is unchanged: supercook-verifier, a fresh launch, per references/verify.md (it did not do the move)
+  - [ ] slice <n> PR opens, saying concretely what got easier (yours), per references/deliver.md
+- [ ] behavior is unchanged across every slice: supercook-verifier, a fresh launch, per references/verify.md
 ```
 
 ## Rules

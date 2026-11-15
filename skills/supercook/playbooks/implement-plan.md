@@ -6,16 +6,18 @@ Find the plan, taking the first hit: a path in the ask; the plan from this chat 
 
 ## Steps
 
-Copy these into the ledger verbatim. The reason after a worker is why the step is not yours.
+Copy these into the ledger verbatim, with the slice block once per slice per references/ledger.md. The reason after a worker is why the step is not yours.
 
 ```
 - [ ] pin the plan verbatim as user-plan.md and echo its title (yours)
 - [ ] map the files and areas the plan names, plus the test command and test paths: supercook-explorer, one launch per area (the planner needs ground truth, not your memory of the plan)
 - [ ] plan.md tightens the user's plan without changing its approach: supercook-planner in supplied-plan mode, per references/plan.md (you check it against their plan)
-- [ ] tests land red before the code: supercook-test-designer, per references/test-first.md
-- [ ] implement slice by slice: supercook-implementer, one launch per slice, per references/implement.md (you check and commit each diff)
-- [ ] the work lands end to end: supercook-verifier, a fresh launch, per references/verify.md
-- [ ] open one PR per slice (yours), per references/deliver.md
+- [ ] each slice in plan order, closed before the next starts (yours)
+  - [ ] slice <n> tests land red before the code: supercook-test-designer, per references/test-first.md
+  - [ ] slice <n> code: supercook-implementer, per references/implement.md (you check and commit its diff)
+  - [ ] slice <n> matches its plan rows: supercook-verifier, a fresh launch, per references/verify.md
+  - [ ] slice <n> PR opens (yours), per references/deliver.md
+- [ ] the work lands end to end across every slice: supercook-verifier, a fresh launch, per references/verify.md
 ```
 
 ## Rules

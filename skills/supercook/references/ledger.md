@@ -15,7 +15,7 @@ The ledger is the run's memory. When context is compacted or a session restarts,
    `--git-path` matters because a linked worktree's `.git` is a file. Without git, use the system temp dir. A rule against committing logs does not skip this; the folder is untracked.
 3. **Point at it**: write `.supercook/active-run` with the ledger's relative path, and delete it when the run ends.
 4. **Pin the inputs.** Acceptance criteria from the task or its ticket go verbatim to `acceptance.md`, numbered `AC-1` onward. A supplied plan goes verbatim to `user-plan.md`. An unreadable ticket is the missing-access pause.
-5. **Write `ledger.md`**: the header, then the playbook's steps copied verbatim under `## Steps`, with tier skips marked.
+5. **Write `ledger.md`**: the header, then the playbook's steps copied verbatim under `## Steps`, with tier skips marked. A slice block goes in once as slice 1; when `plan.md` lands, add one block per further slice. With no plan, the task is slice 1.
 
 ```markdown
 # Ledger: add rate limiting to public API
@@ -29,9 +29,13 @@ done: every public route answers a 101st request in one minute with a 429, and t
 ## Steps
 - [x] map the code the feature touches: supercook-explorer, a broad launch then one per area (3 launches via Task, composer-2.5, 09:22)
 - [x] design doc, big-change only (lite, approved 09:41)
-- [ ] implement slice by slice: supercook-implementer, one launch per slice
-  - [x] slice 1: middleware skeleton (Task, composer-2.5, 214 reviewable / 231 raw, PR #241)
-  - [ ] slice 2: redis token bucket
+- [x] plan.md names the data shape and the user journeys: three supercook-arena-runner launches then supercook-plan-judge (4 launches via Task, 10:02)
+- [ ] each slice in plan order, closed before the next starts (yours)
+  - [x] slice 1 journey tests land red before the code: supercook-test-designer (Task, grok-4.7-high, tests 3c1d9e0)
+  - [x] slice 1 code, middleware skeleton: supercook-implementer (Task, composer-2.5, 214 reviewable / 231 raw)
+  - [x] slice 1 matches its plan rows: supercook-verifier (Task, grok-4.7-high, verdict: pass)
+  - [x] slice 1 PR opens (PR #241)
+  - [ ] slice 2 journey tests land red before the code, redis token bucket: supercook-test-designer
 
 ## Log
 - 09:14 assess: tier: complex | track: feature | big-change: yes | why: three services change and so does the session token shape

@@ -60,12 +60,13 @@ def playbooks() -> list[Path]:
     return sorted((SKILL_DIR / "playbooks").glob("*.md"))
 
 
-def top_level_steps(playbook: Path) -> list[str]:
+def checklist(playbook: Path) -> list[str]:
+    """Every row of the fenced `## Steps` checklist, nested rows included."""
     steps = read(playbook).split("## Steps", 1)[1]
     block = re.search(r"^```\n(.*?)^```", steps, flags=re.MULTILINE | re.DOTALL)
     if block is None:
         raise AssertionError(f"{playbook.name}: ## Steps has no fenced checklist")
-    return [line for line in block.group(1).splitlines() if line.startswith("- [ ] ")]
+    return [line for line in block.group(1).splitlines() if line.lstrip().startswith("- [ ] ")]
 
 
 def frontmatter_description(text: str) -> str:
@@ -116,18 +117,29 @@ class PlaybookSteps(unittest.TestCase):
     def test_every_playbook_has_a_steps_checklist(self):
         for playbook in playbooks():
             with self.subTest(playbook=playbook.name):
-                self.assertTrue(top_level_steps(playbook))
+                self.assertTrue(checklist(playbook))
 
     def test_tracks_that_change_code_launch_implementer_and_verifier_as_steps(self):
-        # The stop hook nudges only on top-level steps written `<what>: supercook-<role>`.
+        # The stop hook echoes a step written `<what>: supercook-<role>`, nested or not.
         for track in TRACKS_THAT_CHANGE_CODE:
-            steps = "\n".join(top_level_steps(SKILL_DIR / "playbooks" / f"{track}.md"))
+            steps = "\n".join(checklist(SKILL_DIR / "playbooks" / f"{track}.md"))
             for worker in ("supercook-implementer", "supercook-verifier"):
                 with self.subTest(track=track, worker=worker):
                     self.assertIn(f": {worker}", steps)
 
+    def test_a_slice_block_verifies_the_slice_before_its_pr_opens(self):
+        for playbook in playbooks():
+            block = [line for line in checklist(playbook) if line.startswith("  - [ ] slice <n>")]
+            if not block:
+                continue
+            with self.subTest(playbook=playbook.name):
+                verify = next(i for i, line in enumerate(block) if ": supercook-verifier" in line)
+                pr = next(i for i, line in enumerate(block) if " PR opens" in line)
+                self.assertLess(verify, pr)
+                self.assertEqual(pr, len(block) - 1)
+
     def test_investigation_launches_the_explorer_as_a_step(self):
-        steps = "\n".join(top_level_steps(SKILL_DIR / "playbooks" / "investigation.md"))
+        steps = "\n".join(checklist(SKILL_DIR / "playbooks" / "investigation.md"))
         self.assertIn(": supercook-explorer", steps)
 
 

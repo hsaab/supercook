@@ -39,7 +39,7 @@ Not: "Fixed webhook handling and improved retry logic for better reliability."
 
 This check fails closed: a failure means the PR is not opened and the step that owns the gap reopens.
 
-1. Every step above deliver is `[x]`, `[~]` with a valid reason, or a sanctioned `[!]`.
+1. Every row above this PR's row is `[x]`, `[~]` with a valid reason, or a sanctioned `[!]`, apart from the slice step that holds it. Rows below it, later slices and the final verify, stay open.
 2. `guard scope --allow <slice files> --tests <test globs> --base <base>` passes, so the branch holds only scoped files and its own tests. A QA note, log, or leftover stub fails; move it to the run folder.
 3. `guard lines --base <base>` is under budget, or the slice carries the cohesion exception logged at plan time. Do not mint one now; split instead.
 4. Every acceptance criterion has a passing line from the verifier, and the Evidence section is filled.
