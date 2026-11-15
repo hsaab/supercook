@@ -24,10 +24,10 @@ Loading this skill makes you the **coordinator**. You run intake, classify the t
 
 **How to launch a worker.** Call the session's subagent tool (in Cursor, `Task`; it can sit inside a dynamic tool catalog, so open that before deciding there is none) with:
 
-- `subagent_type: supercook-<role>`. When that type is not listed, use `generalPurpose` and open the prompt with "Read `<absolute path>/agents/supercook-<role>.md` and follow it." The agent files sit two folders above this one.
+- `subagent_type: supercook-<role>`. When that type is not listed, use `generalPurpose` and open the prompt with "Read `<absolute path>/agents/supercook-<role>.md` and follow it." The agent files are at `../../agents/` from this file.
 - `prompt`: the run folder path, the objective in one sentence, and file pointers. Not file contents, not the conversation.
 - `model`: the role's slug from the ledger `models:` line, or leave it out. If the launch rejects it, relaunch once without it.
-- `run_in_background: true` when several workers start at once, such as parallel explorers or the arena.
+- Several workers at once, such as parallel explorers or the arena, are several subagent calls in one message. They run together and return within your turn. Never set `run_in_background`: its results arrive only after you end the turn.
 
 **When there is no subagent tool**, or a launch fails twice in a row, log the error and run the remaining roles yourself under [solo mode](agents.md#no-spawn-tool-run-roles-inline), marking each row `inline`. Never call a tool the session does not show.
 
@@ -179,7 +179,7 @@ adds the arena and per-slice verification. The big-change flag inserts phase 3 a
 any tier, including trivial, since a small diff can still change an interface
 others depend on.
 
-**Precedence when they disagree.** The tier collapse wins over a playbook's phase table. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. The track still decides *what* the work is; the tier decides how much process it gets.
+**Precedence when they disagree.** The tier collapse wins over a playbook's phase table and its steps. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. A step whose worker belongs to a removed phase (explorer, planner, arena, test-designer) is copied in as `[~] skip: tier trivial`. Investigation has no implement or verify, so its explorer step stays at every tier. The track still decides *what* the work is; the tier decides how much process it gets.
 
 **The open-pr track is a routing exception.** Work already exists, so no tier sends
 it through source implementation. It always verifies and delivers; tier only
@@ -200,9 +200,10 @@ phase 1 does not run. Routing and the per-PR order are in
 ## Playbook routing
 
 Route on your verdict's `track`, except `merge`, `implement-plan`, and `review`,
-which the user selects directly. Copy the playbook's steps verbatim into the ledger.
-A step that names a worker is that worker's launch, and it says why the work is not
-yours. A step that names no worker is yours.
+which the user selects directly. Copy the playbook's steps verbatim into the ledger
+once the track is known: right after your verdict ([assess.md](pipeline/assess.md#the-verdict)),
+or at intake on a user-selected track. A step that names a worker is that worker's
+launch, and it says why the work is not yours. A step that names no worker is yours.
 
 | Track | When | Playbook |
 |---|---|---|
@@ -219,7 +220,7 @@ yours. A step that names no worker is yours.
 
 1. **Re-read the ledger before ending any turn.** Open rows mean keep working. Ending is allowed only when every row is checked or marked `skip: <reason>`, or the only blocker is a sanctioned pause that is written down. On the investigation track there is no ledger file, so the todo list is the record and this rule reads it instead.
 2. **Done is a predicate, stated at intake.** Write it in the ledger header. A plateau is not a stop.
-3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten. When that row is a roster phase, the next action is launching its worker.
+3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten. When that row is a worker phase, the next action is launching its worker.
 4. **Report without stopping.** Send progress as a mid-turn note; do not end the turn to check in.
 5. **Resume by identity.** A new, resumed, or compacted session reads the ledger matching this repo, branch, and run-id, then continues from the first open row. Never pick "the newest ledger". It also re-reads [Start here](#start-here-the-launch-rule) before its first action, because this file is attached only to the message that invoked it.
 

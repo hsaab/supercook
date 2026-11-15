@@ -108,7 +108,7 @@ git clone https://github.com/hsaab/supercook.git ~/.cursor/plugins/local/superco
 
 Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugins-locally) decide whether that checkout is the one that loads. Cursor skips a link in `~/.cursor/plugins/local` that points at a checkout elsewhere on disk, so clone into the folder rather than linking to it. And a marketplace install with the same name takes precedence over the local copy, so keep one install or the other: an old marketplace install hides a newer local checkout.
 
-Either way, reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` in that list means an install older than 0.5.0 is loaded too.
+Either way, reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` in that list is left over from before 0.5.0: an older install, or a stale copy in `~/.cursor/agents/`.
 
 Every run opens with the copy it loaded, for example `supercook 0.5.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
 
@@ -116,6 +116,7 @@ A skill folder mirrored on its own (for example a personal `~/.cursor/skills/sup
 
 ```bash
 mkdir -p ~/.cursor/agents && cp ~/.cursor/plugins/local/supercook/agents/supercook-*.md ~/.cursor/agents/
+rm -f ~/.cursor/agents/supercook-assessor.md   # retired in 0.5.0
 ```
 
 Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook launches each role as `generalPurpose` pointed at its agent file.
@@ -130,9 +131,9 @@ A cloud VM cannot see your local home directory, so three things decide whether 
 
 - **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
 - **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
-- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` above in the environment's install step.
+- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` and `rm` above in the environment's install step.
 
-To see what a run got, read its first line and the subagent types it lists. Eight `supercook-*` names, including `supercook-plan-optimizer` and no `supercook-assessor`, means the current agents are typed. A `supercook-assessor` means the VM loaded an install from before 0.5.0, so refresh the marketplace. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same pipeline: the coordinator launches a worker for every worker phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
+To see what a run got, read its first line and the subagent types it lists. Eight `supercook-*` names, including `supercook-plan-optimizer` and no `supercook-assessor`, means the current agents are typed. A `supercook-assessor` means the VM loaded an install from before 0.5.0: refresh the marketplace, and run the `rm` above if the install step copies agents into `~/.cursor/agents/`. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same pipeline: the coordinator launches a worker for every worker phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
 
 **No spawn tool?** Some Cloud Agents never get `Task`. The run then switches to solo mode: the same phases, each handed off through a file in `.supercook/<run>/`, with red tests committed on their own, a test-diff and scope check before every commit, and a verify step that re-reads the diff from disk and runs the suite. The arena does not run. The PR says it was built in solo mode with no independent review, and links a hosted Bugbot run when one exists. Details are in [skills/supercook/agents.md](skills/supercook/agents.md#no-spawn-tool-run-roles-inline).
 

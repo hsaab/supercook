@@ -17,7 +17,7 @@ The ledger is the run's memory and its audit trail. It is the thing that makes a
 3. **Mutable, never lossy.** Rows get appended and checked. They never get deleted or quietly edited away.
 4. **No silent skips.** Work that is not done gets `skip: <reason>`. An unexplained missing row is a defect.
 5. **Plain language, no em dashes.** Every row names files and real consequences, the same as any other output.
-6. **A worker row closes on a launch record or an `inline` record.** The recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model actually used (`supercook-implementer via Task, composer-2.5`, or `inherit` when the model field was dropped), or says `inline` with the reason (`spawn none`, or the launch error quoted after the second failed launch in [SKILL.md](../SKILL.md#start-here-the-launch-rule)). The older `degraded: parent inline (spawn none)` still counts. That holds at every tier, trivial included. A worker row checked with none of these is a silent skip, even when the work itself is good. Solo mode is in [agents.md](../agents.md#no-spawn-tool-run-roles-inline). The assess row is yours: it closes on the verdict line from [assess.md](assess.md).
+6. **A worker row closes on a launch record or an `inline` record.** The recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model actually used (`supercook-implementer via Task, composer-2.5`, or `inherit` when the model field was dropped), or says `inline` with the reason (`spawn none`, or the launch error quoted after the second failed launch in [SKILL.md](../SKILL.md#start-here-the-launch-rule)). The older `degraded: parent inline (spawn none)` still counts. That holds at every tier, trivial included. A worker row checked with none of these is a silent skip, even when the work itself is good. The phase rows are the record this rule and the stop hook read; a playbook step that names a worker is never checked before its phase row has that launch or `inline` record. Solo mode is in [agents.md](../agents.md#no-spawn-tool-run-roles-inline). The assess row is yours: it closes on the verdict line from [assess.md](assess.md).
 
 ### Invalid skip reasons
 
@@ -66,9 +66,14 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 - [~] merge. skip: no merge asked for, run ends at the open PRs
 
 ## Playbook steps (feature)
-- [x] data shape named before logic: RateLimitConfig in src/rate-limit/types.ts
-- [ ] journeys tested before implementation
-- [ ] no opportunistic refactors in the diff
+- [x] map the code the feature touches: supercook-explorer, one launch per area (its clean context reads more of the repo than yours should hold)
+- [x] plan.md names the data shape before any logic, and the user journeys this feature has to make work: supercook-planner, or the arena then supercook-plan-judge on complex tier (you check the plan, so you do not write it)
+- [x] tests, or an executable recipe without a runner, land before implementation: supercook-test-designer (it owns every test edit, so the implementer cannot bend the tests to fit)
+- [~] supplied UI design is resolved into a contract (yours) and pinned by structure tests (supercook-test-designer). skip: ui-change no
+- [ ] implement slice by slice, each one shippable on its own: supercook-implementer, one launch per slice (you review its diff, so you do not write it)
+- [ ] no opportunistic refactors in the diff: your scope guard on every implementer return
+- [ ] the feature works end to end on the real artifact, not just in unit tests: supercook-verifier, a fresh launch (it did not write the code, so its pass is independent)
+- [~] every changed UI route passes its rendered smoke before delivery (yours). skip: ui-change no
 
 ## Log
 - 09:14 assess: tier: complex | track: feature | big-change: yes | why: 3 services touched and the session token shape changes, so architecture needs sign-off

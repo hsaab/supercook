@@ -1,6 +1,6 @@
 # Phase 0: intake
 
-Five steps, in this order. The order is not cosmetic: doing them out of sequence is how a ledger ends up in a directory the run abandons, and stopping after step 4 is how a parent ends up doing the roster's work itself.
+Five steps, in this order. The order is not cosmetic: doing them out of sequence is how a ledger ends up in a directory the run abandons, and stopping after step 4 is how a parent ends up doing a worker's job itself.
 
 1. [Probe capabilities](#1-probe-capabilities)
 2. [Decide the working tree](#2-decide-the-working-tree)
@@ -10,7 +10,7 @@ Five steps, in this order. The order is not cosmetic: doing them out of sequence
 
 ## 1. Probe capabilities
 
-**First, say which supercook loaded.** Read `version` from `.cursor-plugin/plugin.json` at the plugin root (three folders above this file) and make it the first line of your first message: `supercook <version> from <plugin root>`. Write the same value as the `supercook:` ledger header. When the file is missing, say `supercook version unknown from <path of SKILL.md>`. Two installs loaded side by side, or a stale cache, show up here before they cost a run.
+**First, say which supercook loaded.** Read `version` from `../../../.cursor-plugin/plugin.json` (the plugin root is `../..` from SKILL.md) and make it the first line of your first message: `supercook <version> from <plugin root>`, with your home folder written as `~`. Write the same value as the `supercook:` ledger header. When the file is missing, say `supercook version unknown from <path of SKILL.md>`. Two installs loaded side by side, or a stale cache, show up here before they cost a run.
 
 The rest of the workflow assumes git, a remote host, worktrees, and a test suite. UI work also needs a way to render the real route. Check rather than assume, and record what you find. Every missing capability has a degraded path, listed at the bottom of this file.
 
@@ -29,7 +29,7 @@ Intake itself needs no worker. Determine these yourself:
 - **The test command.** Look at the `scripts` block, the CI config, or a test runner config file. Do not guess from the language.
 - **UI evidence in the task.** Record whether the request changes a rendered surface and whether it supplies a Figma URL, screenshot, attachment, or layout spec. Read [ui.md](ui.md) immediately when either fact is true.
 - **The render check.** Note an available browser or computer-use tool, or an existing browser or end-to-end command in the repo. Record `none` when the route cannot be rendered yet. Recon refines the start command, route, state, and viewports. A trivial UI run that skips recon must do a minimal route, start-command, and representative-state lookup before verify.
-- **Whether the supercook agents are installed.** Look for `supercook-*` in the host subagent catalog, meaning the subagent types this session lists for its launch tool. Agent files on disk (`agents/supercook-*.md`) supply prompt bodies but do not make typed agents launchable; only the catalog counts, and it is fixed when the session starts. Check all eight names. A missing role launches as `generalPurpose` pointed at its agent file, for that role only. A listed `supercook-assessor` means an install older than 0.5.0 is loaded too; say so in your first message. Record `supercook-agents: installed|no` on the capability line, naming any missing role (`installed, missing plan-optimizer`).
+- **Whether the supercook agents are installed.** Look for `supercook-*` in the host subagent catalog, meaning the subagent types this session lists for its launch tool. Agent files on disk (`agents/supercook-*.md`) supply prompt bodies but do not make typed agents launchable; only the catalog counts, and it is fixed when the session starts. Check all eight names. A missing role launches as `generalPurpose` pointed at its agent file, for that role only. A listed `supercook-assessor` is left over from before 0.5.0, from an older install or a stale copy in `~/.cursor/agents/`. Say so in your first message, do not launch it, and classify yourself. Record `supercook-agents: installed|no` on the capability line, naming any missing role (`installed, missing plan-optimizer`).
 - **Which spawn path this session has.** Read your own tool list for a tool that starts another agent: the top-level list, a deferred or dynamic tool catalog (a Cloud Agent can list `Task` only there), and the subagent types. The first worker launch is the probe. Record `spawn: typed` when typed agents are installed, `spawn <tool name>` for another listed nested-spawn tool, or `spawn none` when none is listed. Never record a tool you cannot see. If a launch fails twice, per [../SKILL.md](../SKILL.md#start-here-the-launch-rule), rewrite the field to `spawn none (launches failed: <error>)`.
 - **Which host shape this parent has.** Record `parent-host: cursor-chat|project-worker|cloud-agent|unknown` on the capability line when you can tell; otherwise `unknown` after a good-faith read of the session (Project worker brief, cloud task banner, editor chat, etc.). Use `parent-host` so the line stays distinct from `host github` (the forge).
 - **Turn 1 on cloud and Project workers.** Read [../SKILL.md](../SKILL.md) in full before phase 0 file writes, before treating the assignment as the plan, and before any product edit. The assignment may restate objectives; it does not replace SKILL.md.
@@ -94,11 +94,11 @@ Resume depends entirely on this, so write it down before anything else happens.
 
 **Skip this step entirely on the investigation track**, and on any request that is explicitly read-only. Those runs keep the record in the todo list instead, which satisfies the same purpose without writing to someone's repo during a read-only ask. See [../playbooks/investigation.md](../playbooks/investigation.md). Steps 1 through 3 still run, minus the worktree.
 
-Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header, every phase as an unchecked row, and the routed playbook's steps copied in verbatim. Format and lifecycle rules live in [ledger.md](ledger.md).
+Otherwise: create `.supercook/<run-id>/` in the chosen tree, then write `ledger.md` with the header and every phase as an unchecked row. On a user-selected track (`merge`, `implement-plan`, `review`), also copy that playbook's steps in verbatim now; a classified track copies its steps after your verdict, per [assess.md](assess.md#the-verdict). Format and lifecycle rules live in [ledger.md](ledger.md).
 
 **A rule against committing evidence does not skip this step.** A user or repo rule that forbids committing logs, transcripts, or probe notes is already met by the `info/exclude` write below, because the run folder stays untracked. Only `keep ledger` commits it. A run that reports its findings in the PR body still keeps its run folder: the PR is delivery, not the run's memory.
 
-Name the worker on every roster row as you seed it, for example `- [ ] implement: supercook-implementer, one launch per slice`. A resumed or compacted session re-reads the ledger, not this skill, so the row is where the next turn learns that the phase is a launch and not its own to-do.
+Name the worker on every worker row as you seed it, for example `- [ ] implement: supercook-implementer, one launch per slice`. A resumed or compacted session re-reads the ledger, not this skill, so the row is where the next turn learns that the phase is a launch and not its own to-do.
 
 **The merge track does not get the investigation exception.** It changes the repo and it can span sessions while checks run, so it needs the record more than most runs, not less. Seed the ledger, with the target PR number in the header.
 
@@ -134,10 +134,13 @@ When a track seeds a ledger, write `.supercook/active-run` with that ledger's re
 
 Intake ends on a launch, not on an edit. With the ledger seeded (or the todo list, on the investigation track), the next action is one of these:
 
-- **Classified run:** write your verdict per [assess.md](assess.md), then launch the first worker the routed playbook names: `supercook-explorer` on standard and complex tier, `supercook-implementer` on trivial.
+- **Classified run:** write your verdict and copy the steps per [assess.md](assess.md#the-verdict), then launch the first worker step left:
+  - bugfix, feature, refactor: `supercook-explorer` for recon on standard and complex tier. On trivial, `supercook-implementer`, after the phase 3 design doc when big-change is yes.
+  - open-pr: `supercook-verifier`, with an explorer first only for unfamiliar changed files, and `supercook-test-designer` in retrospective mode first when a supplied UI contract lacks structure tests. Never the implementer, at any tier.
+  - investigation: `supercook-explorer`, at any tier.
 - **`implement-plan`:** launch `supercook-explorer` against the areas `user-plan.md` names.
 - **`review`:** start the reviewer fan-out in [../playbooks/review.md](../playbooks/review.md).
-- **`merge`:** no roster phase up front. The merge loop in [merge.md](merge.md) is the coordinator's own work.
+- **`merge`:** no worker phase up front. The merge loop in [merge.md](merge.md) is the coordinator's own work.
 
 With `spawn none`, run that same role inline under [solo mode](../agents.md#no-spawn-tool-run-roles-inline), logged as `inline`. Before the first inline role, record `spawn none` on the capability line.
 
@@ -157,7 +160,7 @@ Announce the degradation in one line, log it, and continue. Never fail the run o
 | A readable supplied UI source | Ask once for a screenshot, a written layout spec, or authorization to proceed without it. Record the answer before planning. Never invent the source's contents. |
 | A renderer for a changed route | Write a fully specified manual smoke row with the route, state, viewports, and checks. It is sanctioned-blocked until the user confirms it or accepts delivery with the missing visual evidence named. |
 | Write access | Investigation track only, since nothing can ship. Same no-file behavior as that track. |
-| The supercook agents | With any listed spawn tool, launch each role as `generalPurpose` pointed at its `agents/supercook-<role>.md`; the parent does not solo-implement. With `spawn: none`, each role runs inline in the parent from its agent file, under the same contract and guards. See [../SKILL.md](../SKILL.md#start-here-the-launch-rule). |
+| The supercook agents | With a spawn tool, launch each role pointed at its `agents/supercook-<role>.md` per the launch rule; the parent does not solo-implement. With `spawn: none`, each role runs inline in the parent from its agent file, under the same contract and guards. See [../SKILL.md](../SKILL.md#start-here-the-launch-rule). |
 | An available model slug | The launch is rejected, the relaunch drops the `model` field, the role runs on the session model, and the launch row says `inherit`. Tell the user once. |
 | Repository or home model override | Missing `<workspace-root>/.supercook/models.md` or `~/.supercook/models.md` is the default: fall through silently to the next tier ending at the shipped roster in [../models.md](../models.md). A repository override wins per role over home and shipped; say nothing about it. |
 | A PR template, or one that is mandatory | The three PR body sections become the minimum content and get fitted into the template's fields rather than replacing them. Check for `.github/pull_request_template.md` during the probe. |

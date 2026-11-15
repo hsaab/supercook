@@ -62,4 +62,4 @@ Good: `why: touches the auth middleware plus both API gateways, and changes the 
 
 Bad: `why: this is a fairly complex change with wide-reaching implications.`
 
-Then route to the playbook for `track` and launch the first worker it names.
+Then route to the playbook for `track`, copy its Steps block into the ledger under `## Playbook steps (<track>)` (the todo list on investigation), mark the steps the tier removes per [the precedence rule](../SKILL.md#the-pipeline), and launch the first worker step that is left. [Intake step 5](intake.md#5-assess-then-launch-the-first-worker) names it per track.

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from doc_helpers import (
     ASSESS_DOC,
+    INTAKE_DOC,
     LAUNCH_RULE_HEADING,
     README_DOC,
     REPO_ROOT,
@@ -33,13 +34,17 @@ MAX_DESCRIPTION_CHARS = 1024
 # Inside an unquoted YAML value these sequences end the value or start a comment,
 # and a skill or agent whose frontmatter does not parse is dropped by the host.
 YAML_PLAIN_SCALAR_BREAKERS = (": ", " #")
-# The launch rule regrew to 22 dense lines once; runs then skimmed past it.
-MAX_LAUNCH_RULE_LINES = 16
+# The launch rule regrew to 731 words once; runs then skimmed past it. Lines are
+# no measure: one paragraph can hold 650 characters.
+MAX_LAUNCH_RULE_WORDS = 400
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 WORKER_NAME = re.compile(r"\bsupercook-[a-z]+(?:-[a-z]+)*\b")
 # supercook-* tokens that name something other than a worker.
 NOT_WORKERS = {"supercook-agents", "supercook-marketplace"}
+# Retired workers, and the only docs allowed to name them: to diagnose a stale install.
+RETIRED_WORKERS = {"supercook-assessor": {"intake.md", "README.md"}}
 TRACKS_THAT_CHANGE_CODE = ("feature", "bugfix", "refactor", "implement-plan")
+CLASSIFIED_TRACKS = ("bugfix", "feature", "refactor", "open-pr", "investigation")
 SCRIPT_PATH = re.compile(r"\b((?:scripts|hooks)/[a-z_]+\.py)\b")
 
 
@@ -80,16 +85,15 @@ class LinkIntegrityTest(unittest.TestCase):
 
 
 class WorkerNamesTest(unittest.TestCase):
-    def test_every_worker_the_skill_names_has_an_agent_file(self):
-        # intake.md names supercook-assessor on purpose, as the sign of an older install.
+    def test_every_worker_a_doc_names_has_an_agent_file(self):
         known = agent_names() | NOT_WORKERS
-        for doc in [*skill_docs(), REPO_ROOT / SKILL_DOC]:
-            text = doc.read_text(encoding="utf-8")
-            if doc.name == "intake.md":
-                text = text.replace("`supercook-assessor`", "")
-            for name in set(WORKER_NAME.findall(text)):
+        for doc in docs_to_check():
+            for name in set(WORKER_NAME.findall(doc.read_text(encoding="utf-8"))):
                 with self.subTest(doc=doc.name, worker=name):
-                    self.assertIn(name, known)
+                    if name in RETIRED_WORKERS:
+                        self.assertIn(doc.name, RETIRED_WORKERS[name])
+                    else:
+                        self.assertIn(name, known)
 
     def test_every_agent_file_is_named_in_the_pipeline_table(self):
         pipeline = section_body(read_doc(SKILL_DOC), "## The pipeline")
@@ -113,6 +117,13 @@ class PlaybookStepsTest(unittest.TestCase):
                 with self.subTest(track=track, worker=worker):
                     self.assertIn(worker, steps)
 
+    def test_intake_names_the_first_worker_for_every_classified_track(self):
+        # One line for all tracks once sent a trivial open-pr or investigation to the implementer.
+        step5 = section_body(read_doc(INTAKE_DOC), "## 5. Assess, then launch the first worker")
+        for track in CLASSIFIED_TRACKS:
+            with self.subTest(track=track):
+                self.assertRegex(step5, rf"(?m)^  - [^:\n]*\b{track}\b[^:\n]*: `supercook-")
+
     def test_investigation_steps_launch_the_explorer(self):
         self.assertIn("supercook-explorer", steps_block(read_doc("skills/supercook/playbooks/investigation.md")))
 
@@ -132,14 +143,26 @@ class LaunchRuleTest(unittest.TestCase):
         self.assertEqual(first_heading, LAUNCH_RULE_HEADING)
 
     def test_launch_rule_stays_short(self):
-        lines = [line for line in self.rule.splitlines() if line.strip()]
-        self.assertLessEqual(len(lines), MAX_LAUNCH_RULE_LINES)
+        self.assertLessEqual(len(self.rule.split()), MAX_LAUNCH_RULE_WORDS)
 
     def test_launch_rule_names_the_launch_fields_and_both_fallbacks(self):
         for phrase in ("subagent_type: supercook-<role>", "generalPurpose", "agents/supercook-<role>.md",
-                       "agents.md#no-spawn-tool-run-roles-inline", "run_in_background"):
+                       "agents.md#no-spawn-tool-run-roles-inline", "in one message"):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, self.rule)
+
+    def test_trivial_tier_keeps_implement_and_verify_as_launches(self):
+        self.assertIn("implement and verify are still launches", self.rule)
+
+    def test_background_launches_are_named_only_to_rule_them_out(self):
+        # A background result arrives after the turn ends, which the continuation protocol forbids.
+        self.assertIn("Never set `run_in_background`", self.rule)
+        for doc in docs_to_check():
+            text = doc.read_text(encoding="utf-8")
+            if doc == REPO_ROOT / SKILL_DOC:
+                text = text.replace(self.rule, "")
+            with self.subTest(doc=doc.name):
+                self.assertNotIn("run_in_background", text)
 
 
 class PackagingTest(unittest.TestCase):
@@ -164,8 +187,9 @@ class PackagingTest(unittest.TestCase):
                     self.assertNotIn(breaker, description)
 
     def test_readme_counts_the_agents_that_ship(self):
-        count_words = {7: "seven", 8: "eight", 9: "nine", 10: "ten"}
-        self.assertIn(f"{count_words[len(agent_files())]} agents", read_doc(README_DOC))
+        count_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
+        count = len(agent_files())
+        self.assertIn(f"{count_words[count] if count < len(count_words) else count} agents", read_doc(README_DOC))
 
     def test_plugin_manifest_ships_no_hooks_and_a_semver_version(self):
         manifest = json.loads(read_doc(".cursor-plugin/plugin.json"))

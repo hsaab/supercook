@@ -4,7 +4,7 @@ The eight agents live at the plugin root in `agents/`, not in this skill folder.
 
 This file is the launch contract: what the parent passes in, when the job is done, what comes back, and what the parent checks afterwards. The prompt itself lives in the agent file. Whether to launch and the launch shape are in [Start here](SKILL.md#start-here-the-launch-rule).
 
-**Finding an agent file.** `agents/supercook-<role>.md` is a path from the plugin root, two folders up from this skill folder (`../../agents/` from here), and is a different thing from this `agents.md` file. When this skill folder was mirrored on its own, read the file from `~/.cursor/agents/`, then from `~/.cursor/plugins/local/supercook/agents/`. If none of those has it, launch the worker anyway with that role's block under [Per-role contracts](#per-role-contracts) as the prompt body, and log `agent file missing` on the launch row. A missing prompt file never moves a role to the parent.
+**Finding an agent file.** `agents/supercook-<role>.md` is a path from the plugin root, `../../agents/` from this file, and is a different thing from this `agents.md` file. When this skill folder was mirrored on its own, read the file from `~/.cursor/agents/`, then from `~/.cursor/plugins/local/supercook/agents/`. If none of those has it, launch the worker anyway with that role's block under [Per-role contracts](#per-role-contracts) as the prompt body, and log `agent file missing` on the launch row. A missing prompt file never moves a role to the parent.
 
 ## Contents
 
@@ -131,7 +131,7 @@ A boundary written in a prompt is a request. These checks are what make it a con
 
 | After | Guard |
 |---|---|
-| Any roster phase | Before checking its ledger row, confirm the launch record that [ledger rule 6](pipeline/ledger.md#rules) requires. Without one, reopen the row and launch the worker. |
+| Any worker phase | Before checking its ledger row, confirm the launch record that [ledger rule 6](pipeline/ledger.md#rules) requires. Without one, reopen the row and launch the worker. |
 | Any launch | After the agent returns, log the model actually used on the launch row (`inherit` when the field was omitted or dropped). No hook checks it against the roster. |
 | Any agent | Read the diff yourself. Never accept the summary as evidence. |
 | `supercook-explorer` | For UI work, confirm every render field has evidence or says `not found`. |
@@ -163,7 +163,7 @@ UI controls live in two places rather than being copied here:
 
 The launch in [Start here](SKILL.md#start-here-the-launch-rule) is written for Cursor's `Task`. On another host, use the spawn tool that session lists, name the worker `supercook-<role>`, and point its prompt at the agent file the same way. Through `CallDynamicTool` (`namespace: cursor`, `toolName: Task`), the launch fields go under `arguments` and `prompt` is a plain string. Intake records the path as `spawn:` on the capability line: `typed`, the tool name, or `none`.
 
-**Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
+**Keep workers on the parent's machine.** When the spawn tool offers a choice (`environment: local` or similar), use the local, same-checkout option so the worker can read the run folder under `.supercook/`. A Cloud Agent parent never asks for a nested cloud VM on purpose. When the tool only offers a separate VM, or the worker reports it cannot see the run folder, that worker gets no `.supercook/` access: push the run branch before launch, put the agent file body, the slice scope, `plan.md` content, and every input inline in the prompt, and have a writing role (test-designer, implementer) commit and push its work to the run branch. The parent then fetches, reads that diff itself, and runs the role's guard before continuing.
 
 Whichever path launches a worker, keep the same inputs, done-when, returns shape, and parent-side guards from this file, and log one ledger row with the spawn tool name, the worker name, and the model slug (or `inherit`).
 

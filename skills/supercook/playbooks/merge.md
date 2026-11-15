@@ -39,7 +39,7 @@ Copy these into the ledger verbatim.
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight. No worktree and no new branch, since the PR's branch already exists. A ledger is still seeded |
-| 1 assess | only to confirm the target PR and whether it is part of a stack |
+| 1 assess | no. The track is user-selected |
 | 2 recon | only enough to understand code a comment or a CI failure points at |
 | 3 design doc | no |
 | 4 plan | no |
