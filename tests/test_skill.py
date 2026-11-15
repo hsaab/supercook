@@ -14,12 +14,13 @@ REPO = Path(__file__).resolve().parents[1]
 SKILL_DIR = REPO / "skills" / "supercook"
 AGENTS_DIR = REPO / "agents"
 
-# Size budgets, in lines. The skill regrew past 230 lines and 18 phase docs once;
-# these keep the always-read file and each playbook near pstack's proportions.
-MAX_SKILL_LINES = 160
-MAX_PLAYBOOK_LINES = 35
-MAX_REFERENCE_LINES = 100
-MAX_AGENT_LINES = 80
+# Size budgets, in words, since each paragraph is one line. The skill regrew past 230
+# lines and 18 phase docs once; these keep the always-read file and each playbook near
+# pstack's proportions.
+MAX_SKILL_WORDS = 1600
+MAX_PLAYBOOK_WORDS = 450
+MAX_REFERENCE_WORDS = 1100
+MAX_AGENT_WORDS = 750
 # The Agent Skills standard caps a description at 1024 characters, and inside an
 # unquoted YAML value these sequences end the value or start a comment.
 MAX_DESCRIPTION_CHARS = 1024
@@ -27,9 +28,10 @@ YAML_PLAIN_SCALAR_BREAKERS = (": ", " #")
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 WORKER = re.compile(r"\bsupercook-[a-z]+(?:-[a-z]+)*\b")
-# Names that are not workers: removed agents the skill names as the sign of an older
-# install, and the marketplace the README installs from.
-NOT_WORKERS = {"supercook-assessor", "supercook-plan-optimizer", "supercook-marketplace"}
+NOT_WORKERS = {"supercook-marketplace"}
+# Removed agents may be named only as the sign of an older install, in these docs.
+REMOVED_AGENTS = {"supercook-assessor", "supercook-plan-optimizer"}
+OLDER_INSTALL_DOCS = (SKILL_DIR / "SKILL.md", REPO / "README.md")
 SCRIPT = re.compile(r"\b((?:scripts|hooks)/[a-z_]+\.py)\b")
 STEP_REFERENCE = re.compile(r"\breferences/[a-z-]+\.md\b")
 TRACKS_THAT_CHANGE_CODE = ("feature", "bugfix", "refactor", "implement-plan")
@@ -40,7 +42,7 @@ def read(path: Path) -> str:
 
 
 def strip_code_fences(text: str) -> str:
-    return re.sub(r"^```.*?^```", "", text, flags=re.MULTILINE | re.DOTALL)
+    return re.sub(r"^[ \t]*```.*?^[ \t]*```", "", text, flags=re.MULTILINE | re.DOTALL)
 
 
 def anchors_in(path: Path) -> set[str]:
@@ -102,9 +104,13 @@ class ReferencesResolve(unittest.TestCase):
     def test_every_worker_named_has_an_agent_file(self):
         known = {path.stem for path in agent_files()} | NOT_WORKERS
         for doc in [*skill_docs(), *agent_files(), REPO / "README.md"]:
-            for name in set(WORKER.findall(read(doc))):
-                with self.subTest(doc=doc.name, worker=name):
-                    self.assertIn(name, known)
+            for line in read(doc).splitlines():
+                for name in set(WORKER.findall(line)):
+                    with self.subTest(doc=doc.name, worker=name):
+                        if name in REMOVED_AGENTS and doc in OLDER_INSTALL_DOCS:
+                            self.assertIn("older install", line)
+                        else:
+                            self.assertIn(name, known)
 
     def test_the_roster_lists_every_agent(self):
         roster = read(SKILL_DIR / "references" / "workers.md")
@@ -147,17 +153,17 @@ class SizeBudgets(unittest.TestCase):
     def assert_at_most(self, paths, limit):
         for path in paths:
             with self.subTest(doc=path.relative_to(REPO).as_posix()):
-                self.assertLessEqual(len(read(path).splitlines()), limit)
+                self.assertLessEqual(len(read(path).split()), limit)
 
     def test_skill_md_stays_near_pstack_size(self):
-        self.assert_at_most([SKILL_DIR / "SKILL.md"], MAX_SKILL_LINES)
+        self.assert_at_most([SKILL_DIR / "SKILL.md"], MAX_SKILL_WORDS)
 
     def test_playbooks_stay_short(self):
-        self.assert_at_most(playbooks(), MAX_PLAYBOOK_LINES)
+        self.assert_at_most(playbooks(), MAX_PLAYBOOK_WORDS)
 
     def test_references_and_agents_stay_short(self):
-        self.assert_at_most(sorted((SKILL_DIR / "references").glob("*.md")), MAX_REFERENCE_LINES)
-        self.assert_at_most(agent_files(), MAX_AGENT_LINES)
+        self.assert_at_most(sorted((SKILL_DIR / "references").glob("*.md")), MAX_REFERENCE_WORDS)
+        self.assert_at_most(agent_files(), MAX_AGENT_WORDS)
 
 
 class Packaging(unittest.TestCase):
