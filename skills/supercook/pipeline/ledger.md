@@ -17,24 +17,24 @@ The ledger is the run's memory and its audit trail. It is the thing that makes a
 3. **Mutable, never lossy.** Rows get appended and checked. They never get deleted or quietly edited away.
 4. **No silent skips.** Work that is not done gets `skip: <reason>`. An unexplained missing row is a defect.
 5. **Plain language, no em dashes.** Every row names files and real consequences, the same as any other output.
-6. **A roster row closes on a launch record or an `inline` record.** The assess, recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model actually used (`supercook-implementer via Task, composer-2.5`, or `inherit` when the model field was dropped), or says `inline` with the reason (`spawn none`, or the launch error quoted after the retry ladder in [SKILL.md](../SKILL.md#start-here-the-launch-rule)). The older `degraded: parent inline (spawn none)` still counts. That holds at every tier, trivial included. A roster row checked with none of these is a silent skip, even when the work itself is good. Solo mode is in [agents.md](../agents.md#no-spawn-tool-run-roles-inline).
+6. **A worker row closes on a launch record or an `inline` record.** The recon, plan, test-first, implement, and verify rows name their worker from the moment they are seeded. Each one is checked only when the row or its log line says which worker ran, through which spawn path, and on which model actually used (`supercook-implementer via Task, composer-2.5`, or `inherit` when the model field was dropped), or says `inline` with the reason (`spawn none`, or the launch error quoted after the second failed launch in [SKILL.md](../SKILL.md#start-here-the-launch-rule)). The older `degraded: parent inline (spawn none)` still counts. That holds at every tier, trivial included. A worker row checked with none of these is a silent skip, even when the work itself is good. Solo mode is in [agents.md](../agents.md#no-spawn-tool-run-roles-inline). The assess row is yours: it closes on the verdict line from [assess.md](assess.md).
 
 ### Invalid skip reasons
 
-These reasons are never valid on **standard** or **complex** tier unless assessor already returned **trivial** and tier collapse applies:
+These reasons are never valid on **standard** or **complex** tier unless the phase 1 verdict is **trivial** and tier collapse applies:
 
 | Reason (or close variant) | Why invalid |
 |---|---|
-| `user checklist` / `coordinator spec` | A pasted task list is not assessor, recon, or `plan.md`. |
-| `agents not installed` | Each role still runs through a spawn tool or, with `spawn: none`, inline in the parent; see [../agents.md](../agents.md#spawn-paths-when-typed-agents-are-missing). |
+| `user checklist` / `coordinator spec` | A pasted task list is not a phase 1 verdict, recon, or `plan.md`. |
+| `agents not installed` | Each role still runs through the `generalPurpose` fallback or, with `spawn: none`, inline in the parent; see [../SKILL.md](../SKILL.md#start-here-the-launch-rule). |
 | `plan in kickoff` | Spec pointers do not replace planner or arena output. |
 | `worker assignment` | Project and cloud briefs still run the pipeline. |
 | `no artifacts in repo` / `findings in PR only` / `throwaway experiment` | The run folder is untracked by design, so a no-commit rule is already met. The PR body is delivery, not the run's memory, and a throwaway run still needs `ledger.md` and, on standard or complex tier, `plan.md`. |
-| `faster inline` / `small task` / `assessor already launched` | Never a reason for the parent to do a roster phase, at any tier. Size is the assessor's verdict, and a trivial verdict removes phases, not workers. |
+| `faster inline` / `small task` / `already know the fix` | Never a reason for the parent to do a worker phase, at any tier. Size picks the tier, and a trivial verdict removes phases, not workers. |
 
-Valid skips cite assessor verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
+Valid skips cite the phase 1 verdict, user-selected track, tier collapse, big-change off, or an explicit scope modifier from [../SKILL.md](../SKILL.md).
 
-A `[~]` skip removes a phase from the roster. It does not reopen that work on the parent while the row stays skipped. Solo parent work is valid only when rule 6 closes the row with an `inline` record on a checked row (`spawn none`, a quoted launch error after the retry ladder, or the older `degraded: parent inline (spawn none)` wording).
+A `[~]` skip removes a phase from the roster. It does not reopen that work on the parent while the row stays skipped. Solo parent work is valid only when rule 6 closes the row with an `inline` record on a checked row (`spawn none`, a quoted launch error, or the older `degraded: parent inline (spawn none)` wording).
 
 ## Format
 
@@ -43,6 +43,7 @@ A `[~]` skip removes a phase from the roster. It does not reopen that work on th
 run-id: 2026-07-29-rate-limit-a4f2
 repo: git@github.com:acme/api.git | branch: supercook/rate-limit | worktree: ~/wt/api-rate-limit
 started: 2026-07-29 09:12 | tier: complex | track: feature | design doc: lite (approved 09:41)
+supercook: 0.5.0 from ~/.cursor/plugins/local/supercook
 capabilities: git yes | host github (gh authed) | worktrees yes | tests `pnpm vitest run` | PRs yes | stacking gt | supercook-agents installed | spawn typed | parent-host cursor-chat
 models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | plan-optimizer grok-4.7-medium | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
 test-paths: **/*.test.ts
@@ -51,7 +52,7 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 
 ## Phases
 - [x] intake: worktree created, capabilities probed, ledger seeded (09:12)
-- [x] assess: supercook-assessor (typed) returned complex/feature, big-change flag (09:14)
+- [x] assess: you, complex/feature, big-change yes (09:14)
 - [x] recon: 3 supercook-explorer launches (typed), pointers in log (09:22)
 - [x] design doc (lite): design-doc.md approved (09:41)
 - [x] plan: 3 supercook-arena-runner launches, supercook-plan-judge merged candidates A and C (09:55)
@@ -70,7 +71,7 @@ done: every public route rejects a 101st request in a minute with a 429, and the
 - [ ] no opportunistic refactors in the diff
 
 ## Log
-- 09:14 assessor (grok-4.7-high): 3 services touched, session token shape changes, so architecture needs sign-off
+- 09:14 assess: tier: complex | track: feature | big-change: yes | why: 3 services touched and the session token shape changes, so architecture needs sign-off
 - 09:22 explorer (composer-2.5): returned pointers, test command is `pnpm vitest run`
 - 09:55 plan summary sent to user, continuing into implementation without waiting
 - 10:11 guard: implementer modified src/rate-limit/bucket.test.ts, restored it, routed the

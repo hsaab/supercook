@@ -4,14 +4,15 @@ Same behavior, better structure. If behavior changes, this is not a refactor.
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] pin current behavior with characterization tests or a recipe before moving anything
-- [ ] confirm that verification passes against the code as it is today
-- [ ] UI refactor only: record and smoke the current rendered behavior
-- [ ] move structure in small steps, suite green after each one
+- [ ] pin current behavior with characterization tests or a recipe before moving anything: supercook-test-designer (it owns the tests, so the move cannot quietly rewrite them)
+- [ ] confirm that verification passes against the code as it is today (yours: run it and quote the output)
+- [ ] UI refactor only: record and smoke the current rendered behavior (yours)
+- [ ] move structure in small steps, suite green after each one: supercook-implementer, one launch per slice (you review each diff for a behavior change)
 - [ ] behavior change discovered means stop and reroute to feature
+- [ ] confirm behavior is unchanged: supercook-verifier, a fresh launch (it did not do the move)
 - [ ] state what got easier, concretely, before opening the PR
 ```
 
@@ -22,7 +23,7 @@ This table describes standard and complex tier. A trivial refactor collapses to 
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes |
-| 1 assess | yes |
+| 1 assess | yes, yours |
 | 2 recon | yes, understanding the current shape is the prerequisite |
 | 3 design doc | only if a public interface or data shape moves |
 | 4 plan | yes, small slices, each one green on its own |

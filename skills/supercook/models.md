@@ -30,7 +30,7 @@ Do not confuse `~/.supercook/` with the `.supercook/` folder inside a repo. The 
 ## The roster
 
 ```
-standard:           grok-4.7-high        # assessor, planner, test-designer, verifier
+standard:           grok-4.7-high        # planner, test-designer, verifier
 arena-a:            grok-4.7-high        # simplest viable plan
 arena-b:            composer-2.5         # implementation-first plan
 arena-c:            grok-4.7-high        # challenge assumptions and failure cases
@@ -54,7 +54,7 @@ A slug written inside an agent file is not reliable. The model only takes effect
 2. **Merge per role, not per file.** For each roster key, the repository value wins over the home value, which wins over the shipped value. A repository file that sets only `arena-b` changes exactly `arena-b`.
 3. **Write one `models:` ledger header** listing every roster key with its slug or plain `inherit`. A resumed run reads that line instead of re-resolving.
 4. **Pass the slug verbatim** as the `model` field on each launch. Omit the field for a role that is `inherit`. Never substitute a "latest" or "nearest" model.
-5. **Do not pre-validate slugs.** If a launch rejects the model, the retry ladder in [SKILL.md](SKILL.md#start-here-the-launch-rule) drops the `model` field and relaunches. The launch row records the model actually used (`inherit` when dropped), and the user hears about it once.
+5. **Do not pre-validate slugs.** If a launch rejects the model, relaunch once without the `model` field, per [SKILL.md](SKILL.md#start-here-the-launch-rule). The launch row records the model actually used (`inherit` when dropped), and the user hears about it once.
 6. **Never block a run on a model name.**
 
 ### Changing a model mid-run

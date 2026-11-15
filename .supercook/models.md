@@ -5,7 +5,7 @@ Repository roster for cloud agents and other shared checkouts. Cloud VMs typical
 ## The roster
 
 ```
-standard:           grok-4.7-high        # assessor, planner, test-designer, verifier
+standard:           grok-4.7-high        # planner, test-designer, verifier
 arena-a:            grok-4.7-high        # simplest viable plan
 arena-b:            composer-2.5         # implementation-first plan
 arena-c:            grok-4.7-high        # challenge assumptions and failure cases

@@ -20,7 +20,7 @@ import cloud_roster_guard
 GUARD = Path(cloud_roster_guard.__file__).resolve()
 
 PHASE_ROWS = {
-    "assess": "supercook-assessor via Task, grok-4.7-high",
+    "assess": "you, standard/bugfix, big-change no",
     "recon": "supercook-explorer via Task, composer-2.5",
     "plan": "supercook-planner via Task",
     "test-first": "supercook-test-designer via Task",
@@ -110,7 +110,7 @@ class CloudRosterGuardTests(unittest.TestCase):
             root = Path(temp)
             write_ledger(root, "run", ledger(
                 replacements={
-                    "recon": "- [~] recon: supercook-explorer. skip: assessor trivial",
+                    "recon": "- [~] recon: supercook-explorer. skip: tier trivial",
                     "plan": "- [!] plan: supercook-planner blocked: waiting on design doc approval",
                 },
                 trailing=("  - [ ] recon: supercook-explorer", "  - [ ] implement: supercook-implementer"),
@@ -131,11 +131,27 @@ class CloudRosterGuardTests(unittest.TestCase):
             root = Path(temp)
             write_ledger(root, "run", ledger(
                 replacements={
-                    "recon": "- [ ] recon: supercook-explorer. skip: assessor trivial",
+                    "recon": "- [ ] recon: supercook-explorer. skip: tier trivial",
                     "plan": "- [ ] plan: supercook-planner inline (spawn none)",
                 },
             ))
             self.assertEqual(self.run_hook(root), {})
+
+    def test_stop_does_not_echo_an_open_assess_row(self):
+        # The parent classifies the task itself, so an open assess row has no worker
+        # to launch. Nudging "Launch that worker" there would send it looking for one.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(replacements={"assess": "- [ ] assess: you"}))
+            self.assertEqual(self.run_hook(root), {})
+
+    def test_stop_skips_the_open_assess_row_and_echoes_the_next_worker(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon",), replacements={"assess": "- [ ] assess: you"}))
+            message = self.followup(root)
+            self.assertIn("- [ ] recon: supercook-explorer", message)
+            self.assertNotIn("assess", message)
 
     def test_stop_with_no_ledger_is_silent(self):
         with tempfile.TemporaryDirectory() as temp:

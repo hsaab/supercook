@@ -5,7 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_ROSTER_PHASES = ("assess", "recon", "plan", "test-first", "implement", "verify")
+# Assess is the parent's own classification, so an open assess row names no worker to launch.
+_ROSTER_PHASES = ("recon", "plan", "test-first", "implement", "verify")
 _OPEN_ROW = re.compile(r"^- \[ \] (" + "|".join(_ROSTER_PHASES) + r"):")
 
 
