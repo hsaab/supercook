@@ -1,6 +1,6 @@
 # UI work
 
-A supplied design is a contract, not inspiration. Load this at the first sign of UI work: a design URL, screenshot, or layout spec in the task; recon finding a route, view, component, or stylesheet that changes what a user sees; or UI files in the diff before verify. Late detection reopens any plan or test step a tier skip removed.
+A supplied design is a contract, not inspiration. Load this at the first sign of UI work: a design URL, screenshot, or layout spec in the task; recon finding a route, view, component, or stylesheet that changes what a user sees; or UI files in the diff before verify. Late detection reopens any plan or test step a tier skip removed. When the run already wrote the source, restart that chunk from its pre-implementation snapshot so the new tests fail first.
 
 ## Level
 

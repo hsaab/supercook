@@ -38,6 +38,7 @@ Check out the PR branch first, because the reviewers read the working tree. Laun
 
 - `thermo-nuclear-review-subagent` and `thermo-nuclear-code-quality-review-subagent` get the diff in the prompt (`git diff <base>...HEAD` plus the changed files they need), asking for prioritized findings with file references and evidence.
 - A reviewer not installed on this host is recorded as a gap in the ledger and the summary. Never fake one with a generic agent.
+- In solo mode only hosted reviewers run, because local ones need a spawn tool; record each local reviewer as a gap the same way.
 
 ## Triage, fix, confirm
 

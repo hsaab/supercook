@@ -15,10 +15,11 @@ Copy these in verbatim, one nested block per PR, and finish one PR before openin
   - [ ] launch both thermo reviewers and every local reviewer in one parallel batch, scoped to this PR's base; collect hosted findings
   - [ ] once all have reported, dedupe and triage; decline the rest with a reason (yours)
   - [ ] fix the in-scope findings: supercook-implementer, one launch on the review-implementer key (you check and commit its diff)
-  - [ ] run the recorded tests and push
+  - [ ] run the recorded tests, plus the rendered smoke when a fix touched a rendered file under a UI contract, then push; a finding fixed but never verified is not fixed
   - [ ] one confirmation pass on the reviewers whose findings were fixed; at most one more implementer launch, then stop
   - [ ] CI checks green, per references/merge.md
-  - [ ] merge mode only: merge this PR per references/merge.md, then restack its children per references/stacking.md
+  - [ ] merge mode only: merge this PR per references/merge.md
+  - [ ] after that merge or a fix pushed to this PR, restack its children per references/stacking.md
 - [ ] report per PR: found, fixed (file and consequence), declined (with reason), left open
 ```
 

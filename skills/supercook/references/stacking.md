@@ -22,7 +22,7 @@ gt submit --stack --no-interactive --no-edit --publish
 gh pr edit --body-file <body>                           # gt submit has no body flag
 ```
 
-After a base merges, or someone merges mid-stack in the GitHub UI:
+After a base merges, a review fix lands on a base slice, or someone merges mid-stack in the GitHub UI:
 
 ```bash
 gt sync --no-interactive --delete-all
@@ -52,4 +52,6 @@ else
 fi
 ```
 
-`gh` has no merge-method field, so do not ask it. The ancestor test answers the real question: after a merge commit the child's history is contained; after a squash or rebase merge it is not, and the child must be replayed or its PR shows the base's changes as its own. Outside a stated merge walk, ask before each force-push. A bare retarget does not re-run checks; use `gh run rerun <run-id> --failed` when they matter.
+`gh` has no merge-method field, so do not ask it. The ancestor test answers the real question: after a merge commit the child's history is contained; after a squash or rebase merge it is not, and the child must be replayed or its PR shows the base's changes as its own. A bare retarget does not re-run checks; use `gh run rerun <run-id> --failed` when they matter.
+
+After a review fix is pushed to a base slice that has not merged, replay each child on it, bottom-up: `git rebase origin/<base-branch> <child-branch>`, then `git push --force-with-lease`. Ask before force-pushing a branch the run does not own.

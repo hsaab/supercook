@@ -10,7 +10,7 @@ Judge the risk of getting it wrong, not how long it takes to type.
 - **standard**: the common case. One area, a handful of files, real behavior, and a wrong version would reach a user or another developer.
 - **complex**: any one of these: three or more areas or services change together; reasonable engineers would disagree on the approach; a wrong choice is expensive to reverse (data shape, public interface, migration); it touches security, auth, payments, or data integrity.
 
-Changes to CI, workflows, shared test plugins, or repo automation are standard by default. A supplied design does not make copy-only work standard, but a change to hierarchy, order, geometry, interactions, or responsive behavior is at least standard. When torn, pick the higher tier only if you can name the specific risk.
+Changes to CI, workflows, shared test plugins, or repo automation are standard by default. When such work does collapse to trivial, log a one-line `trivial-collapse:` note naming the single hunk or file and why recon and plan add nothing; the verdict's `why:` does not count. A supplied design does not make copy-only work standard, but a change to hierarchy, order, geometry, interactions, or responsive behavior is at least standard. When torn, pick the higher tier only if you can name the specific risk.
 
 ## Track
 

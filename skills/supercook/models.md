@@ -48,4 +48,4 @@ Each role is independent: `reviewer` and `review-implementer` left on `inherit` 
 
 ## Keep the arena diverse
 
-The arena's value is three genuinely different lines of reasoning, so keep `arena-a`, `arena-b`, and `arena-c` on different model families when you override them. `inherit` on one is fine if the session model differs from the other two.
+The arena's value is three genuinely different lines of reasoning, so keep `arena-a`, `arena-b`, and `arena-c` on different model families when you override them. The shipped defaults span only two: `arena-a` and `arena-c` share `grok-4.7-high`, which still gives independent attempts, so a third family on one of them is the better override. `inherit` on one is fine if the session model differs from the other two.

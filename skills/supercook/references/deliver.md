@@ -29,7 +29,7 @@ Red first (test commit <sha>, tests only):
 
 Not: "Fixed webhook handling and improved retry logic for better reliability."
 
-- Red-first lines come from the test designer's `red-evidence`. Trivial and open-pr runs have none and say so.
+- Red-first lines come from the test designer's `red-evidence`. Open-pr runs, and trivial runs with no test designer launch, have none and say so.
 - The acceptance table appears only when `acceptance.md` exists; a row without proof means the PR does not open.
 - A solo run adds "Built in solo mode, no independent review: verify was a self-audit."
 - A recipe that replaced tests goes in the body (or a durable link) with its hash, because the run folder does not travel.
