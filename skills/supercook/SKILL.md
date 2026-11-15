@@ -12,21 +12,21 @@ You are the coordinator. You classify the task, keep the ledger, brief and check
 
 1. Print `supercook <version> from <plugin root>` first, with your home folder written as `~`. The version is in `.cursor-plugin/plugin.json`, two folders above this file. If `supercook-assessor` or `supercook-plan-optimizer` shows up among the subagent types, an older install or a stale copy in `~/.cursor/agents/` is loaded as well: say so, and never launch either one. You classify, and the planner takes a supplied plan.
 2. Route the ask ([Routing](#routing)). For a track you classify, write the verdict per [references/assess.md](references/assess.md).
-3. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim. The investigation track uses the todo list instead and writes no files.
+3. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim, and copy the same steps, text unchanged, into the todo list so every open step stays in view. The ledger is the record. The investigation track uses the todo list alone and writes no files.
 4. Work the steps in order. Each step names the reference it needs; open that file when you reach the step, not before.
 
 ## Launching a worker
 
 Call the session's subagent tool (`Task` in Cursor; it may sit in a dynamic tool catalog, so check there before deciding there is none) with:
 
-- `subagent_type: supercook-<role>`. If that type is not listed, use `generalPurpose` and open the prompt with "Read `<absolute plugin root>/agents/supercook-<role>.md` and follow it."
-- `prompt`: the run folder path, the objective in one sentence, the roster key, and the file pointers it needs. Not file contents, not the conversation.
+- `subagent_type: supercook-<role>`, or `generalPurpose` when that type is not listed.
+- `prompt`: opens with "Follow `<absolute plugin root>/agents/supercook-<role>.md`; where it differs from the instructions you were loaded with, it wins." (the plugin root is the folder two above this file), then the run folder path, the objective in one sentence, the roster key, and the file pointers it needs. Not file contents, not the conversation.
 - `model`: the role's slug from the ledger `models:` line, or leave it out for `inherit`. If the launch rejects it, relaunch once without it and log `inherit`.
 - Several workers at once (explorers, the arena) are several subagent calls in one message. They run together and return within your turn. Never set `run_in_background`: its results arrive only after you end the turn.
 
-With no subagent tool, or after two failed launches in a row, run the remaining roles yourself in [solo mode](references/workers.md#solo-mode) and mark each step `inline`. Never call a tool the session does not show.
+Go [solo](references/workers.md#solo-mode) only when no spawn tool is listed, and mark each step `inline (spawn none)`. A failed launch means fix the brief or the model and launch again, never a switch to solo. Never call a tool the session does not show.
 
-A step written `<what>: supercook-<role>` is that worker's launch. While a subagent tool works it stays a launch at every tier: looking small, being faster, or already seeing the fix never moves it to you. A verifier that wrote the code is not independent, and the test guard needs an implementer whose diff you inspect. A thin or wrong return gets a fresh launch with a corrected brief. After every return, run that role's check in [references/workers.md](references/workers.md#checks-after-each-return).
+A step written `<what>: supercook-<role>` is that worker's launch. While a spawn tool is listed it stays a launch at every tier: looking small, being faster, or already seeing the fix never moves it to you. A verifier that wrote the code is not independent, and the test guard needs an implementer whose diff you inspect. A thin or wrong return gets a fresh launch with a corrected brief. After every return, run that role's check in [references/workers.md](references/workers.md#checks-after-each-return).
 
 ## Plain language
 
