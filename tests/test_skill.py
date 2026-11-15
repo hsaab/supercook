@@ -149,6 +149,17 @@ class PlaybookSteps(unittest.TestCase):
         self.assertIn(": supercook-explorer", steps)
 
 
+class LaunchRule(unittest.TestCase):
+    def test_parallel_launches_are_never_backgrounded(self):
+        # A background result arrives only after the turn ends, which the continuation rules forbid.
+        launch = read(SKILL_DIR / "SKILL.md").split("## Launching a worker", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("Never set `run_in_background`", launch)
+        for doc in [*skill_docs(), *agent_files(), REPO / "README.md"]:
+            if doc != SKILL_DIR / "SKILL.md":
+                with self.subTest(doc=doc.relative_to(REPO).as_posix()):
+                    self.assertNotIn("run_in_background", read(doc))
+
+
 class SizeBudgets(unittest.TestCase):
     def assert_at_most(self, paths, limit):
         for path in paths:

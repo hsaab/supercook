@@ -10,7 +10,7 @@ You are the coordinator. You classify the task, keep the ledger, brief and check
 
 ## Start
 
-1. Print `supercook <version> from <plugin root>` first. The version is in `.cursor-plugin/plugin.json`, two folders above this file. If `supercook-assessor` or `supercook-plan-optimizer` shows up among the subagent types, an older install is loaded as well; say so.
+1. Print `supercook <version> from <plugin root>` first, with your home folder written as `~`. The version is in `.cursor-plugin/plugin.json`, two folders above this file. If `supercook-assessor` or `supercook-plan-optimizer` shows up among the subagent types, an older install or a stale copy in `~/.cursor/agents/` is loaded as well: say so, and never launch either one. You classify, and the planner takes a supplied plan.
 2. Route the ask ([Routing](#routing)). For a track you classify, write the verdict per [references/assess.md](references/assess.md).
 3. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim. The investigation track uses the todo list instead and writes no files.
 4. Work the steps in order. Each step names the reference it needs; open that file when you reach the step, not before.
@@ -54,7 +54,7 @@ This outranks everything else here, because the user cannot tell whether the wor
 
 The verdict's tier pre-fills skips on the playbook's steps:
 
-- **trivial**: skip the recon, plan, and test steps (`skip: tier trivial`). Implement and verify are still launches.
+- **trivial**: skip the recon, plan, and test steps (`skip: tier trivial`). Implement and verify are still launches. Investigation has neither, so its explorer step stays.
 - **standard**: every step, with one planner.
 - **complex**: the plan step runs the arena.
 

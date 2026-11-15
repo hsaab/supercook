@@ -33,7 +33,7 @@ A boundary in a prompt is a request; these checks are the control. `guard` below
 
 ## Other hosts
 
-On a host without `Task`, use the spawn tool it lists, name the worker `supercook-<role>`, and brief it the same way. Through `CallDynamicTool` (`namespace: cursor`, `toolName: Task`) the launch fields go under `arguments`. Prefer a local, same-checkout worker so it can read `.supercook/`. A worker on a separate VM gets every input inline in the prompt and pushes its commits to the run branch; fetch them and run the same check.
+On a host without `Task`, use the spawn tool it lists, name the worker `supercook-<role>`, and brief it the same way. Through `CallDynamicTool` (`namespace: cursor`, `toolName: Task`) the launch fields go under `arguments`. Prefer a local, same-checkout worker so it can read `.supercook/`. A worker on a separate VM gets its agent file body and every input inline in the prompt and pushes its commits to the run branch; fetch them and run the same check.
 
 ## Solo mode
 

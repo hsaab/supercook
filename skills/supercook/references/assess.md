@@ -36,4 +36,4 @@ Log it, and fill `tier:` and `track:` in the ledger header (on investigation, th
 
 Good: `why: touches the auth middleware plus both API gateways, and changes the session token shape.` Bad: `why: a fairly complex change with wide-reaching implications.`
 
-Then mark the tier's skips on the copied steps and launch the first worker the playbook names.
+Then mark the tier's skips on the copied steps and launch the first worker step left open.
