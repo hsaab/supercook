@@ -255,7 +255,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     ledger = commands.add_parser("ledger", help="worker steps match the launch log")
     # Resolved here, because main() changes to the repo root before the check runs.
-    ledger.add_argument("--ledger", type=lambda path: Path(path).resolve(), help="default: the ledger .supercook/active-run names")
+    ledger.add_argument(
+        "--ledger", type=lambda path: Path(path).resolve(), help="default: the ledger .supercook/active-run names"
+    )
     ledger.set_defaults(handler=cmd_ledger)
     return parser
 

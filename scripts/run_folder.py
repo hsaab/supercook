@@ -37,7 +37,11 @@ class Row(NamedTuple):
     text: str
     roles: list[str]
     nested: bool
-    leaf: bool
+
+
+class OpenStep(NamedTuple):
+    row: Row
+    worker_returned: bool
 
 
 def as_dict(value: object) -> dict | None:
@@ -147,17 +151,15 @@ def read_launches(ledger: Path) -> list[dict]:
     return rows
 
 
-def worker_rows(ledger_text: str) -> list[Row]:
-    """Every row under `## Steps` that names a worker, numbered like `3` or `2.4`.
+def steps(ledger_text: str) -> list[Row]:
+    """Every row under `## Steps`, numbered like `3` or `2.4`.
 
-    A nested row names its own worker or inherits its parent step's. A worker step with
-    nested rows is judged by those rows (one launch per slice), so it is not a leaf.
+    Only a worker step, written `<what>: supercook-<role>` as the playbooks write it, has
+    roles. A row that only mentions a worker, or sits under one, launches nothing.
     """
     rows: list[Row] = []
     in_steps = False
     top = child = 0
-    parent_roles: list[str] = []
-    parent_index: int | None = None
     for line in ledger_text.splitlines():
         if line.startswith("## "):
             in_steps = line.startswith("## Steps")
@@ -165,75 +167,120 @@ def worker_rows(ledger_text: str) -> list[Row]:
         match = ROW.match(line) if in_steps else None
         if match is None:
             continue
-        workers = WORKERS.search(match["text"])
-        own = ROLE.findall(workers.group(1)) if workers else []
         nested = bool(match["indent"])
-        if nested:
-            child += 1
-            number, roles = f"{top}.{child}", own or parent_roles
-            if roles and parent_index is not None:
-                rows[parent_index] = rows[parent_index]._replace(leaf=False)
-        else:
-            top, child = top + 1, 0
-            number, roles, parent_roles, parent_index = str(top), own, own, len(rows) if own else None
-        if roles:
-            rows.append(Row(number, match["mark"].lower(), match["text"].strip(), roles, nested, True))
+        top, child = (top, child + 1) if nested else (top + 1, 0)
+        workers = WORKERS.search(match["text"])
+        roles = ROLE.findall(workers.group(1)) if workers else []
+        number = f"{top}.{child}" if nested else str(top)
+        rows.append(Row(number, match["mark"].lower(), match["text"].strip(), roles, nested))
     return rows
 
 
-def valid_skip(reason: str, header: dict[str, str], nested: bool) -> bool:
+def cite(row: Row) -> str:
+    return f"step {row.number}: {row.text[:ECHO_CHARS]}{'...' if len(row.text) > ECHO_CHARS else ''}"
+
+
+def valid_skip(reason: str, header: dict[str, str], row: Row) -> bool:
     """A skip cites the run's own tier, track, `big-change: no`, or a scope modifier.
 
-    A nested review row may also cite `no findings`, since it only runs when there are some.
+    Implement and verify take only `plan only`, since every other reason still ships code.
+    A nested row may also cite `no findings`: review and merge fixes run only on findings.
     """
     words = reason.lower().replace(":", " ").split()
+    lead = " ".join(words[:2])
+    if row.nested and lead == "no findings":
+        return True
+    if NEVER_SKIPPED & set(row.roles):
+        return lead == "plan only"
     if words[:1] in (["tier"], ["track"]):
         return len(words) > 1 and words[1] == header.get(words[0])
     if words[:1] == ["big-change"]:
         return words[1:2] == ["no"] and header.get("big-change") == "no"
-    return " ".join(words[:2]) in SCOPE_MODIFIERS or (nested and words[:2] == ["no", "findings"])
+    return lead in SCOPE_MODIFIERS
 
 
-def problems(ledger_text: str, launches: list[dict]) -> list[str]:
-    """One message per problem, citing the step by number with its text clipped.
-
-    Each checked leaf row needs its own evidence: an agent id on the row, or one logged
+def match_launches(rows: list[Row], launches: list[dict]) -> tuple[set[str], list[str]]:
+    """Give each checked worker step its own evidence: an agent id on the row, or one logged
     launch of a role it names that no other row has used.
+
+    Returns the numbers of checked steps left without any, and the roles of unused launches.
     """
-    header = dict(HEADER.findall(ledger_text.split("## Steps", 1)[0]))
-    rows = worker_rows(ledger_text)
     recorded = {agent_id for row in rows for agent_id in AGENT_ID.findall(row.text)}
     unused = [
         str(launch["role"]) for launch in launches
         if not recorded & set(AGENT_ID.findall(str(launch.get("agent_id"))))
     ]
-    found: list[str] = []
-    first_open = None
+    bare: set[str] = set()
     for row in rows:
-        cite = f"step {row.number}: {row.text[:ECHO_CHARS]}{'...' if len(row.text) > ECHO_CHARS else ''}"
-        skip = SKIP.search(row.text)
-        if skip and not row.nested and NEVER_SKIPPED & set(row.roles):
-            found.append(f"implement and verify are never skipped, launch the worker: {cite}")
-        elif skip and not valid_skip(skip.group(1), header, row.nested):
-            found.append(f"a skip must cite this run's tier, track, big-change: no, or a scope modifier: {cite}")
-        elif skip:
+        if row.mark != "x" or not row.roles or " inline (" in row.text or AGENT_ID.search(row.text):
             continue
-        elif row.mark == "~":
-            found.append(f"marked skipped with no skip: reason: {cite}")
-        elif " inline (" in row.text:
-            if header.get("spawn") != "none":
-                found.append(f"inline is only for spawn: none, launch the worker: {cite}")
-        elif row.mark == "x" and row.leaf and not AGENT_ID.search(row.text):
-            role = next((role for role in unused if role in row.roles), None)
-            if role is None:
-                found.append(f"checked with no logged launch or agent id: {cite}")
-            else:
-                unused.remove(role)
-        elif row.mark == " " and first_open is None:
-            first_open = cite
-    if first_open:
-        found.append(f"still open: {first_open}")
+        role = next((role for role in unused if role in row.roles), None)
+        if role is None:
+            bare.add(row.number)
+        else:
+            unused.remove(role)
+    return bare, unused
+
+
+def problems(ledger_text: str, launches: list[dict]) -> list[str]:
+    """One message per closed worker step the record does not back, citing it by number.
+
+    Open steps are never a problem here: a slice PR is delivered with later slices open.
+    """
+    header = dict(HEADER.findall(ledger_text.split("## Steps", 1)[0]))
+    rows = steps(ledger_text)
+    bare, _ = match_launches(rows, launches)
+    found: list[str] = []
+    for row in rows:
+        if not row.roles:
+            continue
+        skip = SKIP.search(row.text)
+        if row.mark == "~" and skip is None:
+            found.append(f"marked skipped with no skip: reason: {cite(row)}")
+        elif row.mark == "~" and not valid_skip(skip.group(1), header, row):
+            rule = (
+                "implement and verify are never skipped unless plan only, launch the worker"
+                if NEVER_SKIPPED & set(row.roles)
+                else "a skip must cite this run's tier, track, big-change: no, or a scope modifier"
+            )
+            found.append(f"{rule}: {cite(row)}")
+        elif row.mark == "x" and " inline (" in row.text and header.get("spawn") != "none":
+            found.append(f"inline is only for spawn: none, launch the worker: {cite(row)}")
+        elif row.number in bare:
+            found.append(f"checked with no logged launch or agent id: {cite(row)}")
     return found
+
+
+def next_step(ledger_text: str, launches: list[dict]) -> OpenStep | None:
+    """The step the run waits on: the first row neither `[x]` nor `[~]`, else None.
+
+    An open step with nested rows waits on its first open nested row, and on itself once
+    they are all closed; nested rows under a closed step are not owed. A `[!]` row is
+    returned as is, since the caller must treat it as a pause. A `[ ]` row is open even
+    with `skip:` on it. `worker_returned` is set when the step is a worker step whose launch
+    is already recorded, so what is left is the parent's own part of it.
+    """
+    rows = steps(ledger_text)
+    waiting: Row | None = None
+    open_parent: Row | None = None
+    for row in rows:
+        if not row.nested and open_parent is not None:
+            waiting = open_parent
+            break
+        if (row.nested and open_parent is None) or row.mark in "x~":
+            continue
+        if row.mark == "!" or row.nested:
+            waiting = row
+            break
+        open_parent = row
+    waiting = waiting or open_parent
+    if waiting is None:
+        return None
+    _, unused = match_launches(rows, launches)
+    returned = bool(waiting.roles) and (
+        bool(AGENT_ID.search(waiting.text)) or any(role in waiting.roles for role in unused)
+    )
+    return OpenStep(waiting, returned)
 
 
 def check_ledger(ledger: Path) -> list[str]:

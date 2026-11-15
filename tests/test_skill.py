@@ -211,7 +211,7 @@ class LedgerCheckSeesEveryWorkerStep(unittest.TestCase):
         known = {path.stem for path in agent_files()}
         for playbook in playbooks():
             rows = checklist(playbook)
-            parsed = {row.text: row.roles for row in run_folder.worker_rows("## Steps\n" + "\n".join(rows))}
+            parsed = {row.text: row.roles for row in run_folder.steps("## Steps\n" + "\n".join(rows))}
             for line in rows:
                 if ": supercook-" in line:
                     text = line.split("] ", 1)[1].strip()

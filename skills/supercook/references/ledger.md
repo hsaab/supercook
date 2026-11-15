@@ -53,8 +53,8 @@ done: every public route answers a 101st request in one minute with a 429, and t
 | `[~]` | Skipped, with `skip: <reason>` on the line. |
 | `[!]` | Blocked, naming the blocker. Counts as open unless it is a sanctioned pause. |
 
-- A worker step closes only with its launch record (spawn path, the agent id the launch returned, and the model actually used) or, in a `spawn: none` run, `inline (spawn none)`. A checked worker step with neither is a silent skip. Each checked row, and each checked slice nested under a worker step, needs its own launch: the hooks log every launch that returned to `launches.jsonl`, and the stop hook and `guard ledger` match it against these rows.
-- A skip cites this run's tier, track, `big-change: no`, or a scope modifier; a nested review row may cite `no findings`. Size, speed, a pasted checklist, a plan in the kickoff, or agents not being installed never skip a worker step. `skip:` is never valid on the implement or verify step, at any tier.
+- A worker step closes only with its launch record (spawn path, the agent id the launch returned, and the model actually used) or, in a `spawn: none` run, `inline (spawn none)`. A checked worker step with neither is a silent skip. Each checked worker step, in a slice block or not, needs its own launch: the hooks log every launch that returned to `launches.jsonl`, and the stop hook and `guard ledger` match it against these rows. A row that does not itself read `<what>: supercook-<role>` launches nothing.
+- A skip goes on a `[~]` row and cites this run's tier, track, `big-change: no`, or a scope modifier; a nested review or merge fix may cite `no findings`. An implement or verify step takes only `plan only`, at any tier. Size, speed, a pasted checklist, a plan in the kickoff, or agents not being installed never skip a worker step.
 - Rows are appended and checked, never deleted. Log every launch and return, every check that fired, and every course correction.
 
 ## Resume

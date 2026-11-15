@@ -248,7 +248,7 @@ skills/setup-supercook/       /setup-supercook: roster check and the delegation 
 
 ## Checking that runs delegate
 
-During a run, the hooks log each launch that returned to `.supercook/<run>/launches.jsonl`, and the stop hook and `python3 scripts/guard.py ledger` (before delivery) compare it with the ledger. A run in a worktree outside the workspace folders gets no log; its ledger rows count by the agent ids they record.
+During a run, the hooks log each supercook launch that returned to `.supercook/<run>/launches.jsonl`, and the stop hook and `python3 scripts/guard.py ledger` (before delivery) compare it with the ledger. A run in a worktree outside the workspace folders gets no log; its ledger rows count by the agent ids they record.
 
 `scripts/audit_runs.py` reads the chat transcripts Cursor keeps under `~/.cursor/projects/` for the current workspace and reports, for every chat that attached the skill, which copy and version loaded, the subagent launches by type, hook denials the agent mentioned, and edits the coordinator made itself outside the run folder.
 

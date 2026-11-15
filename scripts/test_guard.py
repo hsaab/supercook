@@ -353,6 +353,10 @@ class LedgerBeforeDelivery(GuardRepo):
         (self.repo / ".supercook" / "active-run").unlink()
         self.assertExit(self.guard("ledger", "--ledger", "../.supercook/run/ledger.md", cwd="src"), 0)
 
+    def test_a_later_open_step_does_not_block_a_slice_pr(self) -> None:
+        self.seed(["supercook-explorer", "supercook-implementer"], "- [ ] slice 2 code: supercook-implementer\n")
+        self.assertExit(self.guard("ledger"), 0)
+
     def test_no_live_run_could_not_run_and_says_how_to_point_at_one(self) -> None:
         result = self.guard("ledger")
         self.assertExit(result, 2)

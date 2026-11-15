@@ -80,7 +80,8 @@ class HookConfigs(unittest.TestCase):
                 self.assertLessEqual(run_folder.LAUNCH_TOOLS | {"CallDynamicTool"}, set(logger["matcher"].split("|")))
                 self.assertEqual(self.run_command(logger["command"], launch, cwd, env), {})
                 (nudge,) = hooks["stop"]
-                self.assertIn("still open: step 1", self.run_command(nudge["command"], stop, cwd, env)["followup_message"])
+                followup = self.run_command(nudge["command"], stop, cwd, env)["followup_message"]
+                self.assertIn("> step 1: plan.md: supercook-planner", followup)
         logged = (self.workspace / ".supercook" / "run" / "launches.jsonl").read_text(encoding="utf-8").splitlines()
         self.assertEqual(len(logged), 3)
         self.assertEqual(len(run_folder.read_launches(self.workspace / ".supercook" / "run" / "ledger.md")), 1)
