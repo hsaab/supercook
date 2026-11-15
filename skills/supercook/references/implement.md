@@ -12,7 +12,7 @@ One `supercook-implementer` launch per slice, or per chunk when a slice has natu
 
 ## After every return, in order
 
-1. **Run the implementer check** in [workers.md](workers.md#checks-after-each-return): `guard scope` with the slice's files, the test globs, `--since <tests sha>`, and `--fix`. Run it before committing, because `git restore --source=HEAD` cannot undo a committed test edit.
+1. **Run the implementer check** in [workers.md](workers.md#checks-after-each-return): `guard scope` with the slice's files, the test globs, `--since <tests sha>`, and `--fix`.
 2. **Read the diff yourself.** The summary is a claim.
 3. **Commit that unit** in the house style. The subject says what changed; the body says why it was wrong and what it means:
 

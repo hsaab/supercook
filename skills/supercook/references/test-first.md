@@ -17,6 +17,6 @@ Run the test-designer check in [workers.md](workers.md#checks-after-each-return)
 
 - **Commit per slice, not all at once.** Each slice's tests land at the start of that slice, so every PR carries its own red-to-green story and merges green.
 - **Repos that require every commit green**: keep the red evidence in the ledger and the PR body, then squash the test commit into the implementation commit before pushing.
-- **No test runner**: the designer returns an executable recipe (setup, assertions, expected output, cleanup). Write it to `verification-<slice>.md` in the run folder, record its path in `plan.md` and its hash from `guard recipe <file>` in the ledger. Ordered prose that cannot run is not a recipe.
+- **No test runner**: the designer returns an executable recipe (setup, assertions, expected output, cleanup). Write it to `verification-<slice>.md` in the run folder, record its path in `plan.md` and its hash from `guard recipe hash <file>` in the ledger. Ordered prose that cannot run is not a recipe.
 - **Trivial work that needs a test**: launch the test designer before the implementer; neither you nor the implementer edits tests.
 - **Contract-level UI**: run the anchor check in [ui.md](ui.md#tests-and-the-anchor-check) before implementation starts.
