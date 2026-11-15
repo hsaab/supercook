@@ -28,7 +28,7 @@ One `supercook-implementer` launch per slice, or per chunk when a slice has natu
 
 ## Size
 
-Past about 400 reviewable lines, close the slice at the next atomic boundary: verify it, open its PR, start the next slice. A logged cohesion exception is the only way past 500. Estimates miss, and the running count is what catches it.
+Past about 400 reviewable lines, close the slice at the next atomic boundary: verify it, open its PR, start the next slice. The budget and its one exception are in [plan.md](plan.md#slices). Estimates miss, and the running count is what catches it.
 
 ## When a chunk goes wrong
 

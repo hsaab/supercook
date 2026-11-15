@@ -9,7 +9,7 @@ Copy these into the ledger verbatim. The reason after a worker is why the step i
 ```
 - [ ] read the full diff, then log `open-pr scope`: the task, base and head SHAs, and every changed or untracked path with a one-line purpose (yours: you write the PR body)
 - [ ] the recorded tests pass, or exactly what fails is reported: supercook-verifier against the open-pr scope, per references/verify.md (fresh context judges the diff, not the story about it)
-- [ ] size it with `guard lines` and split it along its commits if over budget (yours), per references/deliver.md
+- [ ] size it with `guard lines --base <base>` and split it along its commits if over budget (yours), per references/deliver.md
 - [ ] write the PR body from the diff and open it (yours), per references/deliver.md
 ```
 

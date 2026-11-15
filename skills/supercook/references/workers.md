@@ -12,7 +12,7 @@ Agent files live at `<plugin root>/agents/supercook-<role>.md`. Each holds that 
 | `supercook-plan-judge` | plan-judge | `plan.md` | the three candidate paths, recon pointers, slice budget |
 | `supercook-test-designer` | standard | test files | slice, journeys, test command, conventions, `mode: red-first` or `characterization` |
 | `supercook-implementer` | implementer, or review-implementer on the review track | scoped source, never tests | explicit file list, data shape, the failing tests, the test command |
-| `supercook-verifier` | standard | nothing | `plan.md` (or the task text and `done:` on trivial), the diff range, the test command; nothing about how the code was built |
+| `supercook-verifier` | standard | nothing | the contract per [verify.md](verify.md#the-contract-it-checks-against) (`plan.md`, the task text and `done:` on trivial, or the `open-pr scope` baseline), the diff range, the test command; nothing about how the code was built |
 
 Every brief names the run folder (where `plan.md`, `user-plan.md`, `acceptance.md`, and `design-doc.md` live), the roster key, and the plain-language rule for its return. UI work adds only the contract entries and evidence that role owns, per [ui.md](ui.md). The review track also launches host reviewers (bugbot, security-review, both thermo reviewers) on the `reviewer` key; see [review.md](review.md).
 

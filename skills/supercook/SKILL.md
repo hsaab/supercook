@@ -68,7 +68,7 @@ Parse the ask before classifying. First match wins:
 
 | Ask | Track |
 |---|---|
-| `review`, `review PR …`, `review and merge` | review. Never merge, even for a whole stack |
+| `review`, `review PR …`, `review and merge` | review, never the merge track, even for a whole stack |
 | `merge PR …`, or `merge` with no leading review ask | merge, with no reviewer fan-out |
 | `use this plan`, `implement <path>`, an attached plan to carry out | implement-plan |
 | anything else | the track in your verdict |

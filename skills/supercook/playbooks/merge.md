@@ -12,7 +12,8 @@ Copy these into the ledger verbatim, one block per PR on a stack.
 - [ ] check out the PR; on a stack, state and log the full merge sequence and the rewrites it needs, per references/stacking.md (yours)
 - [ ] read the state with `gh pr view <n> --json state,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup`
 - [ ] resolve conflicts, understanding both sides (yours)
-- [ ] triage every comment, per references/merge.md (yours; a code fix is a supercook-implementer launch you check)
+- [ ] triage every comment, per references/merge.md (yours)
+  - [ ] fix the in-scope comments: supercook-implementer, one launch (you check and commit its diff)
 - [ ] fix in-scope CI failures and report the rest, per references/merge.md
 - [ ] run the recorded tests before merging
 - [ ] merge with the repo's default method once mergeable, green, and approved
