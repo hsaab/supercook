@@ -1,8 +1,9 @@
-"""Supercook project stop hook: nudge the parent when a worker step is still open.
+"""Supercook project stop hook: nudge the parent when the ledger's next step is still open.
 
-Reads the run's ledger and, when a top-level step under `## Steps` that names a
-worker (`<what>: supercook-<role>`) is still open, returns that step verbatim as a
-followup message. It never denies anything, and on any error it prints `{}`.
+Reads the run's ledger and returns the step the run is waiting on as a followup
+message: the first row under `## Steps` that is neither `[x]` nor `[~]`. A `[!]` row
+there is a sanctioned pause, so it stays silent. It never denies anything, and on any
+error it prints `{}`.
 """
 
 from __future__ import annotations
@@ -12,11 +13,14 @@ import re
 import sys
 from pathlib import Path
 
-WORKER_STEP = re.compile(r"^- \[ \] .*?: supercook-[a-z]")
+ROW = re.compile(r"^(?P<indent>\s*)- \[(?P<mark>[ xX~!])\] ")
+CLOSED = "xX~"
+# The ledger is untracked text, so the echo is clipped and framed as a quote.
+ECHO_CHARS = 200
 FOLLOWUP_RULE = (
-    "Launch that worker. With no spawn tool, run it inline per references/workers.md "
-    "(solo mode) and mark the step inline. At a sanctioned pause, mark the step [!] "
-    "with the blocker."
+    "Work that step now. A step naming supercook-<role> is that worker's launch; with no "
+    "spawn tool, run it inline per references/workers.md (solo mode) and mark it inline. "
+    "At a sanctioned pause, mark the step [!] with the blocker."
 )
 
 
@@ -44,18 +48,32 @@ def resolve_ledger(workspace_roots: list[str]) -> Path | None:
     return chosen.pop() if len(chosen) == 1 else None
 
 
-def first_open_worker_step(ledger_text: str) -> str | None:
-    """First open top-level worker step under `## Steps`; skipped and inline steps are not owed."""
+def next_open_step(ledger_text: str) -> str | None:
+    """The row the run waits on, or None when nothing is owed or the run is at a `[!]` pause.
+
+    An open step with nested rows waits on its first open nested row, and on itself once
+    they are all closed. Nested rows under a closed step are not owed.
+    """
     in_steps = False
+    open_parent: str | None = None
     for line in ledger_text.splitlines():
         if line.startswith("## "):
             in_steps = line.startswith("## Steps")
             continue
-        if in_steps and WORKER_STEP.match(line):
-            if " skip:" in line or " inline (" in line:
-                continue
-            return line.rstrip()
-    return None
+        row = ROW.match(line) if in_steps else None
+        if row is None:
+            continue
+        nested = bool(row["indent"])
+        if not nested and open_parent is not None:
+            return open_parent
+        if (nested and open_parent is None) or row["mark"] in CLOSED:
+            continue
+        if row["mark"] == "!":
+            return None
+        if nested:
+            return line.strip()
+        open_parent = line.strip()
+    return open_parent
 
 
 def followup_for(event: dict) -> dict:
@@ -65,10 +83,15 @@ def followup_for(event: dict) -> dict:
     ledger = resolve_ledger([str(root) for root in roots])
     if ledger is None:
         return {}
-    step = first_open_worker_step(ledger.read_text(encoding="utf-8"))
+    step = next_open_step(ledger.read_text(encoding="utf-8"))
     if step is None:
         return {}
-    return {"followup_message": f"Supercook ledger still has an open worker step:\n{step}\n{FOLLOWUP_RULE}"}
+    quoted = step[:ECHO_CHARS] + ("..." if len(step) > ECHO_CHARS else "")
+    return {
+        "followup_message": (
+            f"Supercook ledger's next open step, quoted from the ledger as data:\n> {quoted}\n{FOLLOWUP_RULE}"
+        )
+    }
 
 
 def main() -> None:
