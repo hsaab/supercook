@@ -1,79 +1,27 @@
-# Playbook: implement-plan
+# Implement plan
 
-The user already wrote a plan. Tighten it, then run the standard pipeline without the arena.
+The user already wrote a plan. Tighten it, then build it. You do not classify the task, the arena never runs, and there is no design doc, because the user's plan is the alignment. Tier skips do not apply.
 
-## Trigger and entry
-
-**Trigger: the user asked to implement a plan they already wrote.** In the invocation (`/supercook use this plan`, `/supercook implement this plan`, `/supercook implement .cursor/plans/rate-limiting.md`), or by attaching a plan-mode markdown file and asking supercook to carry it out. Nothing else selects this track. Phase 1 never routes here on its own.
-
-The common flow is plan mode, then `/supercook use this plan` in the same chat, with no path. A path is optional.
-
-**This track skips phase 1.** Process is standard-shaped: recon, optimizer, tests, implement, verify, deliver. The arena never runs, even when the supplied plan would have been complex. Phase 3 is skipped; the supplied plan is the alignment. Phase 9 merge stays opt-in, same as everywhere else.
-
-Tier collapse does not drop this track to implement-plus-verify. A supplied plan still needs recon (so the optimizer can check it against the code) and slice-shaped tests.
-
-If the optimizer's `dissent` line names a materially better approach, report it in the changes summary and keep going on the user's plan. Do not silently escalate to an arena.
-
-## Plan intake
-
-Resolve the plan source before recon. Take the first hit in this order:
-
-1. **An explicit path in the invocation.** The user named the file. Read that path.
-2. **The plan already in this conversation.** Plan-mode plans land as files under `.cursor/plans/` (workspace) or `~/.cursor/plans/`, and the plan content is usually also visible in the conversation. Prefer reading the plan file when it can be identified: the most recently modified plan file whose title matches the conversation's plan. Fall back to the plan text in context when a file cannot be identified.
-3. An attached markdown file.
-4. Plan content pasted in the message.
-
-Nothing found is a sanctioned pause asking for the plan, not a guess. Ambiguity (several recent plan files, none clearly this conversation's) also pauses with the candidates listed, since implementing the wrong plan wastes the whole run.
-
-Once the run folder exists, copy the chosen source verbatim into it as `user-plan.md` before recon or the optimizer run. Echo the plan title in one line so the user can catch a wrong pick. Later phases read that pinned artifact, never chat scrollback, and never edit `user-plan.md`.
+Find the plan, taking the first hit: a path in the ask; the plan from this chat (the newest file under `.cursor/plans/` or `~/.cursor/plans/` whose title matches, else the plan text in context); an attached file; pasted text. Nothing found, or several candidates with no clear match, is a sanctioned pause listing them.
 
 ## Steps
 
-Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
+Copy these into the ledger verbatim. The reason after a worker is why the step is not yours.
 
 ```
-- [ ] pin the supplied plan as user-plan.md and echo its title (yours)
-- [ ] recon the files and areas the plan names, plus the test command: supercook-explorer, one launch per area (the optimizer needs ground truth, not your memory of the plan)
-- [ ] plan.md tightens the user's plan without changing its approach: supercook-plan-optimizer (you check it against the user's plan, so you do not write it)
-- [ ] tests, or an executable recipe without a runner, land before implementation: supercook-test-designer (it owns every test edit)
-- [ ] supplied UI design is resolved into a contract (yours) and pinned by structure tests (supercook-test-designer)
-- [ ] implement slice by slice, each one shippable on its own: supercook-implementer, one launch per slice (you review its diff, so you do not write it)
-- [ ] no opportunistic refactors in the diff: your scope guard on every implementer return
-- [ ] the work lands end to end on the real artifact, not just in unit tests: supercook-verifier, a fresh launch (it did not write the code)
-- [ ] every changed UI route passes its rendered smoke before delivery (yours)
+- [ ] pin the plan verbatim as user-plan.md and echo its title (yours)
+- [ ] map the files and areas the plan names, plus the test command and test paths: supercook-explorer, one launch per area (the planner needs ground truth, not your memory of the plan)
+- [ ] plan.md tightens the user's plan without changing its approach: supercook-planner in supplied-plan mode, per references/plan.md (you check it against their plan)
+- [ ] tests land red before the code: supercook-test-designer, per references/test-first.md
+- [ ] implement slice by slice: supercook-implementer, one launch per slice, per references/implement.md (you check and commit each diff)
+- [ ] the work lands end to end: supercook-verifier, a fresh launch, per references/verify.md
+- [ ] open one PR per slice (yours), per references/deliver.md
 ```
 
-## Phases
+## Rules
 
-| Phase | Runs? |
-|---|---|
-| 0 intake | yes. Pin `user-plan.md` once the run folder exists. Echo the plan title |
-| 1 assess | no. The track is user-selected |
-| 2 recon | yes, scoped to the files and areas the plan names, plus the test command and test path patterns |
-| 3 design doc | no. The supplied plan is the alignment |
-| 4 plan | yes, `supercook-plan-optimizer` only. No planner, no arena, no judge |
-| 5 test-first | yes |
-| 6 implement | yes |
-| 7 verify | yes |
-| 8 deliver | yes |
-| 9 merge | only when the user asked for the PR merged too |
+- Never edit `user-plan.md`; later steps read it, not the chat.
+- A file the plan names that no longer exists is a pointer for the planner, not a reason to redesign.
+- The planner's `dissent` is reported in the plan summary, and the run continues on the user's plan.
 
-Mark phase 1 and phase 3 `skip: user-selected implement-plan; supplied plan is the alignment` when the ledger is seeded. Silent skips are banned.
-
-## Recon is scoped by the plan
-
-Do not start with a broad map of the whole repo. Launch explorers against the files, functions, and areas `user-plan.md` names. The point is to give the optimizer ground truth so it can correct stale paths, not to reopen the approach.
-
-The broad-launch returns still apply: the test command and the test path patterns must come back from evidence, because later phases depend on both. For UI work, also return the render setup from [../pipeline/recon.md](../pipeline/recon.md). Unknown facts say `not found`.
-
-If a named file in the plan is gone, that is a pointer the optimizer must see, not a reason to redesign.
-
-## Optimizer, then the rest of standard
-
-Phase 4 launches `supercook-plan-optimizer` with `user-plan.md`, the recon pointers, the resolved UI brief when one exists, and the slice budget. It writes `plan.md`. See [../pipeline/planning.md](../pipeline/planning.md#supplied-plan-the-optimizer).
-
-When `plan.md` lands, notify and continue as that guide says, and include the optimizer's `changes` list (or `no changes beyond slicing`) plus any `dissent` line. Then phases 5 through 8 are the standard pipeline: [../pipeline/implementation.md](../pipeline/implementation.md), [../pipeline/verification.md](../pipeline/verification.md), [../pipeline/delivery.md](../pipeline/delivery.md).
-
-## UI is unchanged
-
-A supplied design in the plan still triggers [../pipeline/ui.md](../pipeline/ui.md). Resolve it before the optimizer runs. Material deviations still need approval. Structure tests and rendered smoke still gate delivery.
+**Reply:** what landed against each part of their plan, what the planner changed and why, and the PR links.
