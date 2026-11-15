@@ -2,158 +2,176 @@
 """Checks the supercook parent runs on a worker's output (stdlib only).
 
 A boundary in a worker's prompt is a request; these checks are the control.
-Run from inside the repo. Each subcommand prints what it found and exits 0 when
-the check passes and 1 when it fails.
+Run from anywhere in the repo: paths are repo-relative and the test command runs
+from the repo root. Each check prints what it found and exits 0 when it passes,
+1 when it fails, and 2 when it could not run (a bad argument or ref, a git error,
+a missing file, a test command that would not start or timed out).
 
-  scope   changed paths stay inside an allow list and test files stay untouched
-  red     the suite fails with the temporary stub applied, then the stub reverses
+  scope   every path changed since a commit, committed or not, is inside the
+          allow list, and no test file changed
+  red     the new tests fail on their red-evidence lines with the test designer's
+          stub applied, and only test paths are left changed afterwards
   lines   reviewable and raw changed lines against the slice budget
-  recipe  a verification recipe still has the sha256 recorded when it was written
+  recipe  hash a verification recipe, or check it against the recorded hash
 
-Globs use fnmatch, so `*` also matches across folders; a pattern ending in `/` is
-a folder prefix, and a leading `**/` also matches files at the repo root.
-
-Usage:
-  guard.py scope --allow GLOB... [--tests GLOB...] [--since SHA] [--base REF] [--fix]
-  guard.py red --cmd "TEST COMMAND" [--patch FILE] [--timeout SECONDS]
-  guard.py lines --base REF [--budget N] [--exclude GLOB...]
-  guard.py recipe FILE [--sha HEX]
+GLOBs are git pathspec globs, as recorded in the ledger: `*` stays inside one
+folder, `**/` matches zero or more folders, a folder matches everything under it,
+and a pattern with no `*` or `?` is a literal path, so `app/[id]/page.tsx` works.
 """
 
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import hashlib
+import os
+import re
+import signal
 import subprocess
 import sys
 from pathlib import Path
 
-RUN_FOLDER = ".supercook/"
-GENERATED = ("*.lock", "*lock.yaml", "*lock.json", "*.snap", "vendor/*", "*/vendor/*", "*generated*")
+# Run folders are ignored, or committed under `keep ledger`; the tracked roster
+# .supercook/models.md stays in scope.
+NOT_SCOPED = (":(exclude,glob).supercook/*/**",)
+# The line-accounting excludes, in git's default pathspec syntax where `*` crosses folders.
+UNREVIEWABLE = ("*.lock", "*lock.yaml", "*lock.json", "*.snap", "vendor", "*generated*")
 OUTPUT_TAIL = 40
+COULD_NOT_RUN = (126, 127)  # the shell found the command but could not execute it, or found nothing
 
 
-def git(*args: str, check: bool = True) -> str:
-    result = subprocess.run(["git", *args], capture_output=True, text=True)
-    if check and result.returncode != 0:
-        raise SystemExit(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+class GuardError(Exception):
+    """A check could not run; main() reports it with exit code 2."""
+
+
+def git(*args: str) -> str:
+    result = subprocess.run(["git", *args], capture_output=True, encoding="utf-8", errors="surrogateescape")
+    if result.returncode != 0:
+        raise GuardError(f"git {' '.join(args)}: {result.stderr.strip()}")
     return result.stdout
 
 
-def matches(path: str, patterns: list[str]) -> bool:
-    for pattern in patterns:
-        if pattern.endswith("/"):
-            if path.startswith(pattern):
-                return True
-        elif fnmatch.fnmatchcase(path, pattern):
-            return True
-        elif pattern.startswith("**/") and fnmatch.fnmatchcase(path, pattern[3:]):
-            return True
-    return False
+def pathspecs(patterns: list[str] | None, magic: str = "") -> list[str]:
+    return [f":({magic}{'glob' if '*' in p or '?' in p else 'literal'}){p}" for p in patterns or []]
 
 
-def working_changes() -> list[tuple[str, str]]:
-    """(status, path) for every changed or untracked path, rename targets included."""
-    fields = git("status", "--porcelain=v1", "-z", "--untracked-files=all").split("\0")
-    changes = []
-    index = 0
-    while index < len(fields):
-        entry = fields[index]
-        index += 1
-        if len(entry) < 4:
-            continue
-        status, path = entry[:2], entry[3:]
-        if "R" in status or "C" in status:
-            # -z puts the source in the next field; treat the move as an add plus a delete.
-            source = fields[index]
-            index += 1
-            changes.append(("A ", path))
-            if "R" in status:
-                changes.append((" D", source))
-            continue
-        changes.append((status, path))
-    return [(status, path) for status, path in changes if not path.startswith(RUN_FOLDER)]
+def changes_since(start: str, specs: list[str]) -> dict[str, str]:
+    """Path -> status (A, M, D, T, or ? when untracked) for each path that now differs from start."""
+    fields = git("diff", "--name-status", "-z", "--no-renames", start, "--", *specs).split("\0")
+    changes = dict(zip(fields[1::2], fields[0::2]))
+    for path in git("ls-files", "-z", "--others", "--exclude-standard", "--", *specs).split("\0"):
+        if path:
+            changes[path] = "?"
+    return changes
 
 
-def committed_paths(revision_range: str) -> list[str]:
-    return [path for path in git("diff", "--name-only", revision_range).splitlines() if path]
-
-
-def undo_test_change(status: str, path: str) -> str:
-    if status == "??" or "A" in status:
-        git("rm", "--cached", "--quiet", "--ignore-unmatch", "--", path)
-        Path(path).unlink(missing_ok=True)
-        return f"deleted added test {path}"
-    git("restore", "--source=HEAD", "--staged", "--worktree", "--", path)
-    return f"restored test {path}"
+def undo_test_change(path: str, status: str, start: str) -> str:
+    try:
+        if status == "?":
+            Path(path).unlink()
+        else:
+            # Restores modified and deleted tests, and removes ones absent at start.
+            git("restore", f"--source={start}", "--staged", "--worktree", "--", f":(literal){path}")
+    except (GuardError, OSError) as error:
+        return f"test changed, could not undo: {path}: {error}"
+    return f"deleted added test {path}" if status in ("?", "A") else f"restored test {path}"
 
 
 def cmd_scope(args: argparse.Namespace) -> int:
-    problems: list[str] = []
-    for status, path in working_changes():
-        if args.tests and matches(path, args.tests):
-            if args.fix:
-                problems.append(undo_test_change(status, path))
-            else:
-                problems.append(f"test changed: {path}")
-        elif not matches(path, args.allow):
-            problems.append(f"out of scope: {path}")
+    start = args.since or git("merge-base", args.base, "HEAD").strip()
+    problems = 0
     if args.since and args.tests:
-        for path in committed_paths(f"{args.since}..HEAD"):
-            if matches(path, args.tests):
-                problems.append(f"test committed after {args.since}: {path}")
-    if args.base:
-        merge_base = git("merge-base", args.base, "HEAD").strip()
-        for path in committed_paths(f"{merge_base}..HEAD"):
-            allowed = args.allow + (args.tests or [])
-            if not path.startswith(RUN_FOLDER) and not matches(path, allowed):
-                problems.append(f"out of scope since {args.base}: {path}")
-    for problem in problems:
-        print(problem)
-    print("scope: ok" if not problems else f"scope: {len(problems)} problem(s)")
+        for path, status in sorted(changes_since(start, pathspecs(args.tests)).items()):
+            print(undo_test_change(path, status, start) if args.fix else f"test changed: {path}", flush=True)
+            problems += 1
+    # Under --since, test paths are reported above. At delivery (--base) the branch
+    # carries the slice's own committed tests, so test globs count as allowed there.
+    allowed = pathspecs(args.allow + (args.tests or []), "exclude,")
+    for path in sorted(changes_since(start, [*allowed, *NOT_SCOPED])):
+        print(f"out of scope: {path}")
+        problems += 1
+    print("scope: ok" if not problems else f"scope: {problems} problem(s)")
     return 1 if problems else 0
 
 
+def patch_paths(patch: str) -> set[str]:
+    # -z numstat rows are "added\tdeleted\tpath"; a rename empties path and adds source and target fields.
+    return {field.rsplit("\t", 1)[-1] for field in git("apply", "--numstat", "-z", patch).split("\0")} - {""}
+
+
+def run_suite(command: str, timeout: int) -> tuple[str, int | None]:
+    """The suite's combined output and exit code; the code is None when it timed out."""
+    # --cmd comes from the parent's own recon record, never from the worker-writable
+    # ledger; the shell lets it use pipes and env vars. Its own session lets a timeout
+    # or SIGTERM kill the runner's children along with the shell.
+    suite = subprocess.Popen(
+        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True
+    )
+    try:
+        output, code = suite.communicate(timeout=timeout)[0], suite.returncode
+    except subprocess.TimeoutExpired:
+        os.killpg(suite.pid, signal.SIGKILL)
+        output, code = suite.communicate()[0], None
+    finally:
+        if suite.returncode is None:
+            os.killpg(suite.pid, signal.SIGKILL)
+    return output.decode(errors="replace"), code
+
+
+def suite_verdict(args: argparse.Namespace) -> tuple[int, str]:
+    if args.stub and set(args.stub) & set(changes_since("HEAD", pathspecs(args.tests))):
+        return 1, "red: a --stub path matches the test globs"
+    output, code = run_suite(args.cmd, args.timeout)
+    print("\n".join(output.splitlines()[-OUTPUT_TAIL:]))
+    if code is None:
+        return 2, f"red: timed out after {args.timeout}s"
+    if code < 0 or code in COULD_NOT_RUN:
+        return 2, f"red: the test command could not run (exit {code})"
+    if code == 0:
+        return 1, "red: the suite passed, so these tests are not red"
+    missing = [text for text in args.expect if text not in output]
+    if missing:
+        return 1, "red: the suite failed, but its output lacks: " + "; ".join(missing)
+    return 0, "red: confirmed; every --expect line is in the failing output"
+
+
 def cmd_red(args: argparse.Namespace) -> int:
+    signal.signal(signal.SIGTERM, lambda signum, _frame: sys.exit(128 + signum))
     if args.patch:
-        applied = subprocess.run(["git", "apply", args.patch], capture_output=True, text=True)
-        if applied.returncode != 0:
-            print(f"red: stub patch does not apply: {applied.stderr.strip()}")
+        stray = patch_paths(args.patch) - set(args.stub)
+        if stray:
+            print("red: the stub patch changes paths outside --stub: " + ", ".join(sorted(stray)))
+            return 1
+        try:
+            git("apply", args.patch)
+        except GuardError as error:
+            print(f"red: stub patch does not apply: {error}")
             return 1
     try:
-        # The test command comes from the run's own ledger and may use pipes or env vars.
-        suite = subprocess.run(
-            args.cmd, shell=True, capture_output=True, text=True, timeout=args.timeout
-        )
-        output, failed = suite.stdout + suite.stderr, suite.returncode != 0
-    except subprocess.TimeoutExpired:
-        output, failed = f"timed out after {args.timeout}s", False
+        code, verdict = suite_verdict(args)
     finally:
-        reversed_ok = True
-        if args.patch:
-            reversed_ok = subprocess.run(["git", "apply", "-R", args.patch]).returncode == 0
-    print("\n".join(output.splitlines()[-OUTPUT_TAIL:]))
+        reversed_ok = not args.patch or subprocess.run(["git", "apply", "-R", args.patch]).returncode == 0
     if not reversed_ok:
         print("red: the stub patch did not reverse; restore the tree before continuing")
-        return 1
-    if not failed:
-        print("red: the suite did not fail, so these tests are not red")
-        return 1
-    print("red: confirmed; compare the failures above with red-evidence")
-    return 0
+        return 2
+    print(verdict)
+    leftover = sorted(changes_since("HEAD", [*pathspecs(args.tests, "exclude,"), *NOT_SCOPED]))
+    if leftover:
+        print("red: only test paths may stay changed, found: " + ", ".join(leftover))
+    return max(code, 1 if leftover else 0)
+
+
+def changed_lines(base: str, specs: list[str]) -> int:
+    """Added plus deleted lines since base, as git diff --numstat counts them, plus untracked files."""
+    rows = git("diff", "--numstat", "-z", "--no-renames", base, "--", *specs).split("\0")
+    total = sum(int(count) for row in rows for count in row.split("\t")[:2] if count.isdigit())
+    untracked = git("ls-files", "-z", "--others", "--exclude-standard", "--", *specs).split("\0")
+    return total + sum(Path(path).read_bytes().count(b"\n") for path in untracked if os.path.isfile(path))
 
 
 def cmd_lines(args: argparse.Namespace) -> int:
-    merge_base = git("merge-base", args.base, "HEAD").strip()
-    excluded = list(GENERATED) + (args.exclude or [])
-    raw = reviewable = 0
-    for row in git("diff", "--numstat", merge_base).splitlines():
-        added, deleted, path = row.split("\t", 2)
-        count = (int(added) if added.isdigit() else 0) + (int(deleted) if deleted.isdigit() else 0)
-        raw += count
-        if not matches(path, excluded):
-            reviewable += count
+    base = git("merge-base", args.base, "HEAD").strip()
+    raw = changed_lines(base, [])
+    reviewable = changed_lines(base, [f":(exclude){p}" for p in (*UNREVIEWABLE, *(args.exclude or []))])
     print(f"reviewable: {reviewable} | raw: {raw} | budget: {args.budget}")
     if reviewable > args.budget:
         print("lines: over budget; split the slice or log a cohesion exception")
@@ -161,49 +179,76 @@ def cmd_lines(args: argparse.Namespace) -> int:
     return 0
 
 
+def sha256_hex(value: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{64}", value.lower()):
+        raise argparse.ArgumentTypeError(f"not a sha256 hex digest: {value!r}")
+    return value.lower()
+
+
 def cmd_recipe(args: argparse.Namespace) -> int:
+    if args.sha and not Path(args.file).is_file():
+        print(f"recipe: {args.file} is missing")
+        return 1
     digest = hashlib.sha256(Path(args.file).read_bytes()).hexdigest()
     print(f"sha256: {digest}")
-    if args.sha and args.sha.lower() != digest:
+    if args.sha and args.sha != digest:
         print(f"recipe: changed since it was recorded as {args.sha}")
         return 1
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Supercook parent checks.")
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
 
     scope = commands.add_parser("scope", help="changed paths stay inside the allow list")
-    scope.add_argument("--allow", nargs="+", required=True, help="globs the worker may change")
-    scope.add_argument("--tests", nargs="+", help="test globs the worker must not touch")
-    scope.add_argument("--since", help="test commit sha; committed test edits after it fail")
-    scope.add_argument("--base", help="also check every path committed since this ref")
-    scope.add_argument("--fix", action="store_true", help="restore modified tests, delete added ones")
+    scope.add_argument("--allow", nargs="+", required=True, metavar="GLOB", help="paths the worker may change")
+    scope.add_argument("--tests", nargs="+", metavar="GLOB", help="test paths the worker must not change")
+    start = scope.add_mutually_exclusive_group(required=True)
+    start.add_argument("--since", metavar="SHA", help="the commit before the worker launched")
+    start.add_argument("--base", metavar="REF", help="at delivery: the branch since REF; tests count as allowed")
+    scope.add_argument("--fix", action="store_true", help="put changed tests back as they were at --since")
     scope.set_defaults(handler=cmd_scope)
 
-    red = commands.add_parser("red", help="the suite fails with the stub applied")
-    red.add_argument("--cmd", required=True, help="the recorded test command")
-    red.add_argument("--patch", help="the test designer's red-stub.patch")
-    red.add_argument("--timeout", type=int, default=1800)
+    red = commands.add_parser("red", help="the new tests fail with the stub applied")
+    red.add_argument("--cmd", required=True, help="the test command from your recon record")
+    red.add_argument("--expect", nargs="+", required=True, metavar="TEXT", help="what each red-evidence line prints")
+    red.add_argument("--tests", nargs="+", required=True, metavar="GLOB", help="the only paths left changed")
+    red.add_argument("--patch", type=os.path.abspath, help="the test designer's red-stub.patch")
+    red.add_argument("--stub", nargs="+", metavar="PATH", help="the stub paths the patch may change")
+    red.add_argument("--timeout", type=int, default=1800, help="seconds before the run counts as not run")
     red.set_defaults(handler=cmd_red)
 
     lines = commands.add_parser("lines", help="reviewable and raw lines against the budget")
     lines.add_argument("--base", required=True, help="the slice's base branch or ref")
-    lines.add_argument("--budget", type=int, default=500)
-    lines.add_argument("--exclude", nargs="+", help="extra globs that do not count as reviewable")
+    lines.add_argument("--budget", type=int, default=500, help="reviewable lines allowed")
+    lines.add_argument("--exclude", nargs="+", metavar="PATHSPEC", help="more unreviewable paths (`*` crosses /)")
     lines.set_defaults(handler=cmd_lines)
 
-    recipe = commands.add_parser("recipe", help="a recipe file still matches its recorded hash")
-    recipe.add_argument("file")
-    recipe.add_argument("--sha", help="the sha256 recorded when the recipe was written")
-    recipe.set_defaults(handler=cmd_recipe)
+    recipe = commands.add_parser("recipe", help="hash a recipe, or check it against the recorded hash")
+    modes = recipe.add_subparsers(dest="mode", required=True)
+    modes.add_parser("hash", help="print the sha256 to record").add_argument("file")
+    check = modes.add_parser("check", help="fail when the recipe changed or is missing")
+    check.add_argument("file")
+    check.add_argument("sha", type=sha256_hex)
+    recipe.set_defaults(handler=cmd_recipe, sha=None)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    return args.handler(args)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "scope" and args.fix and not (args.since and args.tests):
+        parser.error("scope --fix needs --since and --tests")
+    if args.command == "red" and bool(args.patch) != bool(args.stub):
+        parser.error("red --patch and --stub go together")
+    try:
+        if args.command != "recipe":
+            os.chdir(git("rev-parse", "--show-toplevel").strip())
+        return args.handler(args)
+    except (GuardError, OSError) as error:
+        print(f"guard: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
