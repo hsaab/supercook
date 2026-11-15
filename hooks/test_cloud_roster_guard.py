@@ -1,7 +1,7 @@
 """Stop-hook journeys for hooks/cloud_roster_guard.py.
 
-A parent ends a turn. The hook reads the ledger and, when a roster row is still
-open, echoes the first one verbatim. Run: python3 -m unittest hooks.test_cloud_roster_guard
+A parent ends a turn. The hook reads the ledger and, when an assess or worker row
+is still open, echoes the first one verbatim. Run: python3 -m unittest hooks.test_cloud_roster_guard
 """
 
 import json
@@ -137,21 +137,25 @@ class CloudRosterGuardTests(unittest.TestCase):
             ))
             self.assertEqual(self.run_hook(root), {})
 
-    def test_stop_does_not_echo_an_open_assess_row(self):
-        # The parent classifies the task itself, so an open assess row has no worker
-        # to launch. Nudging "Launch that worker" there would send it looking for one.
-        with tempfile.TemporaryDirectory() as temp:
-            root = Path(temp)
-            write_ledger(root, "run", ledger(replacements={"assess": "- [ ] assess: you"}))
-            self.assertEqual(self.run_hook(root), {})
-
-    def test_stop_skips_the_open_assess_row_and_echoes_the_next_worker(self):
+    def test_stop_on_an_open_assess_row_asks_for_the_verdict_before_any_worker(self):
+        # The verdict decides whether recon runs at all, so recon is never nudged ahead of it.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             write_ledger(root, "run", ledger(("recon",), replacements={"assess": "- [ ] assess: you"}))
             message = self.followup(root)
-            self.assertIn("- [ ] recon: supercook-explorer", message)
-            self.assertNotIn("assess", message)
+            self.assertIn("- [ ] assess: you", message)
+            self.assertIn("pipeline/assess.md", message)
+            self.assertNotIn("recon", message)
+            self.assertNotIn("Launch that worker", message)
+
+    def test_stop_is_silent_after_a_blocked_row(self):
+        # A parent waiting on the user marks the row [!]; later rows are not owed until it clears.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon", "implement"), replacements={
+                "assess": "- [!] assess: waiting on the user to say which API the task means",
+            }))
+            self.assertEqual(self.run_hook(root), {})
 
     def test_stop_with_no_ledger_is_silent(self):
         with tempfile.TemporaryDirectory() as temp:
