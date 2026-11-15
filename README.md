@@ -247,7 +247,7 @@ python3 scripts/audit_runs.py --since 2026-11-01          # per-chat report plus
 python3 scripts/audit_runs.py --since 2026-11-01 --json   # the same, as JSON
 ```
 
-Transcripts hold tool calls but not their results, so a denial only counts when the agent mentioned it. Cloud Agent and Project runs are not in local transcripts.
+Transcripts hold tool calls but not their results, so a denial only counts when the agent mentioned it. Edits made through the shell are not counted, `--since` compares each transcript's modification date, and runs that recorded `spawn none` are reported as solo and left out of the launch totals. Cloud Agent and Project runs are not in local transcripts.
 
 ## Development
 

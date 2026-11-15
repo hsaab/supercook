@@ -11,6 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -100,6 +101,78 @@ class AuditRunsTests(unittest.TestCase):
         })
         self.assertEqual(row["hook_denials"], 0)
         self.assertEqual(row["product_edits"], ["/repo/src/b.ts"])
+
+    def test_every_documented_launch_shape_counts_as_its_role_and_a_mere_mention_does_not(self):
+        launch = json.dumps({"subagent_type": "supercook-planner", "prompt": "plan"})
+        path = write_chat(self.projects, "crate", "chat-shapes", [
+            attach(self.local_skill),
+            call("Task", {"subagent_type": "custom", "name": "supercook-implementer", "prompt": "slice 1"}),
+            call("Task", {"subagent_type": "generalPurpose", "description": "supercook-verifier: audit",
+                          "prompt": "<agent file body>"}),
+            call("Task", {"subagent_type": "generalPurpose",
+                          "prompt": "Read `/p/agents/supercook-test-designer.md` and follow it."}),
+            call("CallDynamicTool", {"namespace": "cursor", "toolName": "Task", "arguments": launch}),
+            call("Task", {"subagent_type": "explore", "prompt": "Read /p/agents/supercook-implementer.md"}),
+            call("Task", {"subagent_type": "generalPurpose", "prompt": "Summarize agents/supercook-implementer.md"}),
+        ])
+        row = audit_runs.audit_chat(path)
+        self.assertEqual(row["launches"], {
+            "custom:supercook-implementer": 1, "explore": 1, "generalPurpose": 1,
+            "generalPurpose:supercook-test-designer": 1, "generalPurpose:supercook-verifier": 1,
+            "supercook-planner": 1,
+        })
+
+    def test_solo_runs_are_left_out_of_the_launch_counts(self):
+        ledger = "capabilities: git yes | spawn none | parent-host cloud-agent"
+        solo = audit_runs.audit_chat(write_chat(self.projects, "crate", "chat-solo", [
+            attach(self.local_skill),
+            call("Write", {"path": "/repo/.supercook/run/ledger.md", "contents": ledger}),
+            call("StrReplace", {"path": "/repo/src/e.ts", "old_string": "a", "new_string": "b"}),
+        ]))
+        self.assertTrue(solo["solo"])
+        summary = audit_runs.summarize([solo, audit_runs.audit_chat(self.stale_run())])
+        self.assertEqual(summary["solo_runs"], 1)
+        self.assertEqual(summary["no_supercook_launch"], 0)
+        self.assertEqual(summary["parent_edits_without_implementer"], 1)
+
+    def test_the_announced_version_wins_over_the_copy_on_disk(self):
+        row = audit_runs.audit_chat(write_chat(self.projects, "crate", "chat-said", [
+            attach(self.local_skill), say("supercook 0.4.2 from ~/.cursor/plugins/local/supercook\nStarting."),
+        ]))
+        self.assertEqual(row["announced_version"], "0.4.2")
+        self.assertEqual(audit_runs.summarize([row])["installs"], {"local 0.4.2": 1})
+
+    def test_a_skill_path_under_the_home_folder_finds_its_manifest(self):
+        with mock.patch.dict(os.environ, {"HOME": str(self.home)}):
+            self.assertEqual(audit_runs.plugin_version("~/plugins/local/supercook/skills/supercook/SKILL.md"), "0.5.0")
+
+    def test_negated_hook_mentions_are_not_denials(self):
+        row = audit_runs.audit_chat(write_chat(self.projects, "crate", "chat-negated", [
+            attach(self.local_skill),
+            say("This repo's stop hook does not deny edits or launches. The hook didn't block the launch either."),
+        ]))
+        self.assertEqual(row["hook_denials"], 0)
+
+    def test_edits_through_call_dynamic_tool_are_counted(self):
+        row = audit_runs.audit_chat(write_chat(self.projects, "crate", "chat-dynamic", [
+            attach(self.local_skill),
+            call("CallDynamicTool", {"namespace": "cursor", "toolName": "Delete",
+                                     "arguments": {"path": "/repo/src/old.ts"}}),
+        ]))
+        self.assertEqual(row["product_edits"], ["/repo/src/old.ts"])
+
+    def test_short_paths_missing_files_and_list_manifests_do_not_crash(self):
+        (self.home / "s.jsonl").write_text(json.dumps(attach(self.local_skill)) + "\n", encoding="utf-8")
+        done = subprocess.run(
+            [sys.executable, str(SCRIPT), "missing.jsonl", "s.jsonl", "--json"],
+            capture_output=True, text=True, timeout=30, cwd=self.home,
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("skipped missing.jsonl", done.stderr)
+        self.assertEqual([chat["project"] for chat in json.loads(done.stdout)["chats"]], [""])
+        listed = fake_plugin(self.home, "plugins/local/listed", "0.5.0")
+        (Path(listed).parents[2] / ".cursor-plugin" / "plugin.json").write_text("[]", encoding="utf-8")
+        self.assertIsNone(audit_runs.plugin_version(listed))
 
     def test_chats_without_the_skill_and_subagent_transcripts_are_skipped(self):
         self.stale_run()
