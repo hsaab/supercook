@@ -92,23 +92,39 @@ def section(path: Path, heading: str) -> str:
     return parts[1].split("\n## ", 1)[0]
 
 
-class RosterTier(NamedTuple):
-    file: str
-    choices: tuple[str, ...]
+class RosterRow(NamedTuple):
+    choice: str
+    files: list[str]
+    default: bool
 
 
-def roster_tiers() -> list[RosterTier]:
-    """The Where to edit table in models.md, highest precedence first."""
-    tiers = []
+def roster_rows() -> list[RosterRow]:
+    """The Where to edit table in models.md, one row per roster choice, files highest first."""
+    rows = []
     for line in section(SKILL_DIR / "models.md", "Where to edit").splitlines():
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if line.startswith("|") and len(cells) == 3 and cells[0][:1].isdigit():
-            choices = tuple(re.findall(r"`(roster:[a-z]+)`", cells[2]))
-            tiers.append(RosterTier(cells[1].strip("`"), choices))
-    return tiers
+        if not line.startswith("|") or len(cells) != 2:
+            continue
+        marked = re.findall(r"`(roster:[a-z]+)`", cells[0])
+        if len(marked) != 1:
+            continue
+        files = [part.strip().strip("`") for part in cells[1].split(",")]
+        rows.append(RosterRow(marked[0], files, "(default)" in cells[0]))
+    if not rows:
+        raise AssertionError("models.md ## Where to edit has no two-cell roster-choice rows")
+    return rows
 
 
-def ledger_roster_value_list() -> str:
+def skill_modifier_line() -> str:
+    """The SKILL.md line that lists every ledger-accepted scope modifier."""
+    lines = read(SKILL_DIR / "SKILL.md").splitlines()
+    line = next((line for line in lines if all(f"`{m}`" in line.lower() for m in run_folder.SCOPE_MODIFIERS)), None)
+    if line is None:
+        raise AssertionError("SKILL.md has no line listing every scope modifier the ledger check accepts")
+    return line
+
+
+def ledger_roster_sentence() -> str:
     """The ledger.md sentence that names the allowed `roster` values."""
     prose = strip_code_fences(read(SKILL_DIR / "references" / "ledger.md"))
     for sentence in re.split(r"(?<=[.!?])\s+", prose):
@@ -210,26 +226,21 @@ class RosterChoice(unittest.TestCase):
     def test_the_roster_choice_is_parsed_once_with_the_scope_modifiers(self):
         # A separate parse point is how a non-leading `roster:` got silently ignored.
         lines = read(SKILL_DIR / "SKILL.md").splitlines()
-        modifiers = next((line for line in lines if all(f"`{m}`" in line.lower() for m in run_folder.SCOPE_MODIFIERS)), None)
-        self.assertIsNotNone(modifiers, "SKILL.md has no line listing every scope modifier the ledger check accepts")
+        modifiers = skill_modifier_line()
         for choice in ROSTER_CHOICES:
             self.assertIn(f"`{choice}`", modifiers)
         self.assertIn("(models.md#choosing-a-roster)", modifiers)
         self.assertNotIn(ROSTER_ALIAS, modifiers)
         self.assertEqual([line for line in lines if "roster:" in line and line != modifiers], [])
 
-    def test_each_roster_choice_reads_the_tiers_the_table_names(self):
-        tiers = roster_tiers()
-        files = [tier.file for tier in tiers]
-        self.assertEqual(files.count(REPO_ROSTER_PATH), 1)
-        self.assertEqual(files.count(PLUGIN_ROSTER_PATH), 1)
-        chains = {
-            choice: [tier.file for tier in tiers if choice in tier.choices]
-            for choice in ROSTER_CHOICES
-        }
-        self.assertEqual(chains["roster:repo"], [REPO_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
-        self.assertEqual(chains["roster:machine"], [HOME_ROSTER_PATH, "this file"])
-        self.assertEqual(chains["roster:supercook"], [PLUGIN_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
+    def test_each_roster_choice_reads_the_files_its_row_names(self):
+        rows = roster_rows()
+        self.assertEqual([row.choice for row in rows], list(ROSTER_CHOICES))
+        files = {row.choice: row.files for row in rows}
+        self.assertEqual(files["roster:repo"], [REPO_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
+        self.assertEqual(files["roster:machine"], [HOME_ROSTER_PATH, "this file"])
+        self.assertEqual(files["roster:supercook"], [PLUGIN_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
+        self.assertEqual([row.choice for row in rows if row.default], ["roster:repo"])
 
     def test_the_ledger_records_a_roster_value_the_choice_defines(self):
         choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
@@ -239,15 +250,10 @@ class RosterChoice(unittest.TestCase):
         line = LEDGER_VERSION_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
         self.assertIsNotNone(line, "the ledger example has no `supercook: <v> from <root> | roster: <r>` line")
         self.assertIn(line.group(2), values)
-        listed = ledger_roster_value_list()
+        listed = ledger_roster_sentence()
         for value in values:
             self.assertIn(f"`{value}`", listed)
         self.assertNotIn("`local`", listed)
-        manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
-        self.assertEqual(line.group(1), manifest["version"])
-        readme = re.search(r"`supercook (\d+\.\d+\.\d+) from", read(REPO / "README.md"))
-        self.assertIsNotNone(readme, "README.md has no `supercook <version> from` example")
-        self.assertEqual(readme.group(1), manifest["version"])
 
     def test_every_doc_naming_a_roster_choice_links_its_one_statement(self):
         tokens = (*ROSTER_CHOICES, ROSTER_ALIAS)
@@ -262,11 +268,7 @@ class RosterChoice(unittest.TestCase):
     def test_roster_local_is_an_alias_of_machine(self):
         choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
         self.assertIn(ROSTER_ALIAS, choosing)
-        lines = read(SKILL_DIR / "SKILL.md").splitlines()
-        modifiers = next((line for line in lines if all(f"`{m}`" in line.lower() for m in run_folder.SCOPE_MODIFIERS)), None)
-        self.assertIsNotNone(modifiers, "SKILL.md has no line listing every scope modifier the ledger check accepts")
-        self.assertNotIn(ROSTER_ALIAS, modifiers)
-        self.assertNotIn(ROSTER_ALIAS, ledger_roster_value_list())
+        self.assertNotIn(ROSTER_ALIAS, ledger_roster_sentence())
         self.assertNotIn(ROSTER_ALIAS, section(SKILL_DIR / "models.md", "Where to edit"))
 
     def test_setup_supercook_names_every_roster_choice(self):
@@ -309,6 +311,15 @@ class Packaging(unittest.TestCase):
     def test_plugin_manifest_has_a_semver_version(self):
         manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
         self.assertRegex(manifest["version"], r"^\d+\.\d+\.\d+$")
+
+    def test_version_examples_match_the_manifest(self):
+        manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
+        line = LEDGER_VERSION_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
+        self.assertIsNotNone(line, "the ledger example has no `supercook: <v> from <root> | roster: <r>` line")
+        self.assertEqual(line.group(1), manifest["version"])
+        readme = re.search(r"`supercook (\d+\.\d+\.\d+) from", read(REPO / "README.md"))
+        self.assertIsNotNone(readme, "README.md has no `supercook <version> from` example")
+        self.assertEqual(readme.group(1), manifest["version"])
 
     def test_every_skill_frontmatter_names_its_directory(self):
         for skill in SKILL_FILES:
