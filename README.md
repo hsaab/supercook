@@ -169,7 +169,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 Nine roster keys, one line each: `standard` (planner, test-designer, verifier), the three arena contestants, the plan judge, implementer, explorer, `reviewer` (the external reviewers on the review track), and `review-implementer`. Each ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
 
-Three files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional, commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped file. Open an ask with `roster:local` to ignore the repo file for that run, so only your home file and the shipped defaults decide; `roster:repo` is the default. The ledger's `supercook:` line records which one ran. Edit an override, not the plugin copy, because a marketplace update replaces the plugin directory.
+Three files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional, commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped file. Open an ask with `roster:local` to skip the repo file for that run ([choosing a roster](skills/supercook/models.md#choosing-a-roster)). Edit an override, not the plugin copy, because a marketplace update replaces the plugin directory.
 
 ```bash
 mkdir -p ~/.supercook
@@ -203,7 +203,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook no PR <what you want>          # implement and verify, do not open a PR
 /supercook no commits <what you want>     # leave the changes uncommitted
 /supercook keep ledger <what you want>    # commit the ledger so another machine can resume
-/supercook roster:local <what you want>   # models from ~/.supercook/models.md, ignoring the repo's
+/supercook roster:local <what you want>   # models from ~/.supercook/models.md, then the shipped defaults; skips the repo's
 /supercook <what you want> and merge it   # carry on through the merge
 /supercook merge PR 412                   # drive an existing PR to merged, nothing to build
 /supercook review                         # run Bugbot, security, and Thermos reviews on each slice PR and fix the real findings

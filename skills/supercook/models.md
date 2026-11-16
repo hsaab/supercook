@@ -23,14 +23,7 @@ Then keep only the roles you want to change; any role a higher file does not nam
 
 ## Choosing a roster
 
-A `/supercook` ask may open with a roster choice. Take it off the ask before routing:
-
-| Ask opens with | Merged per role, first wins | Version line |
-|---|---|---|
-| nothing, or `roster:repo` | `<workspace-root>/.supercook/models.md`, `~/.supercook/models.md`, this file | `roster: repo` |
-| `roster:local` | `~/.supercook/models.md`, this file | `roster: local` |
-
-A missing file falls through like any missing tier, so `roster:local` with no home file runs the shipped defaults. Any other `roster:` value: say so once and use `repo`.
+A `roster:` word among the ask's leading modifiers picks which [files above](#where-to-edit) merge. `repo`, the default, merges all three. `local` skips the repository file, so your home file decides and the shipped defaults fill every role it leaves out. Any other value is named once and runs as `local`, so a typo never hands the run to the committed file. A `roster:` word later in the task stays task text; say once that it chose nothing. The ledger's `supercook:` line records the choice as `roster: repo` or `roster: local`.
 
 ## The roster
 
@@ -55,7 +48,7 @@ Each role is independent: `reviewer` and `review-implementer` left on `inherit` 
 3. Pass the slug verbatim as the launch's `model` field; leave the field out for `inherit`. Never substitute a "nearest" model.
 4. Do not pre-validate during a run; `/setup-supercook` checks the roster ahead of time. If a launch rejects the model, relaunch once without it, log `inherit`, and tell the user once. Never block a run on a model name.
 
-**Mid-run changes** ("use opus for the implementer", "everything on the session model from here") win from the next launch on: update the `models:` line, log why, keep going.
+**Mid-run changes** ("use opus for the implementer", "everything on the session model from here") win from the next launch on: update the `models:` line, log why, keep going. A roster choice mid-run, or on the ask that resumes a run, re-resolves every role: rewrite the `roster:` value and the `models:` line, and log it.
 
 ## Keep the arena diverse
 

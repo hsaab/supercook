@@ -1,6 +1,6 @@
 # Model preferences
 
-Repository roster for cloud agents and other shared checkouts. Cloud VMs typically have no `~/.supercook/models.md`, so this file is committed at tier 1 and wins per role over home and shipped defaults. See [skills/supercook/models.md](../skills/supercook/models.md) for the three-tier merge rules.
+Repository roster for cloud agents and other shared checkouts. Cloud VMs typically have no `~/.supercook/models.md`, so this file is committed at tier 1 and wins per role over home and shipped defaults, unless the run uses `roster:local`. See [skills/supercook/models.md](../skills/supercook/models.md#choosing-a-roster) for the merge rules and the roster choice.
 
 ## The roster
 

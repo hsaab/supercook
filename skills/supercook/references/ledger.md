@@ -42,7 +42,7 @@ done: every public route answers a 101st request in one minute with a 429, and t
 - 10:11 check: the implementer edited src/rate-limit/bucket.test.ts; restored it and sent the concern to the test designer
 ```
 
-`spawn` is `typed`, `generalPurpose`, another tool's name, or `none`. The test command and test paths come from the first explorer, with evidence. `roster` is `repo` or `local`, the [roster choice](../models.md#choosing-a-roster) the `models:` line was resolved from. `models:` lists every roster key, resolved once per [../models.md](../models.md); write `inherit` for every role when the spawn tool has no model field.
+`spawn` is `typed`, `generalPurpose`, another tool's name, or `none`. The test command and test paths come from the first explorer, with evidence. `roster` is `repo` or `local`, the [roster choice](../models.md#choosing-a-roster) of the last full resolve; a per-role change after it edits `models:` alone. `models:` lists every roster key, resolved once per [../models.md](../models.md); write `inherit` for every role when the spawn tool has no model field.
 
 ## Rows
 
