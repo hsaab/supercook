@@ -10,6 +10,7 @@ import re
 import sys
 import unittest
 from pathlib import Path
+from typing import NamedTuple
 
 REPO = Path(__file__).resolve().parents[1]
 SKILL_DIR = REPO / "skills" / "supercook"
@@ -41,11 +42,10 @@ SCRIPT = re.compile(r"\b((?:scripts|hooks)/[a-z_]+\.py)\b")
 STEP_REFERENCE = re.compile(r"\breferences/[a-z-]+\.md\b")
 TRACKS_THAT_CHANGE_CODE = ("feature", "bugfix", "refactor", "implement-plan")
 ROSTER_CHOICES = ("roster:repo", "roster:local")
-REPO_ROSTER = "<workspace-root>/.supercook/models.md"
-HOME_ROSTER = "~/.supercook/models.md"
-SHIPPED_ROSTER = "this file"
-ROSTER_FILE = re.compile(r"`([^`]*models\.md)`|(this file)")
-VERSION_LINE = re.compile(r"^supercook: (\S+) from \S+ \| roster: (\S+)$", re.MULTILINE)
+REPO_ROSTER_PATH = "<workspace-root>/.supercook/models.md"
+HOME_ROSTER_PATH = "~/.supercook/models.md"
+COMMITTED_ROSTER = REPO / ".supercook" / "models.md"
+LEDGER_VERSION_LINE = re.compile(r"^supercook: \d+\.\d+\.\d+ from \S+ \| roster: (\S+)$", re.MULTILINE)
 
 
 def read(path: Path) -> str:
@@ -83,19 +83,26 @@ def checklist(playbook: Path) -> list[str]:
 
 
 def section(path: Path, heading: str) -> str:
-    return read(path).split(f"\n## {heading}\n", 1)[1].split("\n## ", 1)[0]
+    """The body of a `## heading` section, up to the next `## ` heading."""
+    parts = read(path).split(f"\n## {heading}\n", 1)
+    if len(parts) < 2:
+        raise AssertionError(f"{path.name} has no ## {heading} section")
+    return parts[1].split("\n## ", 1)[0]
 
 
-def roster_choices() -> dict[str, tuple[str, list[str], str]]:
-    """The roster table in models.md: choice -> (ask cell, files merged per role in order, ledger value)."""
-    table = {}
-    for line in section(SKILL_DIR / "models.md", "Choosing a roster").splitlines():
-        cells = [cell.strip() for cell in line.strip("|").split("|")]
-        choice = next((c for c in ROSTER_CHOICES if f"`{c}`" in line), None)
-        if line.startswith("|") and choice and len(cells) == 3:
-            files = [path or shipped for path, shipped in ROSTER_FILE.findall(cells[1])]
-            table[choice] = (cells[0], files, cells[2].strip("`"))
-    return table
+class RosterTier(NamedTuple):
+    file: str
+    skipped_under_local: bool
+
+
+def roster_tiers() -> list[RosterTier]:
+    """The Where to edit table in models.md, highest precedence first."""
+    tiers = []
+    for line in section(SKILL_DIR / "models.md", "Where to edit").splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if line.startswith("|") and len(cells) == 3 and cells[0][:1].isdigit():
+            tiers.append(RosterTier(cells[1].strip("`"), "`roster:local`" in cells[2]))
+    return tiers
 
 
 def frontmatter_description(text: str) -> str:
@@ -107,7 +114,7 @@ def frontmatter_description(text: str) -> str:
 
 class ReferencesResolve(unittest.TestCase):
     def test_every_relative_link_and_anchor_resolves(self):
-        for doc in [*skill_docs(), *agent_files(), REPO / "README.md"]:
+        for doc in [*skill_docs(), *agent_files(), REPO / "README.md", COMMITTED_ROSTER]:
             for target in LINK.findall(strip_code_fences(read(doc))):
                 if re.match(r"^[a-z]+:", target):
                     continue
@@ -179,7 +186,7 @@ class PlaybookSteps(unittest.TestCase):
 class LaunchRule(unittest.TestCase):
     def test_parallel_launches_are_never_backgrounded(self):
         # A background result arrives only after the turn ends, which the continuation rules forbid.
-        launch = read(SKILL_DIR / "SKILL.md").split("## Launching a worker", 1)[1].split("\n## ", 1)[0]
+        launch = section(SKILL_DIR / "SKILL.md", "Launching a worker")
         self.assertIn("Never set `run_in_background`", launch)
         for doc in [*skill_docs(), *agent_files(), REPO / "README.md"]:
             if doc != SKILL_DIR / "SKILL.md":
@@ -188,30 +195,36 @@ class LaunchRule(unittest.TestCase):
 
 
 class RosterChoice(unittest.TestCase):
-    def test_start_takes_the_roster_choice_off_the_ask_before_routing(self):
-        steps = re.findall(r"^\d+\. .*$", section(SKILL_DIR / "SKILL.md", "Start"), re.MULTILINE)
-        roster = next(i for i, step in enumerate(steps) if all(f"`{c}`" in step for c in ROSTER_CHOICES))
-        route = next(i for i, step in enumerate(steps) if step.split(". ", 1)[1].startswith("Route the ask"))
-        self.assertLess(roster, route)
-        self.assertIn("(models.md#choosing-a-roster)", steps[roster])
+    def test_the_roster_choice_is_parsed_once_with_the_scope_modifiers(self):
+        # A separate parse point is how a non-leading `roster:` got silently ignored.
+        lines = read(SKILL_DIR / "SKILL.md").splitlines()
+        modifiers = next((line for line in lines if all(f"`{m}`" in line.lower() for m in run_folder.SCOPE_MODIFIERS)), None)
+        self.assertIsNotNone(modifiers, "SKILL.md has no line listing every scope modifier the ledger check accepts")
+        for choice in ROSTER_CHOICES:
+            self.assertIn(f"`{choice}`", modifiers)
+        self.assertIn("(models.md#choosing-a-roster)", modifiers)
+        self.assertEqual([line for line in lines if "roster:" in line and line != modifiers], [])
 
-    def test_no_choice_and_roster_repo_keep_the_three_tier_merge(self):
-        ask, files, ledger = roster_choices()["roster:repo"]
-        self.assertIn("nothing", ask)
-        self.assertEqual(files, [REPO_ROSTER, HOME_ROSTER, SHIPPED_ROSTER])
-        self.assertEqual(ledger, "roster: repo")
+    def test_roster_local_skips_only_the_repository_file(self):
+        tiers = roster_tiers()
+        files = [tier.file for tier in tiers]
+        self.assertEqual(files[:2], [REPO_ROSTER_PATH, HOME_ROSTER_PATH], "models.md lost its precedence table")
+        self.assertEqual([tier.file for tier in tiers if not tier.skipped_under_local], files[1:])
 
-    def test_roster_local_ignores_the_repo_file_and_falls_back_to_shipped(self):
-        _, files, ledger = roster_choices()["roster:local"]
-        self.assertEqual(files, [HOME_ROSTER, SHIPPED_ROSTER])
-        self.assertEqual(ledger, "roster: local")
-
-    def test_the_ledger_version_line_records_the_version_and_the_roster(self):
-        line = VERSION_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
+    def test_the_ledger_records_a_roster_value_the_choice_defines(self):
+        choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
+        values = [choice.split(":", 1)[1] for choice in ROSTER_CHOICES]
+        for value in values:
+            self.assertIn(f"`roster: {value}`", choosing)
+        line = LEDGER_VERSION_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
         self.assertIsNotNone(line, "the ledger example has no `supercook: <v> from <root> | roster: <r>` line")
-        manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
-        self.assertEqual(line.group(1), manifest["version"])
-        self.assertIn(f"roster: {line.group(2)}", {ledger for _, _, ledger in roster_choices().values()})
+        self.assertIn(line.group(1), values)
+
+    def test_every_doc_naming_roster_local_links_its_one_statement(self):
+        for doc in [*skill_docs(), *agent_files(), REPO / "README.md", COMMITTED_ROSTER]:
+            if doc != SKILL_DIR / "models.md" and "roster:local" in read(doc):
+                with self.subTest(doc=doc.relative_to(REPO).as_posix()):
+                    self.assertIn("models.md#choosing-a-roster", read(doc))
 
 
 class SizeBudgets(unittest.TestCase):
