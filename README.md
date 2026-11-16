@@ -94,11 +94,7 @@ This repo is its own Cursor marketplace, so the shortest path is to add it once 
 cursor-agent plugin marketplace add https://github.com/hsaab/supercook
 ```
 
-Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`, and install it. Cursor does not follow pushes to this repo: the marketplace keeps serving the commit it last indexed, to new installs too, until someone re-indexes it. When new commits land, re-index and reload the window:
-
-```bash
-cursor-agent plugin marketplace update supercook-marketplace
-```
+Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`, and install it. The listing is pinned to the commit it was registered at, and `cursor-agent plugin marketplace update` re-indexes that same commit, so a release reaches the marketplace only when the maintainer re-pins it ([Development](#development)). A re-pin drops existing installs: reinstall from Customize, then reload the window.
 
 If you would rather have a checkout you can edit, clone it straight into the local plugins folder, and update it with `git pull`:
 
@@ -129,7 +125,7 @@ A plain `/supercook` attaches the skill to one message, and it fades as a long r
 
 A cloud VM cannot see your local home directory, so three things decide whether a run gets typed `supercook-*` agents:
 
-- **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
+- **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. After a release is re-pinned ([Development](#development)), reinstall and start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
 - **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
 - **Plugin hooks do not load on Cloud Agents.** [Cursor's hook docs](https://cursor.com/docs/agent/hooks#cloud-agent-support) list project, team, and enterprise sources for the cloud. Without them the run still follows the playbook, and `scripts/guard.py ledger` still cross-checks it before delivery. For the launch log and the stop nudge on a VM, clone the plugin to `~/.cursor/plugins/local/supercook` in the install step and commit this as the repo's `.cursor/hooks.json`. Neither hook can block a call, and each prints `{}` when the clone is missing:
 
@@ -157,7 +153,7 @@ A cloud VM cannot see your local home directory, so three things decide whether 
 
 - **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` and `rm` above in the environment's install step.
 
-To see what a run got, read its first line and the subagent types it lists. Seven `supercook-*` names, with no `supercook-assessor` or `supercook-plan-optimizer`, means the current agents are typed. Either of those two means the VM loaded an older install: refresh the marketplace, and run the `rm` above if the install step copies agents into `~/.cursor/agents/`. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same steps: the coordinator launches a worker for every worker step, at every tier, and runs a role itself only when the session has no spawn tool at all.
+To see what a run got, read its first line and the subagent types it lists. Seven `supercook-*` names, with no `supercook-assessor` or `supercook-plan-optimizer`, means the current agents are typed. Either of those two means the VM loaded an older install: check that the marketplace is re-pinned to the current release, and run the `rm` above if the install step copies agents into `~/.cursor/agents/`. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same steps: the coordinator launches a worker for every worker step, at every tier, and runs a role itself only when the session has no spawn tool at all.
 
 **No spawn tool?** Some Cloud Agents never get `Task`. The run then switches to solo mode: the same steps, each handed off through a file in `.supercook/<run>/`, with red tests committed on their own, the same `guard.py` checks before every commit, and a verify step that re-reads the diff from disk and runs the suite. The arena does not run. The PR says it was built in solo mode with no independent review. Details are in [skills/supercook/references/workers.md](skills/supercook/references/workers.md#solo-mode).
 
@@ -269,13 +265,15 @@ python3 -m unittest discover -s tests
 python3 -m unittest discover -s scripts
 ```
 
-After a release merges to `main`, re-index the marketplace so new installs get it and existing installs pick it up on their next window reload:
+After a release merges to `main`, re-pin the marketplace. `cursor-agent plugin marketplace add` pins the listing to the commit it clones, `update` re-indexes that commit, and running `add` again leaves the pin where it was, so only a remove and re-add moves it:
 
 ```bash
-cursor-agent plugin marketplace update supercook-marketplace
+cursor-agent plugin marketplace remove supercook-marketplace
+cursor-agent plugin marketplace add https://github.com/hsaab/supercook
+cursor-agent plugin marketplace list --format json
 ```
 
-After the reload, Cursor's `Cursor Plugins` log shows `Adding enabled plugin: supercook from <sha>`; that SHA should be the new `main`.
+Removing the listing drops every marketplace install of Supercook, yours included, so announce the release and have installers reinstall from Customize. Before reinstalling, check that `gitRef` for `supercook-marketplace` in the `list` output is the new `main` SHA. After the reinstall and a window reload, Cursor's `Cursor Plugins` log shows `Adding enabled plugin: supercook from <sha>` with that SHA.
 
 ## License
 
