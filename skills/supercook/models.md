@@ -12,7 +12,7 @@ The parent merges the files in the chosen row **per role**: the first file that 
 | `roster:machine` | `~/.supercook/models.md`, this file |
 | `roster:supercook` | this file |
 
-`<workspace-root>/.supercook/models.md` is an optional override for this checkout; commit it so cloud agents and other clones pick it up. `~/.supercook/models.md` holds your choices outside any repo. This file is the shipped default for every role; `roster:supercook` reads only this file and ignores the workspace file and the home file.
+`<workspace-root>/.supercook/models.md` is an optional override for this checkout; commit it so cloud agents and other clones pick it up. `~/.supercook/models.md` holds your choices outside any repo. This file is the shipped default for every role and the only file `roster:supercook` reads, so that choice gives the same roster from any repo or machine.
 
 Edit the home or repository file, not a file inside the installed plugin: a marketplace install lives in a cache directory the next update replaces. The home file does not exist until you create it:
 

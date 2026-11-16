@@ -169,7 +169,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 Nine roster keys, one line each: `standard` (planner, test-designer, verifier), the three arena contestants, the plan judge, implementer, explorer, `reviewer` (the external reviewers on the review track), and `review-implementer`. Each ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
 
-Files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional; commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped defaults in `skills/supercook/models.md`. `roster:machine` skips the workspace file. `roster:supercook` reads only the shipped `skills/supercook/models.md`, ignoring the workspace file, the home file, and the plugin repo's committed `.supercook/models.md`. See [choosing a roster](skills/supercook/models.md#choosing-a-roster). Edit an override, not a file inside the installed plugin, because a marketplace update replaces the plugin directory.
+Files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional; commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped defaults in `skills/supercook/models.md`. `roster:machine` skips the workspace file. `roster:supercook` reads only the shipped defaults, so it gives the same roster from any repo or machine. See [choosing a roster](skills/supercook/models.md#choosing-a-roster). Edit an override, not a file inside the installed plugin, because a marketplace update replaces the plugin directory.
 
 ```bash
 mkdir -p ~/.supercook
