@@ -30,15 +30,15 @@ A `roster:` word among the ask's leading modifiers picks a row of the [table abo
 ## The roster
 
 ```
-standard:           grok-4.7-high        # planner, test-designer, verifier
-arena-a:            grok-4.7-high        # simplest viable plan
-arena-b:            composer-2.5         # implementation-first plan
-arena-c:            grok-4.7-high        # challenge assumptions and failure cases
-plan-judge:         grok-4.7-high
-implementer:        composer-2.5
+standard:           claude-opus-5-5-high       # planner, test-designer, verifier
+arena-a:            claude-fable-5-2-high      # simplest viable plan
+arena-b:            gpt-5.6-sol-max            # implementation-first plan
+arena-c:            claude-opus-5-5-xhigh      # challenge assumptions and failure cases
+plan-judge:         claude-opus-5-5-high
+implementer:        claude-sonnet-5-5-high
 explorer:           composer-2.5
-reviewer:           grok-4.7-high        # bugbot, security-review, both thermo reviewers
-review-implementer: composer-2.5         # finding fixes on the review track
+reviewer:           claude-opus-5-5-high       # bugbot, security-review, both thermo reviewers
+review-implementer: claude-sonnet-5-5-high     # finding fixes on the review track
 ```
 
 Each role is independent: `reviewer` and `review-implementer` left on `inherit` do not fall through to `standard` or `implementer`. A `plan-optimizer` line from before 0.6.0 is ignored; the planner's supplied-plan mode uses `standard`.
@@ -54,4 +54,4 @@ Each role is independent: `reviewer` and `review-implementer` left on `inherit` 
 
 ## Keep the arena diverse
 
-The arena's value is three genuinely different lines of reasoning, so keep `arena-a`, `arena-b`, and `arena-c` on different model families when you override them. The shipped defaults span only two: `arena-a` and `arena-c` share `grok-4.7-high`, which still gives independent attempts, so a third family on one of them is the better override. `inherit` on one is fine if the session model differs from the other two.
+The arena's value is three genuinely different lines of reasoning, so keep `arena-a`, `arena-b`, and `arena-c` on different model families when you override them. The shipped defaults use three different models, but `arena-a` and `arena-c` are both Claude models, so a non-Claude model on one of them is the better override. `inherit` on one is fine if the session model differs from the other two.
