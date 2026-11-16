@@ -20,7 +20,7 @@ The ledger is the run's memory. When context is compacted or a session restarts,
 ```markdown
 # Ledger: add rate limiting to public API
 run-id: 2026-07-29-rate-limit-a4f2 | repo: git@github.com:acme/api.git | branch: supercook/rate-limit
-supercook: 0.7.0 from ~/.cursor/plugins/local/supercook
+supercook: 0.8.0 from ~/.cursor/plugins/local/supercook | roster: repo
 tier: complex | track: feature | big-change: yes
 spawn: typed | tests: `pnpm vitest run` | test-paths: **/*.test.ts
 models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
@@ -42,7 +42,7 @@ done: every public route answers a 101st request in one minute with a 429, and t
 - 10:11 check: the implementer edited src/rate-limit/bucket.test.ts; restored it and sent the concern to the test designer
 ```
 
-`spawn` is `typed`, `generalPurpose`, another tool's name, or `none`. The test command and test paths come from the first explorer, with evidence. `models:` lists every roster key, resolved once per [../models.md](../models.md); write `inherit` for every role when the spawn tool has no model field.
+`spawn` is `typed`, `generalPurpose`, another tool's name, or `none`. The test command and test paths come from the first explorer, with evidence. `roster` is `repo` or `local`, the [roster choice](../models.md#choosing-a-roster) of the last full resolve; a per-role change after it edits `models:` alone. `models:` lists every roster key, resolved once per [../models.md](../models.md); write `inherit` for every role when the spawn tool has no model field.
 
 ## Rows
 

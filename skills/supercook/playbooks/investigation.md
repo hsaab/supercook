@@ -1,6 +1,6 @@
 # Investigation
 
-A question to answer. Nothing ships, and nothing is written: no `.supercook/` folder, no ledger, no exclude entry, no diff. The todo list is the record, and the continuation rules read it the same way.
+A question to answer. Nothing ships, and nothing is written: no `.supercook/` folder, no ledger, no exclude entry, no diff. The todo list is the record, and the continuation rules read it the same way. Its first item names the [roster choice](../models.md#choosing-a-roster) and the explorer's model, since no ledger header holds them.
 
 ## Steps
 
