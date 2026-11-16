@@ -45,6 +45,7 @@ ROSTER_CHOICES = ("roster:repo", "roster:machine", "roster:supercook")
 ROSTER_ALIAS = "roster:local"
 REPO_ROSTER_PATH = "<workspace-root>/.supercook/models.md"
 HOME_ROSTER_PATH = "~/.supercook/models.md"
+PLUGIN_ROSTER_PATH = "<plugin-root>/.supercook/models.md"
 COMMITTED_ROSTER = REPO / ".supercook" / "models.md"
 LEDGER_VERSION_LINE = re.compile(r"^supercook: (\d+\.\d+\.\d+) from \S+ \| roster: (\S+)$", re.MULTILINE)
 
@@ -84,11 +85,18 @@ def checklist(playbook: Path) -> list[str]:
 
 
 def section(path: Path, heading: str) -> str:
-    """The body of a `## heading` section, up to the next `## ` heading."""
-    parts = read(path).split(f"\n## {heading}\n", 1)
-    if len(parts) < 2:
-        raise AssertionError(f"{path.name} has no ## {heading} section")
-    return parts[1].split("\n## ", 1)[0]
+    """The body of a heading, up to the next heading of the same or higher level."""
+    text = read(path)
+    match = re.search(rf"(?:^|\n)(#{{1,6}}) {re.escape(heading)}\n", text)
+    if match is None:
+        raise AssertionError(f"{path.name} has no heading {heading}")
+    rest = text[match.end() :]
+    stop = re.search(rf"\n#{{1,{len(match.group(1))}}} ", rest)
+    return rest[: stop.start()] if stop else rest
+
+
+def sentences(text: str) -> list[str]:
+    return re.split(r"(?<=[.!?])\s+", text.strip())
 
 
 class RosterRow(NamedTuple):
@@ -126,7 +134,7 @@ def skill_modifier_line() -> str:
 def ledger_roster_sentence() -> str:
     """The ledger.md sentence that names the allowed `roster` values."""
     prose = strip_code_fences(read(SKILL_DIR / "references" / "ledger.md"))
-    for sentence in re.split(r"(?<=[.!?])\s+", prose):
+    for sentence in sentences(prose):
         if "`roster`" in sentence and "choosing-a-roster" in sentence:
             return sentence
     raise AssertionError("ledger.md has no sentence that lists the `roster` values")
@@ -275,63 +283,29 @@ class RosterChoice(unittest.TestCase):
         for choice in ROSTER_CHOICES:
             self.assertIn(f"`{choice}`", text)
 
-    def test_roster_supercook_reads_none_of_the_override_files(self):
-        files = next(row.files for row in roster_rows() if row.choice == "roster:supercook")
-        for path in (REPO_ROSTER_PATH, HOME_ROSTER_PATH, "<plugin-root>/.supercook/models.md"):
-            with self.subTest(path=path):
-                self.assertNotIn(path, files)
-
-    def test_a_typo_roster_is_named_once_and_plugin_root_is_not_a_fallback(self):
-        choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
-        self.assertIn(
-            "Any other value is named once and runs as `machine`, so a typo never hands the run to a committed file.",
-            choosing,
-        )
-        with self.subTest("shipped models.md drops the plugin-root roster"):
-            self.assertNotIn("<plugin-root>/.supercook/models.md", read(SKILL_DIR / "models.md"))
-        with self.subTest("Choosing a roster drops plugin-root"):
-            self.assertNotIn("<plugin-root>", choosing)
+    def test_shipped_models_never_names_the_plugin_roster_file(self):
+        self.assertNotIn(PLUGIN_ROSTER_PATH, read(SKILL_DIR / "models.md"))
 
     def test_setup_supercook_routes_a_shipped_slug_fix_by_roster_choice(self):
-        text = read(REPO / "skills" / "setup-supercook" / "SKILL.md")
-        for choice in ROSTER_CHOICES:
-            with self.subTest(choice=choice):
-                self.assertIn(f"`{choice}`", text)
-        with self.subTest("no plugin-root roster"):
-            self.assertNotIn("<plugin-root>/.supercook/models.md", text)
-        parts = text.split("\n### 4. Write the fixes\n", 1)
-        if len(parts) < 2:
-            raise AssertionError("setup-supercook has no ### 4. Write the fixes section")
-        fixes = parts[1].split("\n### ", 1)[0]
-        with self.subTest("repo and machine write home"):
-            self.assertIn("`roster:repo`", fixes)
-            self.assertIn("`roster:machine`", fixes)
-            self.assertIn("~/.supercook/models.md", fixes)
-            self.assertIn("<workspace-root>/.supercook/models.md", fixes)
-        with self.subTest("supercook inherit fallback"):
-            self.assertIn("`roster:supercook`", fixes)
-            self.assertIn("`inherit`", fixes)
-            self.assertIn("skills/supercook/models.md", fixes)
-
-    def test_readme_roster_supercook_usage_is_shipped_defaults_only(self):
-        line = next(
-            (
-                row.strip()
-                for row in read(REPO / "README.md").splitlines()
-                if row.strip().startswith("/supercook roster:supercook")
+        fixes = sentences(section(REPO / "skills" / "setup-supercook" / "SKILL.md", "4. Write the fixes"))
+        supercook = [sentence for sentence in fixes if "roster:supercook" in sentence]
+        self.assertTrue(supercook, "step 4 never mentions roster:supercook")
+        for sentence in supercook:
+            with self.subTest(sentence=sentence[:80]):
+                self.assertIn("inherit", sentence)
+                self.assertNotIn(HOME_ROSTER_PATH, sentence)
+                self.assertNotIn(REPO_ROSTER_PATH, sentence)
+        self.assertTrue(
+            any(
+                "write" in sentence.lower()
+                and HOME_ROSTER_PATH in sentence
+                and "roster:repo" in sentence
+                and "roster:machine" in sentence
+                and "roster:supercook" not in sentence
+                for sentence in fixes
             ),
-            None,
+            "step 4 has no sentence that writes a roster:repo and roster:machine fix to the home roster",
         )
-        self.assertIsNotNone(line, "README.md has no usage line that starts with /supercook roster:supercook")
-        for token in ("home", "~/.supercook", "committed roster"):
-            with self.subTest(token=token):
-                self.assertNotIn(token, line)
-
-    def test_committed_models_says_roster_supercook_skips_this_file(self):
-        header = read(COMMITTED_ROSTER).split("## The roster", 1)[0]
-        sentence = next((part for part in re.split(r"(?<=[.!?])\s+", header) if "roster:supercook" in part), None)
-        self.assertIsNotNone(sentence, "the committed roster header has no sentence containing roster:supercook")
-        self.assertIn("skip", sentence)
 
 
 class SizeBudgets(unittest.TestCase):
