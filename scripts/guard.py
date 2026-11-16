@@ -13,6 +13,7 @@ a missing file, a test command that would not start or timed out).
           stub applied, and only test paths are left changed afterwards
   lines   reviewable and raw changed lines against the slice budget
   recipe  hash a verification recipe, or check it against the recorded hash
+  ledger  the live run's worker steps match its launch log, per run_folder.problems
 
 GLOBs are git pathspec globs, as recorded in the ledger: `*` stays inside one
 folder, `**/` matches zero or more folders, a folder matches everything under it,
@@ -28,11 +29,16 @@ import re
 import signal
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
-# Run folders are ignored, or committed under `keep ledger`; the tracked roster
-# .supercook/models.md stays in scope.
-NOT_SCOPED = (":(exclude,glob).supercook/*/**",)
+# guard runs from the installed plugin folder; never leave __pycache__ there.
+sys.dont_write_bytecode = True
+import run_folder  # noqa: E402
+
+# Run folders are ignored, or committed under `keep ledger`, and /setup-supercook writes
+# its rule file outside any slice; the tracked roster .supercook/models.md stays in scope.
+NOT_SCOPED = (":(exclude,glob).supercook/*/**", ":(exclude,glob).cursor/rules/supercook-*")
 # The line-accounting excludes, in git's default pathspec syntax where `*` crosses folders.
 UNREVIEWABLE = ("*.lock", "*lock.yaml", "*lock.json", "*.snap", "vendor", "*generated*")
 OUTPUT_TAIL = 40
@@ -197,6 +203,20 @@ def cmd_recipe(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ledger(args: argparse.Namespace) -> int:
+    ledger = args.ledger or run_folder.run_ledger([Path.cwd()])
+    if ledger is None or not ledger.is_file():
+        print("ledger: no live run (.supercook/active-run names none); pass --ledger")
+        return 2
+    by_role = Counter(str(row["role"]).removeprefix("supercook-") for row in run_folder.read_launches(ledger))
+    print("launched: " + (", ".join(f"{role} {count}" for role, count in sorted(by_role.items())) or "none"))
+    problems = run_folder.check_ledger(ledger)
+    for problem in problems:
+        print(problem)
+    print("ledger: ok" if not problems else f"ledger: {len(problems)} problem(s)")
+    return 1 if problems else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -232,6 +252,13 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("file")
     check.add_argument("sha", type=sha256_hex)
     recipe.set_defaults(handler=cmd_recipe, sha=None)
+
+    ledger = commands.add_parser("ledger", help="worker steps match the launch log")
+    # Resolved here, because main() changes to the repo root before the check runs.
+    ledger.add_argument(
+        "--ledger", type=lambda path: Path(path).resolve(), help="default: the ledger .supercook/active-run names"
+    )
+    ledger.set_defaults(handler=cmd_ledger)
     return parser
 
 

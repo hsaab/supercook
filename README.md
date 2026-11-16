@@ -77,7 +77,7 @@ Purple chips are subagents, each spawned with a fresh context window and a fixed
 
 **Test-driven, with the suite protected.** Failing tests are committed first, the implementing agent is forbidden from touching them, and the orchestrator restores any test file that gets modified anyway. That last part matters: an instruction alone does not stop an agent bending a test until it passes. ([Cursor's agent best practices](https://cursor.com/blog/agent-best-practices))
 
-**Boundaries are parent-checked after returns.** Every rule that matters has a check the coordinator runs once the agent returns, as a command in `scripts/guard.py`: test files untouched, changes inside the slice, red tests confirmed, the line budget. Prompts express intent; those checks are the control. This repo's own stop hook echoes the ledger's next open step, stays silent at a `[!]` pause, and never denies anything.
+**Boundaries are parent-checked after returns.** Every rule that matters has a check the coordinator runs once the agent returns, as a command in `scripts/guard.py`: test files untouched, changes inside the slice, red tests confirmed, the line budget. Prompts express intent; those checks are the control. The plugin's hooks only nudge: a `postToolUse` launch logger, and a stop hook that echoes the ledger's next open step and names checked worker steps with no logged launch, plus skips or inline marks the ledger rules do not allow. It stays silent at a `[!]` pause, asks for a launch only when that step's worker has not run yet, acts only while `.supercook/active-run` names a live run, and never denies anything.
 
 **Designed UI is checked twice.** Semantic regions, counts, and DOM order are
 test-first. Geometry, responsive behavior, visible data, and interactions are
@@ -108,9 +108,9 @@ git clone https://github.com/hsaab/supercook.git ~/.cursor/plugins/local/superco
 
 Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugins-locally) decide whether that checkout is the one that loads. Cursor skips a link in `~/.cursor/plugins/local` that points at a checkout elsewhere on disk, so clone into the folder rather than linking to it. And a marketplace install with the same name takes precedence over the local copy, so keep one install or the other: an old marketplace install hides a newer local checkout.
 
-Either way, reload the window, then confirm you see one skill (`supercook`) and seven agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` or `supercook-plan-optimizer` in that list means an older install is loaded too, or a stale copy sits in `~/.cursor/agents/`.
+Either way, reload the window, then confirm you see two skills (`supercook`, `setup-supercook`) and seven agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` or `supercook-plan-optimizer` in that list means an older install is loaded too, or a stale copy sits in `~/.cursor/agents/`.
 
-Every run opens with the copy it loaded, for example `supercook 0.6.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
+Every run opens with the copy it loaded, for example `supercook 0.7.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
 
 A skill folder mirrored on its own (for example a personal `~/.cursor/skills/supercook` synced to Cloud Agents) carries no agent files, because they live at the plugin root in `agents/`. On such a host, also copy the agents into your user subagent directory so Cursor lists them as named subagents (`/supercook-explorer`, `/supercook-implementer`, and so on):
 
@@ -131,6 +131,30 @@ A cloud VM cannot see your local home directory, so three things decide whether 
 
 - **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
 - **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
+- **Plugin hooks do not load on Cloud Agents.** [Cursor's hook docs](https://cursor.com/docs/agent/hooks#cloud-agent-support) list project, team, and enterprise sources for the cloud. Without them the run still follows the playbook, and `scripts/guard.py ledger` still cross-checks it before delivery. For the launch log and the stop nudge on a VM, clone the plugin to `~/.cursor/plugins/local/supercook` in the install step and commit this as the repo's `.cursor/hooks.json`. Neither hook can block a call, and each prints `{}` when the clone is missing:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "postToolUse": [
+      {
+        "command": "python3 -B \"$HOME/.cursor/plugins/local/supercook/scripts/launch_log.py\" 2>/dev/null || echo {}",
+        "matcher": "Task|Subagent|CreateAgent|CallDynamicTool",
+        "timeout": 5
+      }
+    ],
+    "stop": [
+      {
+        "command": "python3 -B \"$HOME/.cursor/plugins/local/supercook/scripts/ledger_followup.py\" 2>/dev/null || echo {}",
+        "loop_limit": 2,
+        "timeout": 5
+      }
+    ]
+  }
+}
+```
+
 - **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` and `rm` above in the environment's install step.
 
 To see what a run got, read its first line and the subagent types it lists. Seven `supercook-*` names, with no `supercook-assessor` or `supercook-plan-optimizer`, means the current agents are typed. Either of those two means the VM loaded an older install: refresh the marketplace, and run the `rm` above if the install step copies agents into `~/.cursor/agents/`. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same steps: the coordinator launches a worker for every worker step, at every tier, and runs a role itself only when the session has no spawn tool at all.
@@ -152,7 +176,7 @@ mkdir -p ~/.supercook
 curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/supercook/models.md -o ~/.supercook/models.md
 ```
 
-Keep the roles you want to change and delete the rest; write `inherit` to use the session model. The coordinator resolves the roster once and writes a `models:` line in the ledger. **Models are a preference, not a gate**: a launch that rejects a slug is relaunched on the session model, and "use opus for the implementer" applies from the next launch on. If you override the arena, keep the three contestants on different model families; their disagreement is the point of the cook-off.
+Keep the roles you want to change and delete the rest; write `inherit` to use the session model. The coordinator resolves the roster once and writes a `models:` line in the ledger. **Models are a preference, not a gate**: a launch that rejects a slug is relaunched on the session model, and "use opus for the implementer" applies from the next launch on. Run `/setup-supercook` once to check every roster slug against what your session can launch and to write a one-sentence delegation rule to the repo's `.cursor/rules/`. If you override the arena, keep the three contestants on different model families; their disagreement is the point of the cook-off.
 
 ## What it needs, and what happens without it
 
@@ -208,9 +232,10 @@ After plan mode, `/supercook use this plan` in the same chat is enough. No path 
 ```
 .cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
 agents/                       seven discoverable subagents, all supercook- prefixed
-hooks/                        this repo's own stop hook (the plugin ships no hooks)
+hooks/hooks.json              the plugin's two nudge-only hooks; their scripts are in scripts/
 scripts/guard.py              the coordinator's checks after a worker returns
-scripts/audit_runs.py         launch audit over your local chat transcripts
+scripts/run_folder.py         the run folder and ledger check the hooks and guard share
+scripts/audit_runs.py         launch audit over this workspace's chat transcripts
 tests/                        structural checks on the skill and agent docs
 assets/                       the pipeline diagram embedded above
 skills/supercook/
@@ -218,26 +243,28 @@ skills/supercook/
   models.md                   default roster; overrides in repo or home .supercook/models.md
   playbooks/                  one checklist per track
   references/                 one guide per step, opened when a step names it
+skills/setup-supercook/       /setup-supercook: roster check and the delegation rule
 ```
 
 ## Checking that runs delegate
 
-`scripts/audit_runs.py` reads the chat transcripts Cursor keeps under `~/.cursor/projects/` and reports, for every chat that attached the skill, which copy and version loaded, the subagent launches by type, hook denials the agent mentioned, and edits the coordinator made itself outside the run folder.
+During a run, the hooks log each supercook launch that returned to `.supercook/<run>/launches.jsonl`, and the stop hook and `python3 scripts/guard.py ledger` (before delivery) compare it with the ledger. A run in a worktree outside the workspace folders gets no log; its ledger rows count by the agent ids they record.
+
+`scripts/audit_runs.py` reads the chat transcripts Cursor keeps under `~/.cursor/projects/` for the current workspace and reports, for every chat that attached the skill, which copy and version loaded, the subagent launches by type, hook denials the agent mentioned, and edits the coordinator made itself outside the run folder.
 
 ```bash
-python3 scripts/audit_runs.py --since 2026-11-01          # per-chat report plus totals
-python3 scripts/audit_runs.py --since 2026-11-01 --json   # the same, as JSON
+python3 scripts/audit_runs.py --since 2026-11-01          # this workspace: per-chat report plus totals
+python3 scripts/audit_runs.py --all --since 2026-11-01    # every workspace
 ```
 
 Transcripts hold tool calls but not their results, so a denial only counts when the agent mentioned it. Edits made through the shell are not counted, `--since` compares each transcript's modification date, and runs that recorded `spawn none` are reported as solo and left out of the launch totals. Cloud Agent and Project runs are not in local transcripts.
 
 ## Development
 
-Stdlib Python only. Run all three suites before opening a PR:
+Stdlib Python only. Run both suites before opening a PR:
 
 ```bash
 python3 -m unittest discover -s tests
-python3 -m unittest discover -s hooks
 python3 -m unittest discover -s scripts
 ```
 

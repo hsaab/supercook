@@ -5,6 +5,7 @@ supercook parent runs it after a worker returns.
 """
 
 import hashlib
+import json
 import os
 import shlex
 import subprocess
@@ -174,11 +175,12 @@ class ScopeAfterImplementer(GuardRepo):
         self.assertIn("out of scope: docs/notes.md", result.stdout)
         self.assertNotIn("app_test", result.stdout)
 
-    def test_run_folders_are_exempt_but_the_tracked_roster_is_not(self) -> None:
+    def test_run_folders_and_the_setup_rule_are_exempt_but_the_tracked_roster_is_not(self) -> None:
         self.write(".supercook/models.md", "implementer: strong\n")
         self.git("add", "-f", ".supercook/models.md")
         self.start = self.commit("roster")
         self.write(".supercook/run/ledger.md", "# Ledger\n")
+        self.write(".cursor/rules/supercook-delegation.mdc", "---\nalwaysApply: true\n---\n")
         self.assertExit(self.scope(), 0)
         self.git("add", "-f", ".supercook/run/ledger.md")
         self.commit("keep ledger")
@@ -320,6 +322,45 @@ class RecipeIntegrity(GuardRepo):
         result = self.guard("recipe", "check", "recipe.md", "0" * 64)
         self.assertExit(result, 1)
         self.assertIn("recipe.md is missing", result.stdout)
+
+
+class LedgerBeforeDelivery(GuardRepo):
+    """Smoke tests; the ledger check itself is tested in process in test_run_folder.py."""
+
+    def seed(self, launched: list[str], later_steps: str = "") -> None:
+        run = self.repo / ".supercook" / "run"
+        run.mkdir(parents=True)
+        steps = "- [x] map the code: supercook-explorer (Task)\n- [x] implement: supercook-implementer (Task)\n"
+        steps += later_steps
+        (run / "ledger.md").write_text(f"# Ledger\n\n## Steps\n{steps}\n## Log\n", encoding="utf-8")
+        (run / "launches.jsonl").write_text("".join(json.dumps({"role": r}) + "\n" for r in launched), encoding="utf-8")
+        (self.repo / ".supercook" / "active-run").write_text(".supercook/run/ledger.md\n", encoding="utf-8")
+
+    def test_a_matching_log_passes_and_counts_by_role(self) -> None:
+        self.seed(["supercook-explorer", "supercook-explorer", "supercook-implementer"])
+        result = self.guard("ledger")
+        self.assertExit(result, 0)
+        self.assertIn("launched: explorer 2, implementer 1", result.stdout)
+
+    def test_a_checked_step_nobody_launched_fails_from_a_subfolder_too(self) -> None:
+        self.seed(["supercook-explorer"])
+        result = self.guard("ledger", cwd="src")
+        self.assertExit(result, 1)
+        self.assertIn("checked with no logged launch or agent id: step 2", result.stdout)
+
+    def test_a_relative_ledger_path_is_read_from_where_guard_ran(self) -> None:
+        self.seed(["supercook-explorer", "supercook-implementer"])
+        (self.repo / ".supercook" / "active-run").unlink()
+        self.assertExit(self.guard("ledger", "--ledger", "../.supercook/run/ledger.md", cwd="src"), 0)
+
+    def test_a_later_open_step_does_not_block_a_slice_pr(self) -> None:
+        self.seed(["supercook-explorer", "supercook-implementer"], "- [ ] slice 2 code: supercook-implementer\n")
+        self.assertExit(self.guard("ledger"), 0)
+
+    def test_no_live_run_could_not_run_and_says_how_to_point_at_one(self) -> None:
+        result = self.guard("ledger")
+        self.assertExit(result, 2)
+        self.assertIn("pass --ledger", result.stdout)
 
 
 if __name__ == "__main__":

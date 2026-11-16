@@ -22,7 +22,7 @@ A boundary in a prompt is a request; these checks are the control. `guard` below
 
 | After | Check |
 |---|---|
-| any worker | Read its diff yourself. Log the model actually used. |
+| any worker | Read its diff yourself. Log the agent id and the model actually used. |
 | explorer | Every question has a `file:line` or "not found". The broad launch's test command and test paths cite evidence (scripts, CI, runner config); record both in the header. |
 | planner, judge | Every slice has a scope list, a named verification, and an estimate under 500 or an `exception:`. Every `acceptance.md` criterion maps to a slice and a check. Supplied-plan mode also has `## Changes from your plan`, each line traceable to recon or the user's plan. |
 | test-designer | `guard scope --allow <test globs> --since <sha before launch>` passes. On red-first, `guard red --cmd '<test command>' --expect <red-evidence test names> --tests <test globs>` confirms red; when its `stub-patch` names a file, add `--patch <run folder>/red-stub.patch --stub <stub path>`, and each stub path must be one of the slice's files. The expected names are its journey assertions, not setup lines. Then commit the tests alone. |
@@ -37,7 +37,7 @@ On a host without `Task`, use the spawn tool it lists, name the worker `supercoo
 
 ## Solo mode
 
-With `spawn: none`, or after two failed launches, run each worker step yourself from that role's agent file, in order, marking it `inline (spawn none)` or `inline (launch failed: <error>)`. The steps, tier skips, and checks stay the same; the guarantees come from files and git instead of a second agent.
+Only when no spawn tool is listed (`spawn: none`), run each worker step yourself from that role's agent file, in order, marking it `inline (spawn none)`. A failed launch is never a reason: fix the brief or the model and launch again. The steps, tier skips, and checks stay the same; the guarantees come from files and git instead of a second agent.
 
 - No product file changes until the ledger exists and the verdict is logged, and no test file until `plan.md` exists or the plan step is a tier skip.
 - Each step leaves its file: `recon.md`, then `plan.md` reviewed once against the judge's criteria with a `## Strongest objection` section, then the tests committed alone, then `verify.md` written after the slice is committed from a fresh `git diff` and test run.

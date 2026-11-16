@@ -42,7 +42,7 @@ Each role is independent: `reviewer` and `review-implementer` left on `inherit` 
 1. Resolve the roster once, at ledger seed, merging per role across the three files. A missing override file is normal and not worth mentioning.
 2. Write one `models:` header line listing every key with its slug or `inherit`, so a resumed run reads it instead of re-resolving.
 3. Pass the slug verbatim as the launch's `model` field; leave the field out for `inherit`. Never substitute a "nearest" model.
-4. Do not pre-validate. If a launch rejects the model, relaunch once without it, log `inherit`, and tell the user once. Never block a run on a model name.
+4. Do not pre-validate during a run; `/setup-supercook` checks the roster ahead of time. If a launch rejects the model, relaunch once without it, log `inherit`, and tell the user once. Never block a run on a model name.
 
 **Mid-run changes** ("use opus for the implementer", "everything on the session model from here") win from the next launch on: update the `models:` line, log why, keep going.
 

@@ -7,12 +7,17 @@ frontmatter stays loadable, and the docs stay inside pstack-sized budgets.
 
 import json
 import re
+import sys
 import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 SKILL_DIR = REPO / "skills" / "supercook"
+SKILL_FILES = sorted((REPO / "skills").glob("*/SKILL.md"))
 AGENTS_DIR = REPO / "agents"
+
+sys.path.insert(0, str(REPO / "scripts"))
+import run_folder  # noqa: E402
 
 # Size budgets, in words, since each paragraph is one line. The skill regrew past 230
 # lines and 18 phase docs once; these keep the always-read file and each playbook near
@@ -28,7 +33,7 @@ YAML_PLAIN_SCALAR_BREAKERS = (": ", " #")
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 WORKER = re.compile(r"\bsupercook-[a-z]+(?:-[a-z]+)*\b")
-NOT_WORKERS = {"supercook-marketplace"}
+NOT_WORKERS = {"supercook-marketplace", "supercook-delegation"}
 # Removed agents may be named only as the sign of an older install, in these docs.
 REMOVED_AGENTS = {"supercook-assessor", "supercook-plan-optimizer"}
 OLDER_INSTALL_DOCS = (SKILL_DIR / "SKILL.md", REPO / "README.md")
@@ -55,7 +60,7 @@ def agent_files() -> list[Path]:
 
 
 def skill_docs() -> list[Path]:
-    return sorted(SKILL_DIR.rglob("*.md"))
+    return sorted((REPO / "skills").rglob("*.md"))
 
 
 def playbooks() -> list[Path]:
@@ -126,7 +131,7 @@ class PlaybookSteps(unittest.TestCase):
                 self.assertTrue(checklist(playbook))
 
     def test_tracks_that_change_code_launch_implementer_and_verifier_as_steps(self):
-        # The stop hook echoes a step written `<what>: supercook-<role>`, nested or not.
+        # The ledger check refuses a skip on implement or verify, nested or not.
         for track in TRACKS_THAT_CHANGE_CODE:
             steps = "\n".join(checklist(SKILL_DIR / "playbooks" / f"{track}.md"))
             for worker in ("supercook-implementer", "supercook-verifier"):
@@ -166,8 +171,8 @@ class SizeBudgets(unittest.TestCase):
             with self.subTest(doc=path.relative_to(REPO).as_posix()):
                 self.assertLessEqual(len(read(path).split()), limit)
 
-    def test_skill_md_stays_near_pstack_size(self):
-        self.assert_at_most([SKILL_DIR / "SKILL.md"], MAX_SKILL_WORDS)
+    def test_every_skill_md_stays_near_pstack_size(self):
+        self.assert_at_most(SKILL_FILES, MAX_SKILL_WORDS)
 
     def test_playbooks_stay_short(self):
         self.assert_at_most(playbooks(), MAX_PLAYBOOK_WORDS)
@@ -184,17 +189,35 @@ class Packaging(unittest.TestCase):
                 self.assertIn(f"\nname: {agent.stem}\n", read(agent))
 
     def test_descriptions_stay_loadable_frontmatter(self):
-        for described in [SKILL_DIR / "SKILL.md", *agent_files()]:
+        for described in [*SKILL_FILES, *agent_files()]:
             description = frontmatter_description(read(described))
             with self.subTest(file=described.name):
                 self.assertLessEqual(len(description), MAX_DESCRIPTION_CHARS)
                 for breaker in YAML_PLAIN_SCALAR_BREAKERS:
                     self.assertNotIn(breaker, description)
 
-    def test_plugin_manifest_ships_no_hooks_and_a_semver_version(self):
+    def test_plugin_manifest_has_a_semver_version(self):
         manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
-        self.assertNotIn("hooks", manifest)
         self.assertRegex(manifest["version"], r"^\d+\.\d+\.\d+$")
+
+    def test_every_skill_frontmatter_names_its_directory(self):
+        for skill in SKILL_FILES:
+            with self.subTest(skill=skill.parent.name):
+                self.assertIn(f"\nname: {skill.parent.name}\n", read(skill))
+
+
+class LedgerCheckSeesEveryWorkerStep(unittest.TestCase):
+    def test_every_worker_row_in_every_playbook_parses_to_known_roles(self):
+        known = {path.stem for path in agent_files()}
+        for playbook in playbooks():
+            rows = checklist(playbook)
+            parsed = {row.text: row.roles for row in run_folder.steps("## Steps\n" + "\n".join(rows))}
+            for line in rows:
+                if ": supercook-" in line:
+                    text = line.split("] ", 1)[1].strip()
+                    with self.subTest(playbook=playbook.name, step=text[:60]):
+                        self.assertTrue(parsed.get(text), "the ledger check would not see this worker row")
+                        self.assertLessEqual(set(parsed[text]), known)
 
 
 if __name__ == "__main__":

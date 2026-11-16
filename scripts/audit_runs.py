@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Audit local /supercook runs from Cursor agent transcripts (stdlib only).
 
-For each top-level chat that attached the supercook skill, report which SKILL.md
-was loaded and that plugin's version, subagent launches by type, hook denials the
-agent mentioned, and the parent's own edits to files outside the run folder.
+For each top-level chat in the current workspace that attached the supercook skill,
+report which SKILL.md was loaded and that plugin's version, subagent launches by
+type, hook denials the agent mentioned, and the parent's own edits to files outside
+the run folder. `--all` widens it to every project under `--root`.
 
 Transcripts record tool calls and the agent's text, not tool results, so a hook
 denial shows up only when the agent says so. The version is the one the chat
@@ -12,7 +13,7 @@ disk now, which for a local checkout can be newer than what the chat ran. Edits
 made through Shell (`sed -i`, heredocs) are not counted. `--since` compares the
 transcript file's modification date, not the date the chat started.
 
-Usage: python3 scripts/audit_runs.py [--root DIR] [--since YYYY-MM-DD] [--json] [FILE ...]
+Usage: python3 scripts/audit_runs.py [--workspace DIR] [--all] [--root DIR] [--since YYYY-MM-DD] [--json] [FILE ...]
 """
 
 from __future__ import annotations
@@ -20,22 +21,22 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+# The audit runs from the installed plugin folder; never leave __pycache__ there.
+sys.dont_write_bytecode = True
+import run_folder  # noqa: E402
+
 DEFAULT_ROOT = Path.home() / ".cursor" / "projects"
 SKILL_PATH = re.compile(r"Skill Name: supercook\s*\nPath: (\S+/skills/supercook/SKILL\.md)")
-SPAWN_TOOLS = {"Task", "Subagent", "CreateAgent"}
 EDIT_TOOLS = {"Write", "StrReplace", "Edit", "MultiEdit", "EditNotebook", "Delete"}
 EDIT_PATH_KEYS = ("path", "file_path", "target_file", "target_notebook")
 PATCH_FILE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+)$", re.MULTILINE)
-ROLE_NAME = re.compile(r"^(supercook-[a-z]+(?:-[a-z]+)*)\b")
-# The 0.5 fallback brief opens with this line; a mention later in a prompt names no launch.
-FILE_POINTER = re.compile(r"^Read \S*agents/(supercook-[a-z]+(?:-[a-z]+)*)\.md")
-POINTER_TYPES = {"generalPurpose", "untyped"}
 VERSION_LINE = re.compile(r"^supercook (\S+) from \S+", re.MULTILINE)
 SPAWN_NONE = re.compile(r"\|\s*spawn:?\s+none\b")
 DENIAL = re.compile(
@@ -46,11 +47,31 @@ DENIAL = re.compile(
 NEGATION = re.compile(r"\b(?:not|never|no)\b|n['’]t\b", re.IGNORECASE)
 
 
-def iter_transcripts(root: Path) -> Iterable[Path]:
+def iter_transcripts(root: Path, project: str = "*") -> Iterable[Path]:
     """Top-level chat transcripts only; subagent transcripts live one folder deeper."""
-    for path in sorted(root.glob("*/agent-transcripts/*/*.jsonl")):
+    for path in sorted(root.glob(f"{project}/agent-transcripts/*/*.jsonl")):
         if path.stem == path.parent.name:
             yield path
+
+
+def project_folder(workspace: Path) -> str:
+    """The folder name Cursor keeps a workspace's chats under: its path with every other character run as `-`."""
+    return re.sub(r"[^A-Za-z0-9]+", "-", str(workspace)).strip("-")
+
+
+def workspace_transcripts(root: Path, workspace: Path) -> Iterable[Path]:
+    """Chats of the project Cursor keeps for this workspace or its git top level, never a parent like `~`."""
+    try:
+        top = subprocess.run(
+            ["git", "-C", str(workspace), "rev-parse", "--show-toplevel"], capture_output=True, text=True
+        ).stdout.strip()
+    except OSError:
+        top = ""
+    for folder in [workspace, *([Path(top)] if top else [])]:
+        project = project_folder(folder)
+        if project and (root / project).is_dir():
+            return iter_transcripts(root, project)
+    return iter(())
 
 
 def load_entries(path: Path) -> list[dict[str, Any]]:
@@ -89,47 +110,13 @@ def install_label(skill_path: str) -> str:
     return "other"
 
 
-def _as_dict(value: Any) -> dict[str, Any]:
-    """CallDynamicTool arguments arrive as a dict or as a JSON string."""
-    if isinstance(value, str):
-        try:
-            value = json.loads(value)
-        except json.JSONDecodeError:
-            return {}
-    return value if isinstance(value, dict) else {}
-
-
-def unwrap(tool_name: str, tool_input: Any) -> tuple[str, Any]:
-    """A CallDynamicTool call stands for the tool it names, with that tool's arguments."""
-    if tool_name == "CallDynamicTool" and isinstance(tool_input, dict):
-        return str(tool_input.get("toolName")), _as_dict(tool_input.get("arguments"))
-    return tool_name, tool_input
-
-
-def launch_role(tool_input: dict[str, Any]) -> str | None:
-    """The supercook role a launch runs, in any shape the docs have prescribed, else None.
-
-    Typed (`subagent_type`), 0.4 `custom` plus `name`, 0.3.10 role leading the
-    `description`, and the 0.5 generalPurpose brief that opens by pointing at the agent file.
-    """
-    kind = str(tool_input.get("subagent_type") or tool_input.get("name") or "untyped")
-    for value in (kind, tool_input.get("name"), tool_input.get("description")):
-        match = ROLE_NAME.match(str(value or ""))
-        if match:
-            return match.group(1)
-    if kind in POINTER_TYPES:
-        pointer = FILE_POINTER.match(str(tool_input.get("prompt") or "").lstrip())
-        if pointer:
-            return pointer.group(1)
-    return None
-
-
 def launch_label(tool_name: str, tool_input: dict[str, Any]) -> str | None:
     """Name a spawn call by its subagent type, plus the supercook role when the type is not that role."""
-    if tool_name not in SPAWN_TOOLS:
+    call = run_folder.launch_call(tool_name, tool_input)
+    if call is None:
         return None
-    kind = str(tool_input.get("subagent_type") or tool_input.get("name") or "untyped")
-    role = launch_role(tool_input)
+    kind = str(call.get("subagent_type") or call.get("name") or "untyped")
+    role = run_folder.launch_role(call)
     return f"{kind}:{role}" if role and role != kind else kind
 
 
@@ -176,7 +163,7 @@ def audit_chat(path: Path) -> dict[str, Any] | None:
                 solo = solo or bool(SPAWN_NONE.search(text))
                 denials.extend(m.group(0) for m in DENIAL.finditer(text) if not NEGATION.search(m.group(0)))
             elif item.get("type") == "tool_use":
-                name, tool_input = unwrap(str(item.get("name")), item.get("input"))
+                name, tool_input = run_folder.unwrap(str(item.get("name")), item.get("input"))
                 tool_input = tool_input if isinstance(tool_input, (dict, str)) else {}
                 solo = solo or bool(SPAWN_NONE.search(json.dumps(tool_input)))
                 label = launch_label(name, tool_input) if isinstance(tool_input, dict) else None
@@ -264,13 +251,16 @@ def collect(paths: Iterable[Path], since: date | None = None) -> list[dict[str, 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("files", nargs="*", type=Path, help="transcript files; default: every chat under --root")
-    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
+    parser.add_argument("files", nargs="*", type=Path, help="transcript files; default: this workspace's chats")
+    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="folder holding Cursor's project folders")
+    parser.add_argument("--workspace", type=Path, default=Path.cwd(), help="default: the current directory")
+    parser.add_argument("--all", action="store_true", help="every project under --root, not just the workspace")
     parser.add_argument("--since", type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(),
                         help="skip transcripts last modified before this date")
     parser.add_argument("--json", action="store_true", help="print one JSON object instead of the report")
     args = parser.parse_args(argv)
-    chats = collect(args.files or iter_transcripts(args.root), args.since)
+    found = iter_transcripts(args.root) if args.all else workspace_transcripts(args.root, args.workspace.resolve())
+    chats = collect(args.files or found, args.since)
     summary = summarize(chats)
     if args.json:
         print(json.dumps({"summary": summary, "chats": chats}, indent=2))
