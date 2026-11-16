@@ -24,7 +24,7 @@ Compare every slug any of the three resolutions picked with the detected set. Fo
 
 ### 4. Write the fixes
 
-Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file, with two exceptions. A slug from the shipped `skills/supercook/models.md` is never edited there: its fix goes to `~/.supercook/models.md`, created if needed, and also to `<workspace-root>/.supercook/models.md` when that file exists and does not name the role, since it is the only override a cloud run sees. A slug from a `<plugin-root>/.supercook/models.md` outside this workspace is never edited there either: name the role and slug and say the fix belongs in the supercook repo's committed `.supercook/models.md`.
+Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file; never edit shipped `skills/supercook/models.md`. When `roster:repo` or `roster:machine` picked a slug from that shipped file, write the fix to `~/.supercook/models.md` (created if needed) and also to `<workspace-root>/.supercook/models.md` when that file exists and does not name the role, since it is the only override a cloud run sees. For `roster:supercook` and a slug from that shipped file, write nothing: name the role and slug, say that choice falls back to `inherit` at launch, and say the lasting fix is an edit to `skills/supercook/models.md` in the supercook repo.
 
 ### 5. Write the delegation rule
 
