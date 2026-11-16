@@ -45,7 +45,6 @@ ROSTER_CHOICES = ("roster:repo", "roster:machine", "roster:supercook")
 ROSTER_ALIAS = "roster:local"
 REPO_ROSTER_PATH = "<workspace-root>/.supercook/models.md"
 HOME_ROSTER_PATH = "~/.supercook/models.md"
-PLUGIN_ROSTER_PATH = "<plugin-root>/.supercook/models.md"
 COMMITTED_ROSTER = REPO / ".supercook" / "models.md"
 LEDGER_VERSION_LINE = re.compile(r"^supercook: (\d+\.\d+\.\d+) from \S+ \| roster: (\S+)$", re.MULTILINE)
 
@@ -239,7 +238,7 @@ class RosterChoice(unittest.TestCase):
         files = {row.choice: row.files for row in rows}
         self.assertEqual(files["roster:repo"], [REPO_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
         self.assertEqual(files["roster:machine"], [HOME_ROSTER_PATH, "this file"])
-        self.assertEqual(files["roster:supercook"], [PLUGIN_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
+        self.assertEqual(files["roster:supercook"], ["this file"])
         self.assertEqual([row.choice for row in rows if row.default], ["roster:repo"])
 
     def test_the_ledger_records_a_roster_value_the_choice_defines(self):
@@ -275,6 +274,64 @@ class RosterChoice(unittest.TestCase):
         text = read(REPO / "skills" / "setup-supercook" / "SKILL.md")
         for choice in ROSTER_CHOICES:
             self.assertIn(f"`{choice}`", text)
+
+    def test_roster_supercook_reads_none_of_the_override_files(self):
+        files = next(row.files for row in roster_rows() if row.choice == "roster:supercook")
+        for path in (REPO_ROSTER_PATH, HOME_ROSTER_PATH, "<plugin-root>/.supercook/models.md"):
+            with self.subTest(path=path):
+                self.assertNotIn(path, files)
+
+    def test_a_typo_roster_is_named_once_and_plugin_root_is_not_a_fallback(self):
+        choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
+        self.assertIn(
+            "Any other value is named once and runs as `machine`, so a typo never hands the run to a committed file.",
+            choosing,
+        )
+        with self.subTest("shipped models.md drops the plugin-root roster"):
+            self.assertNotIn("<plugin-root>/.supercook/models.md", read(SKILL_DIR / "models.md"))
+        with self.subTest("Choosing a roster drops plugin-root"):
+            self.assertNotIn("<plugin-root>", choosing)
+
+    def test_setup_supercook_routes_a_shipped_slug_fix_by_roster_choice(self):
+        text = read(REPO / "skills" / "setup-supercook" / "SKILL.md")
+        for choice in ROSTER_CHOICES:
+            with self.subTest(choice=choice):
+                self.assertIn(f"`{choice}`", text)
+        with self.subTest("no plugin-root roster"):
+            self.assertNotIn("<plugin-root>/.supercook/models.md", text)
+        parts = text.split("\n### 4. Write the fixes\n", 1)
+        if len(parts) < 2:
+            raise AssertionError("setup-supercook has no ### 4. Write the fixes section")
+        fixes = parts[1].split("\n### ", 1)[0]
+        with self.subTest("repo and machine write home"):
+            self.assertIn("`roster:repo`", fixes)
+            self.assertIn("`roster:machine`", fixes)
+            self.assertIn("~/.supercook/models.md", fixes)
+            self.assertIn("<workspace-root>/.supercook/models.md", fixes)
+        with self.subTest("supercook inherit fallback"):
+            self.assertIn("`roster:supercook`", fixes)
+            self.assertIn("`inherit`", fixes)
+            self.assertIn("skills/supercook/models.md", fixes)
+
+    def test_readme_roster_supercook_usage_is_shipped_defaults_only(self):
+        line = next(
+            (
+                row.strip()
+                for row in read(REPO / "README.md").splitlines()
+                if row.strip().startswith("/supercook roster:supercook")
+            ),
+            None,
+        )
+        self.assertIsNotNone(line, "README.md has no usage line that starts with /supercook roster:supercook")
+        for token in ("home", "~/.supercook", "committed roster"):
+            with self.subTest(token=token):
+                self.assertNotIn(token, line)
+
+    def test_committed_models_says_roster_supercook_skips_this_file(self):
+        header = read(COMMITTED_ROSTER).split("## The roster", 1)[0]
+        sentence = next((part for part in re.split(r"(?<=[.!?])\s+", header) if "roster:supercook" in part), None)
+        self.assertIsNotNone(sentence, "the committed roster header has no sentence containing roster:supercook")
+        self.assertIn("skip", sentence)
 
 
 class SizeBudgets(unittest.TestCase):
