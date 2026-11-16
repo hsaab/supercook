@@ -4,15 +4,17 @@ Every role ships with a model. The roster is a default, never a gate: a role who
 
 ## Where to edit
 
-The parent merges three files **per role**, highest tier wins:
+The parent merges the files in the chosen row **per role**: the first file that names a role decides it, and a missing file is skipped. The [roster choice](#choosing-a-roster) picks the row.
 
-| Precedence | File | Purpose |
-|---|---|---|
-| 1 (wins) | `<workspace-root>/.supercook/models.md` | Optional override for this checkout. Commit it so cloud agents and other clones pick it up. Skipped under `roster:local`. |
-| 2 | `~/.supercook/models.md` | Your choices outside any repo. |
-| 3 | this file | The shipped default for every role. |
+| Roster choice | Files, highest first |
+|---|---|
+| `roster:repo` (default) | `<workspace-root>/.supercook/models.md`, `~/.supercook/models.md`, this file |
+| `roster:machine` | `~/.supercook/models.md`, this file |
+| `roster:supercook` | `<plugin-root>/.supercook/models.md`, `~/.supercook/models.md`, this file |
 
-Edit the home or repository file, not this one: a marketplace install lives in a cache directory the next update replaces. The home file does not exist until you create it:
+`<workspace-root>/.supercook/models.md` is an optional override for this checkout; commit it so cloud agents and other clones pick it up. `~/.supercook/models.md` holds your choices outside any repo. `<plugin-root>/.supercook/models.md` is the roster committed in the supercook plugin repo. This file is the shipped default for every role.
+
+Edit the home or repository file, not a file inside the installed plugin: a marketplace install lives in a cache directory the next update replaces. The home file does not exist until you create it:
 
 ```bash
 mkdir -p ~/.supercook
@@ -23,7 +25,7 @@ Then keep only the roles you want to change; any role a higher file does not nam
 
 ## Choosing a roster
 
-A `roster:` word among the ask's leading modifiers picks which [files above](#where-to-edit) merge. `repo`, the default, merges all three. `local` skips the repository file, so your home file decides and the shipped defaults fill every role it leaves out. Any other value is named once and runs as `local`, so a typo never hands the run to the committed file. A `roster:` word later in the task stays task text; say once that it chose nothing. The ledger's `supercook:` line records the choice as `roster: repo` or `roster: local`.
+A `roster:` word among the ask's leading modifiers picks a row of the [table above](#where-to-edit), and the ledger's `supercook:` line records it as `roster: repo`, `roster: machine`, or `roster: supercook`. `roster:local` is an alias of `machine`: accept it without a warning and record `roster: machine`; a ledger written by 0.8.0 that says `roster: local` also means `machine`. The plugin root is the folder two above `skills/supercook/SKILL.md`; if `<plugin-root>/.supercook/models.md` is missing, say so once and run as `machine`. Any other value is named once and runs as `machine`, so a typo never hands the run to a committed file. A `roster:` word later in the task stays task text; say once that it chose nothing.
 
 ## The roster
 

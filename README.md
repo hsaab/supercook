@@ -110,7 +110,7 @@ Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugi
 
 Either way, reload the window, then confirm you see two skills (`supercook`, `setup-supercook`) and seven agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` or `supercook-plan-optimizer` in that list means an older install is loaded too, or a stale copy sits in `~/.cursor/agents/`.
 
-Every run opens with the copy it loaded, for example `supercook 0.8.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
+Every run opens with the copy it loaded, for example `supercook 0.9.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
 
 A skill folder mirrored on its own (for example a personal `~/.cursor/skills/supercook` synced to Cloud Agents) carries no agent files, because they live at the plugin root in `agents/`. On such a host, also copy the agents into your user subagent directory so Cursor lists them as named subagents (`/supercook-explorer`, `/supercook-implementer`, and so on):
 
@@ -169,7 +169,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 Nine roster keys, one line each: `standard` (planner, test-designer, verifier), the three arena contestants, the plan judge, implementer, explorer, `reviewer` (the external reviewers on the review track), and `review-implementer`. Each ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
 
-Three files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional, commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped file. Open an ask with `roster:local` to skip the repo file for that run ([choosing a roster](skills/supercook/models.md#choosing-a-roster)). Edit an override, not the plugin copy, because a marketplace update replaces the plugin directory.
+Files merge per role, highest tier wins for that role only: `<workspace-root>/.supercook/models.md` (optional; commit it so cloud agents and other clones pick it up), then `~/.supercook/models.md`, then the shipped defaults. `roster:machine` skips the workspace file. `roster:supercook` reads the plugin's own committed `.supercook/models.md` in the workspace file's place, even from another repo. See [choosing a roster](skills/supercook/models.md#choosing-a-roster). Edit an override, not a file inside the installed plugin, because a marketplace update replaces the plugin directory.
 
 ```bash
 mkdir -p ~/.supercook
@@ -203,7 +203,8 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 /supercook no PR <what you want>          # implement and verify, do not open a PR
 /supercook no commits <what you want>     # leave the changes uncommitted
 /supercook keep ledger <what you want>    # commit the ledger so another machine can resume
-/supercook roster:local <what you want>   # models from ~/.supercook/models.md, then the shipped defaults; skips the repo's
+/supercook roster:machine <what you want> # models from ~/.supercook/models.md, then the shipped defaults; skips the repo's
+/supercook roster:supercook <what you want> # models from the plugin's committed roster, then home, then shipped
 /supercook <what you want> and merge it   # carry on through the merge
 /supercook merge PR 412                   # drive an existing PR to merged, nothing to build
 /supercook review                         # run Bugbot, security, and Thermos reviews on each slice PR and fix the real findings

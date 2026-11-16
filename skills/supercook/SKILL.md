@@ -88,7 +88,7 @@ Parse the ask before classifying. First match wins:
 
 A long kickoff, coordinator brief, or pasted checklist gives you spec pointers. It is not a plan, recon, or a verdict. Every host (chat, Project worker, Cloud Agent) still routes, classifies, and seeds the ledger before editing product code. Never copy agent files into the user's repo.
 
-**Scope modifiers** lead the ask, in any order: `plan only`, `no PR`, `no commits` set the stop point; `keep ledger` commits the ledger so another machine can resume it; `roster:local` or `roster:repo` picks the [model roster](models.md#choosing-a-roster).
+**Scope modifiers** lead the ask, in any order: `plan only`, `no PR`, `no commits` set the stop point; `keep ledger` commits the ledger so another machine can resume it; a `roster:` word picks the [model roster](models.md#choosing-a-roster): `roster:repo` (default), `roster:machine`, or `roster:supercook`.
 
 ## Autonomy
 
