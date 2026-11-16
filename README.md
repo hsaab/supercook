@@ -94,7 +94,7 @@ This repo is its own Cursor marketplace, so the shortest path is to add it once 
 cursor-agent plugin marketplace add https://github.com/hsaab/supercook
 ```
 
-Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`, and install it. When new commits land, pull them in with:
+Open Customize in the sidebar, find **Supercook** under `supercook-marketplace`, and install it. Cursor does not follow pushes to this repo: the marketplace keeps serving the commit it last indexed, to new installs too, until someone re-indexes it. When new commits land, re-index and reload the window:
 
 ```bash
 cursor-agent plugin marketplace update supercook-marketplace
@@ -268,6 +268,14 @@ Stdlib Python only. Run both suites before opening a PR:
 python3 -m unittest discover -s tests
 python3 -m unittest discover -s scripts
 ```
+
+After a release merges to `main`, re-index the marketplace so new installs get it and existing installs pick it up on their next window reload:
+
+```bash
+cursor-agent plugin marketplace update supercook-marketplace
+```
+
+After the reload, Cursor's `Cursor Plugins` log shows `Adding enabled plugin: supercook from <sha>`; that SHA should be the new `main`.
 
 ## License
 
