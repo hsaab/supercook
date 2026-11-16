@@ -12,7 +12,7 @@ Validate the roster, then write one rule. Re-running is safe.
 
 ### 1. Resolve the roster
 
-Resolve every role twice, once per [roster choice](../supercook/models.md#choosing-a-roster): `roster:repo` and `roster:local`. Note the file each slug came from. `inherit` is always valid.
+Resolve every role three times, once per [roster choice](../supercook/models.md#choosing-a-roster): `roster:repo`, `roster:machine`, and `roster:supercook`. Note the file each slug came from. `inherit` is always valid.
 
 ### 2. Detect launchable models
 
@@ -20,11 +20,11 @@ List the model slugs you can pass to `Task` in this session. If you cannot detec
 
 ### 3. Validate
 
-Compare every slug either resolution picked with the detected set. For each miss, name the role and the slug, offer the closest detected slug of the same family (highest effort at or below the original), and ask: use it, pick another, or `inherit`. Never substitute silently. Keep `arena-a`, `arena-b`, and `arena-c` on different families when you can.
+Compare every slug any of the three resolutions picked with the detected set. For each miss, name the role and the slug, offer the closest detected slug of the same family (highest effort at or below the original), and ask: use it, pick another, or `inherit`. Never substitute silently. Keep `arena-a`, `arena-b`, and `arena-c` on different families when you can.
 
 ### 4. Write the fixes
 
-Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file. A fix to a shipped default goes to `~/.supercook/models.md`, created if needed, which both choices read. Add it to `<workspace-root>/.supercook/models.md` too when that file exists and does not name the role, since it is the only override a cloud run sees. Never edit the plugin copy.
+Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file. A fix to a shipped default goes to `~/.supercook/models.md`, created if needed, which every choice reads. Add it to `<workspace-root>/.supercook/models.md` too when that file exists and does not name the role, since it is the only override a cloud run sees. When the miss came from `<plugin-root>/.supercook/models.md`, write there only if that path is the same file as `<workspace-root>/.supercook/models.md`. Otherwise name the role and slug and say the fix belongs in the supercook repo's committed `.supercook/models.md`. Never edit the shipped `skills/supercook/models.md`, or a plugin copy outside this workspace.
 
 ### 5. Write the delegation rule
 
