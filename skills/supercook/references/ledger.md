@@ -20,10 +20,10 @@ The ledger is the run's memory. When context is compacted or a session restarts,
 ```markdown
 # Ledger: add rate limiting to public API
 run-id: 2026-07-29-rate-limit-a4f2 | repo: git@github.com:acme/api.git | branch: supercook/rate-limit
-supercook: 0.9.0 from ~/.cursor/plugins/local/supercook | roster: repo
+supercook: 0.9.1 from ~/.cursor/plugins/local/supercook | roster: repo
 tier: complex | track: feature | big-change: yes
 spawn: typed | tests: `pnpm vitest run` | test-paths: **/*.test.ts
-models: standard grok-4.7-high | arena-a grok-4.7-high | arena-b composer-2.5 | arena-c grok-4.7-high | plan-judge grok-4.7-high | implementer composer-2.5 | explorer composer-2.5 | reviewer grok-4.7-high | review-implementer composer-2.5
+models: standard claude-opus-5-5-high | arena-a claude-fable-5-2-high | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-xhigh | plan-judge claude-opus-5-5-high | implementer claude-sonnet-5-5-high | explorer composer-2.5 | reviewer claude-opus-5-5-high | review-implementer claude-sonnet-5-5-high
 done: every public route answers a 101st request in one minute with a 429, and the suite is green
 
 ## Steps
@@ -31,9 +31,9 @@ done: every public route answers a 101st request in one minute with a 429, and t
 - [x] design doc, big-change only (lite, approved 09:41)
 - [x] plan.md names the data shape and the user journeys: three supercook-arena-runner launches then supercook-plan-judge (4 launches via Task, judge 9e41d2c7-3b58-4a06-b1f9-60c2a8e5d713, 10:02)
 - [ ] each slice in plan order, closed before the next starts (yours)
-  - [x] slice 1 journey tests land red before the code: supercook-test-designer (Task 4d7a0e19-c2b6-4f83-9a51-e8f3b7c06d24, grok-4.7-high, tests 3c1d9e0)
-  - [x] slice 1 code, middleware skeleton: supercook-implementer (Task 2f8b3a60-14c7-4d95-b0e2-97a1c5d3e801, composer-2.5, 214 reviewable / 231 raw)
-  - [x] slice 1 matches its plan rows: supercook-verifier (Task b6c39f02-7e1d-4a58-8d04-1f9a2e6c7b35, grok-4.7-high, verdict: pass)
+  - [x] slice 1 journey tests land red before the code: supercook-test-designer (Task 4d7a0e19-c2b6-4f83-9a51-e8f3b7c06d24, claude-opus-5-5-high, tests 3c1d9e0)
+  - [x] slice 1 code, middleware skeleton: supercook-implementer (Task 2f8b3a60-14c7-4d95-b0e2-97a1c5d3e801, claude-sonnet-5-5-high, 214 reviewable / 231 raw)
+  - [x] slice 1 matches its plan rows: supercook-verifier (Task b6c39f02-7e1d-4a58-8d04-1f9a2e6c7b35, claude-opus-5-5-high, verdict: pass)
   - [x] slice 1 PR opens (PR #241)
   - [ ] slice 2 journey tests land red before the code, redis token bucket: supercook-test-designer
 
