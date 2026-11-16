@@ -4,24 +4,24 @@ A question to answer. Nothing ships.
 
 ## Steps
 
-Track these in the todo list. This track has no ledger file, for the reason below.
-
-The explore step is a `supercook-explorer` launch on this track too. A thin or wrong explorer return is a fresh relaunch with a corrected question list and the roster model. This track stays read-only.
+Track these in the todo list. This track has no ledger file, for the reason below. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] restate the question precisely, including what would count as an answer
-- [ ] explore with citations, file and line for every claim
-- [ ] answer in plain language, with the code as evidence
+- [ ] restate the question precisely, including what would count as an answer (yours)
+- [ ] explore with citations, file and line for every claim: supercook-explorer, one launch per area, in parallel when there are several (its context reads the code, yours holds the question)
+- [ ] answer in plain language, with the code as evidence (yours, after you open the cited lines)
 - [ ] say what is unknown rather than filling it with a guess
 - [ ] give a recommendation when asked to choose, with the tradeoff named
 ```
+
+A thin or wrong explorer return is a fresh relaunch with a corrected question list. This track stays read-only.
 
 ## Phases
 
 | Phase | Runs? |
 |---|---|
 | 0 intake | partly: probe capabilities and note the question. No worktree, no run folder, no ledger file, no exclude write |
-| 1 assess | yes |
+| 1 assess | yes, yours |
 | 2 recon | yes, this is the whole job |
 | 3 design doc | no |
 | 4 plan | no |

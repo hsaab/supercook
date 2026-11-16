@@ -4,11 +4,11 @@ The user already wrote a plan. Tighten it, then run the standard pipeline withou
 
 ## Trigger and entry
 
-**Trigger: the user asked to implement a plan they already wrote.** In the invocation (`/supercook use this plan`, `/supercook implement this plan`, `/supercook implement .cursor/plans/rate-limiting.md`), or by attaching a plan-mode markdown file and asking supercook to carry it out. Nothing else selects this track. The assessor never routes here on its own.
+**Trigger: the user asked to implement a plan they already wrote.** In the invocation (`/supercook use this plan`, `/supercook implement this plan`, `/supercook implement .cursor/plans/rate-limiting.md`), or by attaching a plan-mode markdown file and asking supercook to carry it out. Nothing else selects this track. Phase 1 never routes here on its own.
 
 The common flow is plan mode, then `/supercook use this plan` in the same chat, with no path. A path is optional.
 
-**This track skips the assessor.** Process is standard-shaped: recon, optimizer, tests, implement, verify, deliver. The arena never runs, even when the supplied plan would have been complex. Phase 3 is skipped; the supplied plan is the alignment. Phase 9 merge stays opt-in, same as everywhere else.
+**This track skips phase 1.** Process is standard-shaped: recon, optimizer, tests, implement, verify, deliver. The arena never runs, even when the supplied plan would have been complex. Phase 3 is skipped; the supplied plan is the alignment. Phase 9 merge stays opt-in, same as everywhere else.
 
 Tier collapse does not drop this track to implement-plus-verify. A supplied plan still needs recon (so the optimizer can check it against the code) and slice-shaped tests.
 
@@ -29,18 +29,18 @@ Once the run folder exists, copy the chosen source verbatim into it as `user-pla
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] pin the supplied plan as user-plan.md and echo its title
-- [ ] recon the files and areas the plan names, plus the test command
-- [ ] optimizer writes plan.md without changing the user's approach
-- [ ] tests, or an executable recipe without a runner, land before implementation
-- [ ] supplied UI design is resolved into a contract and pinned by structure tests
-- [ ] implement slice by slice, each one shippable on its own
-- [ ] no opportunistic refactors in the diff
-- [ ] the work lands end to end on the real artifact, not just in unit tests
-- [ ] every changed UI route passes its rendered smoke before delivery
+- [ ] pin the supplied plan as user-plan.md and echo its title (yours)
+- [ ] recon the files and areas the plan names, plus the test command: supercook-explorer, one launch per area (the optimizer needs ground truth, not your memory of the plan)
+- [ ] plan.md tightens the user's plan without changing its approach: supercook-plan-optimizer (you check it against the user's plan, so you do not write it)
+- [ ] tests, or an executable recipe without a runner, land before implementation: supercook-test-designer (it owns every test edit)
+- [ ] supplied UI design is resolved into a contract (yours) and pinned by structure tests (supercook-test-designer)
+- [ ] implement slice by slice, each one shippable on its own: supercook-implementer, one launch per slice (you review its diff, so you do not write it)
+- [ ] no opportunistic refactors in the diff: your scope guard on every implementer return
+- [ ] the work lands end to end on the real artifact, not just in unit tests: supercook-verifier, a fresh launch (it did not write the code)
+- [ ] every changed UI route passes its rendered smoke before delivery (yours)
 ```
 
 ## Phases
@@ -48,7 +48,7 @@ Copy these into the ledger verbatim.
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes. Pin `user-plan.md` once the run folder exists. Echo the plan title |
-| 1 assess | no. The track is user-selected; skip the assessor |
+| 1 assess | no. The track is user-selected |
 | 2 recon | yes, scoped to the files and areas the plan names, plus the test command and test path patterns |
 | 3 design doc | no. The supplied plan is the alignment |
 | 4 plan | yes, `supercook-plan-optimizer` only. No planner, no arena, no judge |

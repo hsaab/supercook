@@ -5,8 +5,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-_ROSTER_PHASES = ("assess", "recon", "plan", "test-first", "implement", "verify")
-_OPEN_ROW = re.compile(r"^- \[ \] (" + "|".join(_ROSTER_PHASES) + r"):")
+# Assess is owed before any worker: recon or the implementer depends on its verdict.
+_OWED_PHASES = ("assess", "recon", "plan", "test-first", "implement", "verify")
+_OPEN_ROW = re.compile(r"^- \[ \] (" + "|".join(_OWED_PHASES) + r"):")
+_BLOCKED_ROW = re.compile(r"^- \[!\] ")
 
 
 def resolve_ledger(workspace_roots: list[str]) -> Path | None:
@@ -47,12 +49,13 @@ def resolve_ledger(workspace_roots: list[str]) -> Path | None:
 
 
 def first_open_row(ledger_text: str) -> str | None:
-    """Return the first unchecked roster phase row under ## Phases, verbatim.
+    """Return the first unchecked assess or worker phase row under ## Phases, verbatim.
 
     Only top-level rows count. Indented rows, checked rows, skipped rows (`[~]`),
-    blocked rows (`[!]`), and malformed open rows that say ` skip:` or ` inline (`
-    on the same line are not owed. Intake names the worker on every roster row, so
-    echoing the row tells the parent which worker is next.
+    and malformed open rows that say ` skip:` or ` inline (` on the same line are
+    not owed. A blocked row (`[!]`) before it is a written-down pause, so nothing
+    after it is owed yet. Intake names the worker on every worker row, so echoing
+    the row tells the parent which worker is next.
     """
     in_phases = False
     for line in ledger_text.splitlines():
@@ -61,6 +64,8 @@ def first_open_row(ledger_text: str) -> str | None:
             continue
         if in_phases and line.startswith("## "):
             break
+        if in_phases and _BLOCKED_ROW.match(line):
+            return None
         if in_phases and _OPEN_ROW.match(line):
             if " skip:" in line or " inline (" in line:
                 continue

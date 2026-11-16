@@ -4,13 +4,13 @@ Work already exists in the tree. Turn it into a reviewable PR.
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] read the full diff and understand every change before writing anything
+- [ ] read the full diff and understand every change before writing anything (yours: you write the PR body)
 - [ ] inventory the preexisting diff as the verifier's scope baseline
-- [ ] supplied UI design is reconstructed as a ledger contract
-- [ ] confirm the recorded tests or recipe pass, or report exactly what does not
+- [ ] supplied UI design is reconstructed as a ledger contract; missing structure tests come from supercook-test-designer in retrospective mode
+- [ ] confirm the recorded tests or recipe pass, or report exactly what does not: supercook-verifier against the scope baseline (fresh context, so it judges the diff rather than the story told about it)
 - [ ] changed UI routes pass rendered smoke before the PR opens
 - [ ] size the diff: reviewable and raw
 - [ ] split into coherent PRs if it is oversized
@@ -25,7 +25,7 @@ This track skips planning and source implementation entirely, but it is not deli
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight, no worktree since the work is already here |
-| 1 assess | yes, mainly to confirm this is the right track |
+| 1 assess | yes, yours, mainly to confirm this is the right track |
 | 2 recon | only enough to understand unfamiliar changed files |
 | 3 design doc | no |
 | 4 plan | no |

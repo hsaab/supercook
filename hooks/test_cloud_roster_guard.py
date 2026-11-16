@@ -1,7 +1,7 @@
 """Stop-hook journeys for hooks/cloud_roster_guard.py.
 
-A parent ends a turn. The hook reads the ledger and, when a roster row is still
-open, echoes the first one verbatim. Run: python3 -m unittest hooks.test_cloud_roster_guard
+A parent ends a turn. The hook reads the ledger and, when an assess or worker row
+is still open, echoes the first one verbatim. Run: python3 -m unittest hooks.test_cloud_roster_guard
 """
 
 import json
@@ -20,7 +20,7 @@ import cloud_roster_guard
 GUARD = Path(cloud_roster_guard.__file__).resolve()
 
 PHASE_ROWS = {
-    "assess": "supercook-assessor via Task, grok-4.7-high",
+    "assess": "you, standard/bugfix, big-change no",
     "recon": "supercook-explorer via Task, composer-2.5",
     "plan": "supercook-planner via Task",
     "test-first": "supercook-test-designer via Task",
@@ -110,7 +110,7 @@ class CloudRosterGuardTests(unittest.TestCase):
             root = Path(temp)
             write_ledger(root, "run", ledger(
                 replacements={
-                    "recon": "- [~] recon: supercook-explorer. skip: assessor trivial",
+                    "recon": "- [~] recon: supercook-explorer. skip: tier trivial",
                     "plan": "- [!] plan: supercook-planner blocked: waiting on design doc approval",
                 },
                 trailing=("  - [ ] recon: supercook-explorer", "  - [ ] implement: supercook-implementer"),
@@ -131,10 +131,30 @@ class CloudRosterGuardTests(unittest.TestCase):
             root = Path(temp)
             write_ledger(root, "run", ledger(
                 replacements={
-                    "recon": "- [ ] recon: supercook-explorer. skip: assessor trivial",
+                    "recon": "- [ ] recon: supercook-explorer. skip: tier trivial",
                     "plan": "- [ ] plan: supercook-planner inline (spawn none)",
                 },
             ))
+            self.assertEqual(self.run_hook(root), {})
+
+    def test_stop_on_an_open_assess_row_asks_for_the_verdict_before_any_worker(self):
+        # The verdict decides whether recon runs at all, so recon is never nudged ahead of it.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon",), replacements={"assess": "- [ ] assess: you"}))
+            message = self.followup(root)
+            self.assertIn("- [ ] assess: you", message)
+            self.assertIn("pipeline/assess.md", message)
+            self.assertNotIn("recon", message)
+            self.assertNotIn("Launch that worker", message)
+
+    def test_stop_is_silent_after_a_blocked_row(self):
+        # A parent waiting on the user marks the row [!]; later rows are not owed until it clears.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            write_ledger(root, "run", ledger(("recon", "implement"), replacements={
+                "assess": "- [!] assess: waiting on the user to say which API the task means",
+            }))
             self.assertEqual(self.run_hook(root), {})
 
     def test_stop_with_no_ledger_is_silent(self):

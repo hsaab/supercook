@@ -4,7 +4,7 @@ Slice PRs exist. Run the external reviewers on each one, implement the real find
 
 ## Trigger and entry
 
-**Trigger: an explicit review ask, whenever it arrives.** `/supercook review`, `/supercook review PR 412`, or `/supercook review and merge`, in the invocation or mid-run after phase 8 opened the slice PRs. Nothing else selects this track. The assessor never routes here on its own, and **phase 1 does not run**: the parent routes review before assessor per [../SKILL.md](../SKILL.md#user-selected-track-routing).
+**Trigger: an explicit review ask, whenever it arrives.** `/supercook review`, `/supercook review PR 412`, or `/supercook review and merge`, in the invocation or mid-run after phase 8 opened the slice PRs. Nothing else selects this track. Phase 1 never routes here on its own, and **phase 1 does not run**: the parent routes review before classifying, per [../SKILL.md](../SKILL.md#user-selected-track-routing).
 
 **The ask decides the mode, and the mode is fixed at intake.**
 
@@ -181,7 +181,7 @@ After each PR's fixes: run the recorded tests or recipe, rerun the rendered smok
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight. No worktree and no new branch, the PR branches exist. Ledger seeded with the mode and the stack order |
-| 1 assess | no. Review track routes before the assessor; stack targets are fixed at intake |
+| 1 assess | no. Review track routes before phase 1; stack targets are fixed at intake |
 | 2 recon | only enough to judge a finding against the code it points at |
 | 3 design doc | no |
 | 4 plan | no |

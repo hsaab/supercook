@@ -4,17 +4,17 @@ New or changed behavior. This is the track the full pipeline was designed around
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] name the data shape before writing any logic
-- [ ] name the user journeys this feature has to make work
-- [ ] tests, or an executable recipe without a runner, land before implementation
-- [ ] supplied UI design is resolved into a contract and pinned by structure tests
-- [ ] implement slice by slice, each one shippable on its own
-- [ ] no opportunistic refactors in the diff
-- [ ] the feature works end to end on the real artifact, not just in unit tests
-- [ ] every changed UI route passes its rendered smoke before delivery
+- [ ] map the code the feature touches: supercook-explorer, one launch per area (its clean context reads more of the repo than yours should hold)
+- [ ] plan.md names the data shape before any logic, and the user journeys this feature has to make work: supercook-planner, or the arena then supercook-plan-judge on complex tier (you check the plan, so you do not write it)
+- [ ] tests, or an executable recipe without a runner, land before implementation: supercook-test-designer (it owns every test edit, so the implementer cannot bend the tests to fit)
+- [ ] supplied UI design is resolved into a contract (yours) and pinned by structure tests (supercook-test-designer)
+- [ ] implement slice by slice, each one shippable on its own: supercook-implementer, one launch per slice (you review its diff, so you do not write it)
+- [ ] no opportunistic refactors in the diff: your scope guard on every implementer return
+- [ ] the feature works end to end on the real artifact, not just in unit tests: supercook-verifier, a fresh launch (it did not write the code, so its pass is independent)
+- [ ] every changed UI route passes its rendered smoke before delivery (yours)
 ```
 
 ## Phases
@@ -23,7 +23,7 @@ Every phase runs at standard and complex tier. Phase 3 depends on the big-change
 
 ## CI, workflows, and test harness work
 
-Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **feature** track at **standard** tier by default: recon, plan, test-first, implement, and verify still run. The kickoff may name workflow files; that naming is not a shortcut past assessor or planner. Only assessor **trivial** tier collapse may drop recon and plan; classification alone is not enough, and another track skipping plan without collapse is not collapse. When that collapse drops recon and plan for this kind of work, log a one-line `trivial-collapse:` note in the ledger naming the single hunk or file and why recon and plan add no value. The assessor's `why:` line does not satisfy it. Other trivial work does not log `trivial-collapse:`.
+Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **feature** track at **standard** tier by default: recon, plan, test-first, implement, and verify still run. The kickoff may name workflow files; that naming is not a shortcut past phase 1 or the planner. Only a **trivial** verdict's tier collapse may drop recon and plan; another track skipping plan without collapse is not collapse. When that collapse drops recon and plan for this kind of work, log a one-line `trivial-collapse:` note in the ledger naming the single hunk or file and why recon and plan add no value. The verdict's `why:` line does not satisfy it. Other trivial work does not log `trivial-collapse:`.
 
 ## Name the data shape first
 

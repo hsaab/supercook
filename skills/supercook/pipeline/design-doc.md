@@ -1,6 +1,6 @@
 # Phase 3: Design Doc (big changes only)
 
-This phase runs only when the assessor sets `big-change: yes`. It is the one pause the skill itself introduces, and it exists because getting architectural agreement after the code is written is expensive and annoying for everyone.
+This phase runs only when the phase 1 verdict sets `big-change: yes`. It is the one pause the skill itself introduces, and it exists because getting architectural agreement after the code is written is expensive and annoying for everyone.
 
 It is called "Design Doc" throughout, never "TDD", so it never collides with test-driven development in phase 5.
 

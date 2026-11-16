@@ -6,7 +6,7 @@ A PR already exists. Drive it to merged.
 
 ## Trigger and entry
 
-**Trigger: an explicit merge ask, whenever it arrives.** In the invocation (`/supercook merge PR 412`), mid-run after the user sees the PR, or cold on a PR from last week. Nothing else selects this track. The assessor never routes here on its own, and phase 8 still ends a normal run at an open PR.
+**Trigger: an explicit merge ask, whenever it arrives.** In the invocation (`/supercook merge PR 412`), mid-run after the user sees the PR, or cold on a PR from last week. Nothing else selects this track. Phase 1 never routes here on its own, and phase 8 still ends a normal run at an open PR.
 
 **Entry: continue a run if one exists, otherwise open one.**
 
@@ -27,8 +27,8 @@ Copy these into the ledger verbatim.
 - [ ] stack only: confirm branches are gt-tracked when stacking gt (else fall back to manual); state and log the full merge sequence (gt merge --dry-run --no-interactive when stacking gt, else plain-language walk); add one merge row per PR
 - [ ] read the PR state: mergeable, checks, reviews, base drift
 - [ ] resolve conflicts, understanding both sides
-- [ ] triage every comment, fix or answer each one
-- [ ] fix in-scope CI failures, report out-of-scope ones
+- [ ] triage every comment, fix or answer each one (triage is yours; a code fix is a supercook-implementer launch whose diff you review)
+- [ ] fix in-scope CI failures, report out-of-scope ones (a code fix is a supercook-implementer launch)
 - [ ] UI contract only: confirm current rendered-smoke evidence
 - [ ] merge with the repo's default method (gt merge --no-interactive when stacking gt, else gh pr merge)
 - [ ] handle children if this is a stack (gt sync --no-interactive --delete-all && gt submit --stack --no-interactive --no-edit --update-only when stacking gt, else the manual restack in delivery.md); before gt sync, confirm no stack sibling is checked out in another worktree
@@ -39,7 +39,7 @@ Copy these into the ledger verbatim.
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes, lightweight. No worktree and no new branch, since the PR's branch already exists. A ledger is still seeded |
-| 1 assess | only to confirm the target PR and whether it is part of a stack |
+| 1 assess | no. The track is user-selected |
 | 2 recon | only enough to understand code a comment or a CI failure points at |
 | 3 design doc | no |
 | 4 plan | no |

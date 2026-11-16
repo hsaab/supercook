@@ -7,7 +7,7 @@ gates, the no-commit misread fix, and the trivial-only task-text verify contract
 
 import unittest
 
-from test_spawn_launch_docs import (
+from doc_helpers import (
     AGENTS_DOC,
     INTAKE_DOC,
     LAUNCH_RULE_HEADING,
@@ -17,16 +17,13 @@ from test_spawn_launch_docs import (
     section_body,
 )
 
-KICKOFF_DOC = "skills/supercook/references/coordinator-kickoff.md"
 VERIFICATION_DOC = "skills/supercook/pipeline/verification.md"
 VERIFIER_AGENT = "agents/supercook-verifier.md"
-SOLO_HEADING = "### No spawn tool: run roles inline"
+SOLO_HEADING = "## No spawn tool: run roles inline"
 
 
 def solo_section() -> str:
-    agents = read_doc(AGENTS_DOC)
-    start = agents.index(SOLO_HEADING)
-    return agents[start : agents.index("### Forbidden skips", start)]
+    return section_body(read_doc(AGENTS_DOC), SOLO_HEADING)
 
 
 def solo_step(number: int) -> str:
@@ -38,12 +35,11 @@ def solo_step(number: int) -> str:
 
 
 class SoloGateTests(unittest.TestCase):
-    def test_launch_rule_path_three_starts_at_phase_zero(self):
+    def test_launch_rule_sends_a_session_without_a_spawn_tool_to_solo_mode(self):
         rule = section_body(read_doc(SKILL_DOC), LAUNCH_RULE_HEADING)
-        path_three = next(line for line in rule.splitlines() if line.startswith("3. **Solo mode.**"))
-        for phrase in ("phase 0", "ledger.md", "assess row", "before any product file"):
-            with self.subTest(phrase=phrase):
-                self.assertIn(phrase, path_three)
+        no_tool = next(line for line in rule.splitlines() if line.startswith("**When there is no subagent tool**"))
+        self.assertIn("(agents.md#no-spawn-tool-run-roles-inline)", no_tool)
+        self.assertIn("`inline`", no_tool)
 
     def test_solo_list_starts_at_intake_and_follows_pipeline_phases(self):
         titles = ["Intake", "Assess", "Recon", "Design doc", "Plan", "Test-first", "Implement", "Verify", "Deliver"]
@@ -60,7 +56,7 @@ class SoloGateTests(unittest.TestCase):
     def test_no_product_edit_until_assess_row_is_closed(self):
         step = solo_step(1)
         self.assertIn("**Gate:** no product file is created or changed until `ledger.md` exists", step)
-        self.assertIn("closed `inline`", step)
+        self.assertIn("checked with the verdict", step)
 
     def test_assess_gate_accepts_a_user_selected_track(self):
         gate = solo_step(1).split("**Gate:**", 1)[1]
@@ -71,11 +67,6 @@ class SoloGateTests(unittest.TestCase):
 
     def test_test_first_step_is_standard_and_complex(self):
         self.assertIn("**Test-first** (standard and complex)", solo_step(5))
-
-    def test_launch_rule_path_three_names_user_selected_track(self):
-        rule = section_body(read_doc(SKILL_DOC), LAUNCH_RULE_HEADING)
-        path_three = next(line for line in rule.splitlines() if line.startswith("3. **Solo mode.**"))
-        self.assertIn("[~] skip: user-selected track", path_three)
 
     def test_no_test_commit_until_plan_md_exists(self):
         step = solo_step(4)
@@ -103,9 +94,8 @@ class NoCommitMisreadTests(unittest.TestCase):
         ledger = read_doc(LEDGER_DOC)
         self.assertIn("`no artifacts in repo` / `findings in PR only` / `throwaway experiment`", ledger)
 
-    def test_kickoff_says_solo_is_not_a_one_pass_implement(self):
-        kickoff = read_doc(KICKOFF_DOC)
-        self.assertIn("Solo is the same pipeline run by one agent, not a one-pass implement", kickoff)
+    def test_solo_mode_says_it_is_not_a_one_pass_implement(self):
+        self.assertIn("Solo is the same pipeline run by one agent, not a one-pass implement", solo_section())
 
 
 class VerifierPlanContractTests(unittest.TestCase):

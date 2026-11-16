@@ -50,10 +50,10 @@
   <text x="380" y="761" font-size="12" fill="#5c5326" text-anchor="middle">every phase writes a row,</text>
   <text x="380" y="779" font-size="12" fill="#5c5326" text-anchor="middle">a new session resumes from it</text>
 
-  <rect x="540" y="515" width="210" height="90" rx="10" fill="#635DFF" stroke="#4b46c6"/>
-  <text x="645" y="545" font-size="14" font-weight="600" fill="#ffffff" text-anchor="middle">supercook-assessor</text>
-  <text x="645" y="565" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">sizes the task: tier, track,</text>
-  <text x="645" y="582" font-size="12.5" fill="#ffffff" opacity="0.88" text-anchor="middle">big-change flag</text>
+  <rect x="540" y="515" width="210" height="90" rx="8" fill="#ffffff" stroke="#4a4a44" stroke-width="1.5"/>
+  <text x="645" y="545" font-size="15" font-weight="600" fill="#26251e" text-anchor="middle">Assess</text>
+  <text x="645" y="565" font-size="12.5" fill="#44443e" text-anchor="middle">sizes the task: tier, track,</text>
+  <text x="645" y="582" font-size="12.5" fill="#44443e" text-anchor="middle">big-change flag</text>
 
   <polygon points="895,495 990,560 895,625 800,560" fill="#ffe3b3" stroke="#b77400" stroke-width="1.5"/>
   <text x="895" y="548" font-size="13" fill="#5f3d00" text-anchor="middle">trivial,</text>

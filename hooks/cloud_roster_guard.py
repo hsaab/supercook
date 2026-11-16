@@ -14,8 +14,15 @@ FOLLOWUP_RULE = (
 )
 
 
+ASSESS_RULE = (
+    "Classify the task yourself per pipeline/assess.md and write the verdict before "
+    "launching any worker. If you are waiting on the user, mark the row [!] with the question."
+)
+
+
 def followup_text(open_row: str) -> str:
-    return f"Supercook ledger still has an open roster row:\n{open_row}\n{FOLLOWUP_RULE}"
+    rule = ASSESS_RULE if open_row.startswith("- [ ] assess:") else FOLLOWUP_RULE
+    return f"Supercook ledger still has an open row:\n{open_row}\n{rule}"
 
 
 def _stop_followup(event: dict) -> dict:

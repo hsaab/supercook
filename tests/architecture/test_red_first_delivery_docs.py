@@ -9,7 +9,7 @@ tests pin the stub procedure, the acceptance criteria chain, and the pre-PR chec
 
 import unittest
 
-from test_spawn_launch_docs import AGENTS_DOC, INTAKE_DOC, read_doc, section_body
+from doc_helpers import AGENTS_DOC, INTAKE_DOC, read_doc, section_body
 
 DELIVERY_DOC = "skills/supercook/pipeline/delivery.md"
 IMPLEMENTATION_DOC = "skills/supercook/pipeline/implementation.md"

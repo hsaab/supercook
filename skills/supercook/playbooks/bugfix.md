@@ -4,16 +4,16 @@ Something is broken. Reproduce it, find the actual cause, fix the smallest thing
 
 ## Steps
 
-Copy these into the ledger verbatim.
+Copy these into the ledger verbatim. A step that names a worker is that worker's launch; the reason after it is why the step is not yours.
 
 ```
-- [ ] reproduce the bug and capture the real failure output
-- [ ] find the root cause with evidence, not a guess
-- [ ] write a failing test or executable recipe that reproduces it
-- [ ] fix the smallest thing the evidence justifies
-- [ ] confirm the repro verification and the full recorded verification pass
-- [ ] visual bug only: reproduce and confirm the fix on the rendered route
-- [ ] check for the same mistake elsewhere, report rather than fix
+- [ ] reproduce the bug and capture the real failure output (yours: you brief every worker from it)
+- [ ] find the root cause with evidence, not a guess: supercook-explorer scoped to the failing path returns the pointers, and you name the cause from them
+- [ ] write a failing test or executable recipe that reproduces it: supercook-test-designer (the repro lands before the fix, so the fix is provably what turned it green)
+- [ ] fix the smallest thing the evidence justifies: supercook-implementer (you review its diff against the proven cause, so you do not write it)
+- [ ] confirm the repro verification and the full recorded verification pass: supercook-verifier, a fresh launch (it did not write the fix)
+- [ ] visual bug only: reproduce and confirm the fix on the rendered route (yours)
+- [ ] check for the same mistake elsewhere, report rather than fix (yours)
 ```
 
 ## Phases
@@ -23,7 +23,7 @@ This table describes standard and complex tier. A trivial bugfix collapses to im
 | Phase | Runs? |
 |---|---|
 | 0 intake | yes |
-| 1 assess | yes |
+| 1 assess | yes, yours |
 | 2 recon | yes, scoped to the failing path |
 | 3 design doc | only if the fix changes an interface or data shape |
 | 4 plan | yes, usually one slice |

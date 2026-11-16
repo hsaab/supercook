@@ -19,6 +19,8 @@ A development workflow you invoke with one command that scales its own process t
 - [What it needs, and what happens without it](#what-it-needs-and-what-happens-without-it)
 - [Usage](#usage)
 - [Layout](#layout)
+- [Checking that runs delegate](#checking-that-runs-delegate)
+- [Development](#development)
 
 ## Why this exists
 
@@ -53,13 +55,13 @@ Tracks skip what does not apply. An investigation stays read-only and produces a
 
 ![The Supercook pipeline: intake and assessment route work to a trivial, standard, or complex path, subagents fan out per phase, and every slice exits as its own PR](assets/pipeline.svg)
 
-Purple chips are subagents, each spawned with a fresh context window and a fixed contract. The three bands are the assessor's verdict, and everything converges on the shared tail at the right, where each slice of the plan exits as its own PR. The dashed lines are `models.md` deciding which model a role runs on at launch.
+Purple chips are subagents, each spawned with a fresh context window and a fixed contract. The three bands are the tier the coordinator picks when it classifies the task, and everything converges on the shared tail at the right, where each slice of the plan exits as its own PR. The dashed lines are `models.md` deciding which model a role runs on at launch.
 
 ## Key principles, and why they work
 
 **Explanations name the file, the change, and the real consequence.** Written like a sharp junior engineer who just read the code, not like a changelog. "We changed `handleWebhook` in `src/api/webhook.ts` because it still referenced a `retryCount` variable the queue rewrite deleted, so any real webhook would have thrown and taken the server down." Not "improved error handling". This is the principle that makes the rest checkable, so it sits at the top of the skill. An opinionated style choice, not a research finding.
 
-**Subagents with clean context and terse return contracts.** The agent that runs `/supercook` coordinates and the named `supercook-*` workers do each phase, at every tier, whenever the session can spawn one. Each role gets an objective, inputs, an effort budget, boundaries, and a fixed output shape, so results stay small and the orchestrator's context stays usable. ([Anthropic on multi-agent systems](https://www.anthropic.com/engineering/multi-agent-research-system))
+**Subagents with clean context and terse return contracts.** The agent that runs `/supercook` coordinates: it classifies the task itself, and the named `supercook-*` workers do each later phase, at every tier, whenever the session can spawn one. Each playbook step that needs a worker names it, so the launch sits in the checklist the run follows rather than in a rule it has to remember. Each role gets an objective, inputs, an effort budget, boundaries, and a fixed output shape, so results stay small and the orchestrator's context stays usable. ([Anthropic on multi-agent systems](https://www.anthropic.com/engineering/multi-agent-research-system))
 
 **The ledger as external memory.** Every phase and every skip is written to a file, so context resets and new sessions resume from the record rather than from a guess. ([Anthropic on context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), the structured note-taking pattern)
 
@@ -106,15 +108,22 @@ git clone https://github.com/hsaab/supercook.git ~/.cursor/plugins/local/superco
 
 Two rules from [Cursor's plugin docs](https://cursor.com/docs/plugins#test-plugins-locally) decide whether that checkout is the one that loads. Cursor skips a link in `~/.cursor/plugins/local` that points at a checkout elsewhere on disk, so clone into the folder rather than linking to it. And a marketplace install with the same name takes precedence over the local copy, so keep one install or the other: an old marketplace install hides a newer local checkout.
 
-Either way, reload the window, then confirm you see one skill (`supercook`) and nine agents (`supercook-assessor`, `-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`).
+Either way, reload the window, then confirm you see one skill (`supercook`) and eight agents (`supercook-explorer`, `-planner`, `-arena-runner`, `-plan-judge`, `-plan-optimizer`, `-test-designer`, `-implementer`, `-verifier`). A `supercook-assessor` in that list is left over from before 0.5.0: an older install, or a stale copy in `~/.cursor/agents/`.
 
-A skill folder mirrored on its own (for example a personal `~/.cursor/skills/supercook` synced to Cloud Agents) carries no agent files, because they live at the plugin root in `agents/`. On such a host, also copy the agents into your user subagent directory so Cursor lists them as named subagents (`/supercook-assessor`, `/supercook-explorer`, and so on):
+Every run opens with the copy it loaded, for example `supercook 0.5.0 from ~/.cursor/plugins/local/supercook`. If that names a `plugins/cache/` path when you meant the local checkout, or an older version, remove the other install before going further.
+
+A skill folder mirrored on its own (for example a personal `~/.cursor/skills/supercook` synced to Cloud Agents) carries no agent files, because they live at the plugin root in `agents/`. On such a host, also copy the agents into your user subagent directory so Cursor lists them as named subagents (`/supercook-explorer`, `/supercook-implementer`, and so on):
 
 ```bash
 mkdir -p ~/.cursor/agents && cp ~/.cursor/plugins/local/supercook/agents/supercook-*.md ~/.cursor/agents/
+rm -f ~/.cursor/agents/supercook-assessor.md   # retired in 0.5.0
 ```
 
-Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook still launches each role as a worker named `supercook-<role>` through whatever spawn tool the session has, using the agent file as the prompt.
+Your application repositories do not need their own copy in `.cursor/agents/`. Without the agents in the catalog, Supercook launches each role as `generalPurpose` pointed at its agent file.
+
+### Keep it on for the whole chat
+
+A plain `/supercook` attaches the skill to one message, and it fades as a long run moves on. To keep it in context on every turn, pick `/supercook` from the `/` menu with Option+Enter (Mac) or Alt+Enter (Windows) instead of Enter. That makes it a [Custom Mode](https://cursor.com/docs/skills#using-a-skill-as-a-custom-mode), available in the Agents Window and the CLI.
 
 ### On Cloud Agents
 
@@ -122,9 +131,9 @@ A cloud VM cannot see your local home directory, so three things decide whether 
 
 - **Plugins installed on your account load on the VM at the commit the marketplace last resolved**, which can be far behind this repo. Refresh the marketplace after a release, then start a new agent: [a running Cloud Agent keeps the plugin versions it started with](https://cursor.com/docs/plugins#keep-plugins-up-to-date).
 - **That marketplace install wins over a local copy of the same name.** An environment install script that clones a pinned checkout into `~/.cursor/plugins/local/supercook` gets the skill files onto the VM, but it does not replace an older marketplace install's agents.
-- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` above in the environment's install step.
+- **The subagent list is fixed when the session starts.** An agent file copied into `~/.cursor/agents/` during a run does not join that run's list. Do the `cp` and `rm` above in the environment's install step.
 
-To see what a run got, read the subagent types it lists. Nine `supercook-*` names means the current agents are typed. Eight, with no `supercook-plan-optimizer`, means the VM loaded an install from before that agent existed, so refresh the marketplace. None means every role goes through the session's spawn tool with its agent file as the prompt. All three run the same pipeline: the coordinator launches a worker for every roster phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
+To see what a run got, read its first line and the subagent types it lists. Eight `supercook-*` names, including `supercook-plan-optimizer` and no `supercook-assessor`, means the current agents are typed. A `supercook-assessor` means the VM loaded an install from before 0.5.0: refresh the marketplace, and run the `rm` above if the install step copies agents into `~/.cursor/agents/`. None means every role launches as `generalPurpose` pointed at its agent file. All of these run the same pipeline: the coordinator launches a worker for every worker phase, at every tier, and runs a role itself only when the session has no spawn tool at all.
 
 **No spawn tool?** Some Cloud Agents never get `Task`. The run then switches to solo mode: the same phases, each handed off through a file in `.supercook/<run>/`, with red tests committed on their own, a test-diff and scope check before every commit, and a verify step that re-reads the diff from disk and runs the suite. The arena does not run. The PR says it was built in solo mode with no independent review, and links a hosted Bugbot run when one exists. Details are in [skills/supercook/agents.md](skills/supercook/agents.md#no-spawn-tool-run-roles-inline).
 
@@ -134,7 +143,7 @@ The marketplace above is one you add to your own account. It is not a listing in
 
 ## Bring your own models
 
-Ten roster keys, one line each in the fenced block: `standard` (assessor, planner, test-designer, verifier), the three arena contestants, plan judge, plan optimizer, implementer, explorer, reviewer (four external reviewers on the review track), and review-implementer. Each role ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
+Ten roster keys, one line each in the fenced block: `standard` (planner, test-designer, verifier), the three arena contestants, plan judge, plan optimizer, implementer, explorer, reviewer (four external reviewers on the review track), and review-implementer. Each role ships with a default slug in [skills/supercook/models.md](skills/supercook/models.md).
 
 **Three-tier precedence**, merged per role (highest tier wins for that role only):
 
@@ -173,7 +182,7 @@ Happiest with git, GitHub plus an authenticated `gh`, worktree support, and a ru
 | A test runner | Tests become an executable verification recipe the verifier runs |
 | Worktrees | Works on the current branch, after saying so, and requires a clean tree |
 | git | Works in place, delivers a summary and the diff |
-| The plugin's agents | Each role still launches as a worker named `supercook-<role>` through whatever spawn tool the session lists, with its agent file as the prompt; with no spawn tool, roles run inline from the agent file bodies |
+| The plugin's agents | Each role launches as `generalPurpose` pointed at its agent file; with no spawn tool, roles run inline from the agent file bodies |
 | A renderer for a changed UI route | Writes a fully specified manual smoke and asks once for confirmation. A PR can disclose missing visual evidence, but never calls the route visually verified |
 
 **One limit worth knowing.** Run artifacts live in `.supercook/` in your repo, untracked, excluded via git's local exclude file rather than your `.gitignore`. They survive new sessions in the same checkout. They do not travel to another machine or a cloud agent unless you deliberately commit the ledger.
@@ -198,7 +207,7 @@ Merging never happens unless you ask for it. Without that ask a run ends at an o
 
 After plan mode, `/supercook use this plan` in the same chat is enough. No path needed. Name a file only when you want a different plan than the one in this conversation.
 
-`review and merge` stays on the **review** track (full reviewer fan-out per PR), not the merge-only track. Playbooks route from assessment except `merge`, `implement-plan`, and `review`, which you select at intake (review before assessor):
+`review and merge` stays on the **review** track (full reviewer fan-out per PR), not the merge-only track. Playbooks route from the coordinator's classification except `merge`, `implement-plan`, and `review`, which you select in your ask and which route before classification:
 
 
 | Track | What it does differently |
@@ -216,8 +225,10 @@ After plan mode, `/supercook use this plan` in the same chat is enough. No path 
 
 ```
 .cursor-plugin/               plugin manifest, plus the marketplace manifest for this repo
-agents/                       nine discoverable subagents, all supercook- prefixed
+agents/                       eight discoverable subagents, all supercook- prefixed
 hooks/                        stop-hook and event-log scripts used by this repo's own .cursor/hooks.json (the plugin ships no hooks)
+scripts/audit_runs.py         launch audit over your local chat transcripts
+tests/architecture/           structural checks on the skill docs
 assets/                       the pipeline diagram embedded above
 skills/supercook/
   SKILL.md                    principles, pipeline, routing, autonomy
@@ -226,6 +237,27 @@ skills/supercook/
   pipeline/                   phase guides plus the cross-cutting UI contract
     ui.md                     cross-cutting design contract and rendered-smoke gates
   playbooks/                  one per track, including merge and implement-plan
+```
+
+## Checking that runs delegate
+
+`scripts/audit_runs.py` reads the chat transcripts Cursor keeps under `~/.cursor/projects/` and reports, for every chat that attached the skill, which copy and version loaded, the subagent launches by type, hook denials the agent mentioned, and edits the coordinator made itself outside the run folder.
+
+```bash
+python3 scripts/audit_runs.py --since 2026-11-01          # per-chat report plus totals
+python3 scripts/audit_runs.py --since 2026-11-01 --json   # the same, as JSON
+```
+
+Transcripts hold tool calls but not their results, so a denial only counts when the agent mentioned it. Edits made through the shell are not counted, `--since` compares each transcript's modification date, and runs that recorded `spawn none` are reported as solo and left out of the launch totals. Cloud Agent and Project runs are not in local transcripts.
+
+## Development
+
+Stdlib Python only. Run all three suites before opening a PR:
+
+```bash
+python3 -m unittest discover -s tests/architecture
+python3 -m unittest discover -s hooks
+python3 -m unittest discover -s scripts
 ```
 
 ## License
