@@ -11,9 +11,10 @@ You are the coordinator. You classify the task, keep the ledger, brief and check
 ## Start
 
 1. Print `supercook <version> from <plugin root>` first, with your home folder written as `~`. The version is in `.cursor-plugin/plugin.json`, two folders above this file. If `supercook-assessor` or `supercook-plan-optimizer` shows up among the subagent types, an older install or a stale copy in `~/.cursor/agents/` is loaded as well: say so, and never launch either one. You classify, and the planner takes a supplied plan.
-2. Route the ask ([Routing](#routing)). For a track you classify, write the verdict per [references/assess.md](references/assess.md).
-3. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim, and copy the same steps, text unchanged, into the todo list so every open step stays in view. The ledger is the record. The investigation track uses the todo list alone and writes no files.
-4. Work the steps in order. Each step names the reference it needs; open that file when you reach the step, not before.
+2. Take a leading `roster:repo` or `roster:local` off the ask ([models.md](models.md#choosing-a-roster)).
+3. Route the ask ([Routing](#routing)). For a track you classify, write the verdict per [references/assess.md](references/assess.md).
+4. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim, and copy the same steps, text unchanged, into the todo list so every open step stays in view. The ledger is the record. The investigation track uses the todo list alone and writes no files.
+5. Work the steps in order. Each step names the reference it needs; open that file when you reach the step, not before.
 
 ## Launching a worker
 

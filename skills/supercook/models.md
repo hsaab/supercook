@@ -8,7 +8,7 @@ The parent merges three files **per role**, highest tier wins:
 
 | Precedence | File | Purpose |
 |---|---|---|
-| 1 (wins) | `<workspace-root>/.supercook/models.md` | Optional override for this checkout. Commit it so cloud agents and other clones pick it up. |
+| 1 (wins) | `<workspace-root>/.supercook/models.md` | Optional override for this checkout. Commit it so cloud agents and other clones pick it up. Skipped under `roster:local`. |
 | 2 | `~/.supercook/models.md` | Your choices outside any repo. |
 | 3 | this file | The shipped default for every role. |
 
@@ -20,6 +20,17 @@ curl -fsSL https://raw.githubusercontent.com/hsaab/supercook/main/skills/superco
 ```
 
 Then keep only the roles you want to change; any role a higher file does not name falls through. Write `inherit` to put a role on the session model. The home `~/.supercook/` holds model choices; a repo's `.supercook/` holds run artifacts plus the optional override.
+
+## Choosing a roster
+
+A `/supercook` ask may open with a roster choice. Take it off the ask before routing:
+
+| Ask opens with | Merged per role, first wins | Version line |
+|---|---|---|
+| nothing, or `roster:repo` | `<workspace-root>/.supercook/models.md`, `~/.supercook/models.md`, this file | `roster: repo` |
+| `roster:local` | `~/.supercook/models.md`, this file | `roster: local` |
+
+A missing file falls through like any missing tier, so `roster:local` with no home file runs the shipped defaults. Any other `roster:` value: say so once and use `repo`.
 
 ## The roster
 
@@ -39,8 +50,8 @@ Each role is independent: `reviewer` and `review-implementer` left on `inherit` 
 
 ## How a role becomes a model
 
-1. Resolve the roster once, at ledger seed, merging per role across the three files. A missing override file is normal and not worth mentioning.
-2. Write one `models:` header line listing every key with its slug or `inherit`, so a resumed run reads it instead of re-resolving.
+1. Resolve the roster once, at ledger seed, merging per role across the files the [roster choice](#choosing-a-roster) names. A missing override file is normal and not worth mentioning.
+2. Write the choice on the `supercook:` header line and one `models:` header line listing every key with its slug or `inherit`, so a resumed run reads them instead of re-resolving.
 3. Pass the slug verbatim as the launch's `model` field; leave the field out for `inherit`. Never substitute a "nearest" model.
 4. Do not pre-validate during a run; `/setup-supercook` checks the roster ahead of time. If a launch rejects the model, relaunch once without it, log `inherit`, and tell the user once. Never block a run on a model name.
 
