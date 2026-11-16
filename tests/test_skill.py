@@ -41,11 +41,13 @@ OLDER_INSTALL_DOCS = (SKILL_DIR / "SKILL.md", REPO / "README.md")
 SCRIPT = re.compile(r"\b((?:scripts|hooks)/[a-z_]+\.py)\b")
 STEP_REFERENCE = re.compile(r"\breferences/[a-z-]+\.md\b")
 TRACKS_THAT_CHANGE_CODE = ("feature", "bugfix", "refactor", "implement-plan")
-ROSTER_CHOICES = ("roster:repo", "roster:local")
+ROSTER_CHOICES = ("roster:repo", "roster:machine", "roster:supercook")
+ROSTER_ALIAS = "roster:local"
 REPO_ROSTER_PATH = "<workspace-root>/.supercook/models.md"
 HOME_ROSTER_PATH = "~/.supercook/models.md"
+PLUGIN_ROSTER_PATH = "<plugin-root>/.supercook/models.md"
 COMMITTED_ROSTER = REPO / ".supercook" / "models.md"
-LEDGER_VERSION_LINE = re.compile(r"^supercook: \d+\.\d+\.\d+ from \S+ \| roster: (\S+)$", re.MULTILINE)
+LEDGER_VERSION_LINE = re.compile(r"^supercook: (\d+\.\d+\.\d+) from \S+ \| roster: (\S+)$", re.MULTILINE)
 
 
 def read(path: Path) -> str:
@@ -92,7 +94,7 @@ def section(path: Path, heading: str) -> str:
 
 class RosterTier(NamedTuple):
     file: str
-    skipped_under_local: bool
+    choices: tuple[str, ...]
 
 
 def roster_tiers() -> list[RosterTier]:
@@ -101,8 +103,18 @@ def roster_tiers() -> list[RosterTier]:
     for line in section(SKILL_DIR / "models.md", "Where to edit").splitlines():
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if line.startswith("|") and len(cells) == 3 and cells[0][:1].isdigit():
-            tiers.append(RosterTier(cells[1].strip("`"), "`roster:local`" in cells[2]))
+            choices = tuple(re.findall(r"`(roster:[a-z]+)`", cells[2]))
+            tiers.append(RosterTier(cells[1].strip("`"), choices))
     return tiers
+
+
+def ledger_roster_value_list() -> str:
+    """The ledger.md sentence that names the allowed `roster` values."""
+    prose = strip_code_fences(read(SKILL_DIR / "references" / "ledger.md"))
+    for sentence in re.split(r"(?<=[.!?])\s+", prose):
+        if "`roster`" in sentence and "choosing-a-roster" in sentence:
+            return sentence
+    raise AssertionError("ledger.md has no sentence that lists the `roster` values")
 
 
 def frontmatter_description(text: str) -> str:
@@ -203,13 +215,21 @@ class RosterChoice(unittest.TestCase):
         for choice in ROSTER_CHOICES:
             self.assertIn(f"`{choice}`", modifiers)
         self.assertIn("(models.md#choosing-a-roster)", modifiers)
+        self.assertNotIn(ROSTER_ALIAS, modifiers)
         self.assertEqual([line for line in lines if "roster:" in line and line != modifiers], [])
 
-    def test_roster_local_skips_only_the_repository_file(self):
+    def test_each_roster_choice_reads_the_tiers_the_table_names(self):
         tiers = roster_tiers()
         files = [tier.file for tier in tiers]
-        self.assertEqual(files[:2], [REPO_ROSTER_PATH, HOME_ROSTER_PATH], "models.md lost its precedence table")
-        self.assertEqual([tier.file for tier in tiers if not tier.skipped_under_local], files[1:])
+        self.assertEqual(files.count(REPO_ROSTER_PATH), 1)
+        self.assertEqual(files.count(PLUGIN_ROSTER_PATH), 1)
+        chains = {
+            choice: [tier.file for tier in tiers if choice in tier.choices]
+            for choice in ROSTER_CHOICES
+        }
+        self.assertEqual(chains["roster:repo"], [REPO_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
+        self.assertEqual(chains["roster:machine"], [HOME_ROSTER_PATH, "this file"])
+        self.assertEqual(chains["roster:supercook"], [PLUGIN_ROSTER_PATH, HOME_ROSTER_PATH, "this file"])
 
     def test_the_ledger_records_a_roster_value_the_choice_defines(self):
         choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
@@ -218,13 +238,41 @@ class RosterChoice(unittest.TestCase):
             self.assertIn(f"`roster: {value}`", choosing)
         line = LEDGER_VERSION_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
         self.assertIsNotNone(line, "the ledger example has no `supercook: <v> from <root> | roster: <r>` line")
-        self.assertIn(line.group(1), values)
+        self.assertIn(line.group(2), values)
+        listed = ledger_roster_value_list()
+        for value in values:
+            self.assertIn(f"`{value}`", listed)
+        self.assertNotIn("`local`", listed)
+        manifest = json.loads(read(REPO / ".cursor-plugin" / "plugin.json"))
+        self.assertEqual(line.group(1), manifest["version"])
+        readme = re.search(r"`supercook (\d+\.\d+\.\d+) from", read(REPO / "README.md"))
+        self.assertIsNotNone(readme, "README.md has no `supercook <version> from` example")
+        self.assertEqual(readme.group(1), manifest["version"])
 
-    def test_every_doc_naming_roster_local_links_its_one_statement(self):
+    def test_every_doc_naming_a_roster_choice_links_its_one_statement(self):
+        tokens = (*ROSTER_CHOICES, ROSTER_ALIAS)
         for doc in [*skill_docs(), *agent_files(), REPO / "README.md", COMMITTED_ROSTER]:
-            if doc != SKILL_DIR / "models.md" and "roster:local" in read(doc):
+            if doc == SKILL_DIR / "models.md":
+                continue
+            text = read(doc)
+            if any(token in text for token in tokens):
                 with self.subTest(doc=doc.relative_to(REPO).as_posix()):
-                    self.assertIn("models.md#choosing-a-roster", read(doc))
+                    self.assertIn("models.md#choosing-a-roster", text)
+
+    def test_roster_local_is_an_alias_of_machine(self):
+        choosing = section(SKILL_DIR / "models.md", "Choosing a roster")
+        self.assertIn(ROSTER_ALIAS, choosing)
+        lines = read(SKILL_DIR / "SKILL.md").splitlines()
+        modifiers = next((line for line in lines if all(f"`{m}`" in line.lower() for m in run_folder.SCOPE_MODIFIERS)), None)
+        self.assertIsNotNone(modifiers, "SKILL.md has no line listing every scope modifier the ledger check accepts")
+        self.assertNotIn(ROSTER_ALIAS, modifiers)
+        self.assertNotIn(ROSTER_ALIAS, ledger_roster_value_list())
+        self.assertNotIn(ROSTER_ALIAS, section(SKILL_DIR / "models.md", "Where to edit"))
+
+    def test_setup_supercook_names_every_roster_choice(self):
+        text = read(REPO / "skills" / "setup-supercook" / "SKILL.md")
+        for choice in ROSTER_CHOICES:
+            self.assertIn(f"`{choice}`", text)
 
 
 class SizeBudgets(unittest.TestCase):
