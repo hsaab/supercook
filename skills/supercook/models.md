@@ -10,9 +10,9 @@ The parent merges the files in the chosen row **per role**: the first file that 
 |---|---|
 | `roster:repo` (default) | `<workspace-root>/.supercook/models.md`, `~/.supercook/models.md`, this file |
 | `roster:machine` | `~/.supercook/models.md`, this file |
-| `roster:supercook` | `<plugin-root>/.supercook/models.md`, `~/.supercook/models.md`, this file |
+| `roster:supercook` | this file |
 
-`<workspace-root>/.supercook/models.md` is an optional override for this checkout; commit it so cloud agents and other clones pick it up. `~/.supercook/models.md` holds your choices outside any repo. `<plugin-root>/.supercook/models.md` is the roster committed in the supercook plugin repo. This file is the shipped default for every role.
+`<workspace-root>/.supercook/models.md` is an optional override for this checkout; commit it so cloud agents and other clones pick it up. `~/.supercook/models.md` holds your choices outside any repo. This file is the shipped default for every role; `roster:supercook` reads only this file and ignores the workspace file and the home file.
 
 Edit the home or repository file, not a file inside the installed plugin: a marketplace install lives in a cache directory the next update replaces. The home file does not exist until you create it:
 
@@ -25,7 +25,7 @@ Then keep only the roles you want to change; any role a higher file does not nam
 
 ## Choosing a roster
 
-A `roster:` word among the ask's leading modifiers picks a row of the [table above](#where-to-edit), and the ledger's `supercook:` line records it as `roster: repo`, `roster: machine`, or `roster: supercook`. `roster:local` is an alias of `machine`: accept it without a warning and record `roster: machine`; a ledger written by 0.8.0 that says `roster: local` also means `machine`. The plugin root is the folder two above `skills/supercook/SKILL.md`; if `<plugin-root>/.supercook/models.md` is missing, say so once and run as `machine`. Any other value is named once and runs as `machine`, so a typo never hands the run to a committed file. A `roster:` word later in the task stays task text; say once that it chose nothing.
+A `roster:` word among the ask's leading modifiers picks a row of the [table above](#where-to-edit), and the ledger's `supercook:` line records it as `roster: repo`, `roster: machine`, or `roster: supercook`. `roster:local` is an alias of `machine`: accept it without a warning and record `roster: machine`; a ledger written by 0.8.0 that says `roster: local` also means `machine`. Any other value is named once and runs as `machine`, so a typo never hands the run to a committed file. A `roster:` word later in the task stays task text; say once that it chose nothing.
 
 ## The roster
 

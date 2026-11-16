@@ -20,7 +20,7 @@ The ledger is the run's memory. When context is compacted or a session restarts,
 ```markdown
 # Ledger: add rate limiting to public API
 run-id: 2026-07-29-rate-limit-a4f2 | repo: git@github.com:acme/api.git | branch: supercook/rate-limit
-supercook: 0.9.1 from ~/.cursor/plugins/local/supercook | roster: repo
+supercook: 0.9.2 from ~/.cursor/plugins/local/supercook | roster: repo
 tier: complex | track: feature | big-change: yes
 spawn: typed | tests: `pnpm vitest run` | test-paths: **/*.test.ts
 models: standard claude-opus-5-5-high | arena-a claude-fable-5-2-high | arena-b gpt-5.6-sol-max | arena-c claude-opus-5-5-xhigh | plan-judge claude-opus-5-5-high | implementer claude-sonnet-5-5-high | explorer composer-2.5 | reviewer claude-opus-5-5-high | review-implementer claude-sonnet-5-5-high
