@@ -1,6 +1,6 @@
 # Model preferences
 
-Repository roster for cloud agents and other shared checkouts. From any workspace, `roster:supercook` reads this committed file at tier 1. Inside this plugin repo, `roster:repo` reads it as the workspace file. `roster:machine` skips it. See [skills/supercook/models.md](../skills/supercook/models.md#choosing-a-roster) for the merge rules and the roster choice.
+Repository roster for cloud agents and other shared checkouts. From any workspace, `roster:supercook` reads this committed file first. Inside this plugin repo, `roster:repo` reads it as the workspace file. `roster:machine` skips it. See [skills/supercook/models.md](../skills/supercook/models.md#choosing-a-roster) for the merge rules and the roster choice.
 
 ## The roster
 

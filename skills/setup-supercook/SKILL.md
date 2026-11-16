@@ -24,7 +24,7 @@ Compare every slug any of the three resolutions picked with the detected set. Fo
 
 ### 4. Write the fixes
 
-Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file. A fix to a shipped default goes to `~/.supercook/models.md`, created if needed, which every choice reads. Add it to `<workspace-root>/.supercook/models.md` too when that file exists and does not name the role, since it is the only override a cloud run sees. When the miss came from `<plugin-root>/.supercook/models.md`, write there only if that path is the same file as `<workspace-root>/.supercook/models.md`. Otherwise name the role and slug and say the fix belongs in the supercook repo's committed `.supercook/models.md`. Never edit the shipped `skills/supercook/models.md`, or a plugin copy outside this workspace.
+Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file, with two exceptions. A slug from the shipped `skills/supercook/models.md` is never edited there: its fix goes to `~/.supercook/models.md`, created if needed, and also to `<workspace-root>/.supercook/models.md` when that file exists and does not name the role, since it is the only override a cloud run sees. A slug from a `<plugin-root>/.supercook/models.md` outside this workspace is never edited there either: name the role and slug and say the fix belongs in the supercook repo's committed `.supercook/models.md`.
 
 ### 5. Write the delegation rule
 
