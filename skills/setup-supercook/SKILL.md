@@ -1,0 +1,45 @@
+---
+name: setup-supercook
+description: Check the supercook model roster against the models this session can launch, fix names that do not exist, and write the always-applied delegation rule. Use for /setup-supercook, "check supercook models", or after a launch rejected a model.
+disable-model-invocation: true
+---
+
+# Setup supercook
+
+Validate the roster, then write one rule. Re-running is safe.
+
+## Steps
+
+### 1. Resolve the roster
+
+Merge the roster per role, highest first: `<workspace-root>/.supercook/models.md`, `~/.supercook/models.md`, then the shipped [models.md](../supercook/models.md). A role missing from a higher file falls through. `inherit` is always valid.
+
+### 2. Detect launchable models
+
+List the model slugs you can pass to `Task` in this session. If you cannot detect any, ask the user to paste the slugs they can use. Never write a slug you have not confirmed.
+
+### 3. Validate
+
+Compare every resolved slug with the detected set. For each miss, name the role and the slug, offer the closest detected slug of the same family (highest effort at or below the original), and ask: use it, pick another, or `inherit`. Never substitute silently. Keep `arena-a`, `arena-b`, and `arena-c` on different families when you can.
+
+### 4. Write the fixes
+
+Write each fix to the file its slug came from, changing only that role's line and keeping the rest of the file. A fix to a shipped default goes to `<workspace-root>/.supercook/models.md` when that file exists, since it is the only override a cloud run sees, and otherwise to `~/.supercook/models.md`, created if needed. Never edit the plugin copy.
+
+### 5. Write the delegation rule
+
+Overwrite `<workspace-root>/.cursor/rules/supercook-delegation.mdc` with exactly this. Project rules are the documented route; a file under `~/.cursor/rules/` is not read.
+
+```
+---
+description: Supercook delegation
+alwaysApply: true
+---
+When `.supercook/active-run` names a ledger with an open `supercook-<role>` step, launch that worker with the spawn tool instead of doing the step yourself.
+```
+
+Keep it to that one sentence. The rule does nothing in a repo with no live supercook run. Commit it if you want Cloud Agents and other clones to get it.
+
+### 6. Report
+
+Say which roles changed and that the rule applies to new chats in this repo.

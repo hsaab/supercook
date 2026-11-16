@@ -10,7 +10,6 @@ arena-a:            grok-4.7-high        # simplest viable plan
 arena-b:            composer-2.5         # implementation-first plan
 arena-c:            grok-4.7-high        # challenge assumptions and failure cases
 plan-judge:         grok-4.7-high
-plan-optimizer:     grok-4.7-medium
 implementer:        composer-2.5
 explorer:           composer-2.5
 reviewer:           grok-4.7-high        # bugbot, security-review, both thermo reviewers

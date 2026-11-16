@@ -212,7 +212,7 @@ class AuditRunsTests(unittest.TestCase):
         write_chat(self.projects, "crate", "chat-new", [attach(self.local_skill)])
         os.utime(old, (0, 0))
         done = subprocess.run(
-            [sys.executable, str(SCRIPT), "--root", str(self.projects), "--since", "2000-01-01", "--json"],
+            [sys.executable, str(SCRIPT), "--root", str(self.projects), "--all", "--since", "2000-01-01", "--json"],
             capture_output=True, text=True, timeout=30, cwd=self.home,
         )
         self.assertEqual(done.returncode, 0, done.stderr)
@@ -223,13 +223,39 @@ class AuditRunsTests(unittest.TestCase):
     def test_cli_text_report_names_the_install_and_the_totals(self):
         self.stale_run()
         done = subprocess.run(
-            [sys.executable, str(SCRIPT), "--root", str(self.projects)],
+            [sys.executable, str(SCRIPT), "--root", str(self.projects), "--all"],
             capture_output=True, text=True, timeout=30, cwd=self.home,
         )
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("skill: cache@437267f 0.1.0", done.stdout)
         self.assertIn("launches: verifier 1", done.stdout)
         self.assertIn("parent edits without implementer: 1", done.stdout)
+
+    def audit_cli(self, *args, cwd=None):
+        done = subprocess.run(
+            [sys.executable, str(SCRIPT), "--root", str(self.projects), *args],
+            capture_output=True, text=True, timeout=30, cwd=cwd or self.home,
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return done.stdout
+
+    def test_the_project_folder_is_the_workspace_path_with_dashes(self):
+        self.assertEqual(audit_runs.project_folder(Path("/Users/me/my_code/crate.v2")), "Users-me-my-code-crate-v2")
+
+    def test_a_parent_folder_with_chats_is_never_taken_for_the_workspace(self):
+        write_chat(self.projects, "Users-me", "chat-home", [attach(self.local_skill)])
+        self.assertEqual(list(audit_runs.workspace_transcripts(self.projects, Path("/Users/me/code/crate"))), [])
+
+    def test_default_is_the_git_top_level_of_the_current_folder_and_all_widens_it(self):
+        workspace = self.home / "work" / "crate"
+        (workspace / "app").mkdir(parents=True)
+        subprocess.run(["git", "init", "-q"], cwd=workspace, check=True)
+        write_chat(self.projects, audit_runs.project_folder(workspace.resolve()), "chat-here", [attach(self.local_skill)])
+        write_chat(self.projects, "elsewhere", "chat-there", [attach(self.local_skill)])
+        here = json.loads(self.audit_cli("--json", cwd=workspace / "app"))
+        self.assertEqual([chat["chat"] for chat in here["chats"]], ["chat-here"])
+        everywhere = json.loads(self.audit_cli("--json", "--all", cwd=workspace))
+        self.assertEqual(sorted(chat["chat"] for chat in everywhere["chats"]), ["chat-here", "chat-there"])
 
 
 if __name__ == "__main__":

@@ -3,14 +3,14 @@
   "hooks": {
     "postToolUse": [
       {
-        "command": "python3 hooks/cloud_roster_guard.py",
-        "matcher": "Task",
+        "command": "python3 -B scripts/launch_log.py",
+        "matcher": "Task|Subagent|CreateAgent|CallDynamicTool",
         "timeout": 5
       }
     ],
     "stop": [
       {
-        "command": "python3 hooks/cloud_roster_guard.py",
+        "command": "python3 -B scripts/ledger_followup.py",
         "loop_limit": 2,
         "timeout": 5
       }
