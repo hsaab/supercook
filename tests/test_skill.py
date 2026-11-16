@@ -48,6 +48,7 @@ HOME_ROSTER_PATH = "~/.supercook/models.md"
 PLUGIN_ROSTER_PATH = "<plugin-root>/.supercook/models.md"
 COMMITTED_ROSTER = REPO / ".supercook" / "models.md"
 LEDGER_VERSION_LINE = re.compile(r"^supercook: (\d+\.\d+\.\d+) from \S+ \| roster: (\S+)$", re.MULTILINE)
+LEDGER_MODELS_LINE = re.compile(r"^models: (.+)$", re.MULTILINE)
 
 
 def read(path: Path) -> str:
@@ -131,6 +132,22 @@ def ledger_roster_sentence() -> str:
         if "`roster`" in sentence and "choosing-a-roster" in sentence:
             return sentence
     raise AssertionError("ledger.md has no sentence that lists the `roster` values")
+
+
+def shipped_roster() -> dict[str, str]:
+    """The fenced block under `## The roster` in models.md, role to slug, comments dropped."""
+    block = re.search(r"^```\n(.*?)^```", section(SKILL_DIR / "models.md", "The roster"), flags=re.MULTILINE | re.DOTALL)
+    if block is None:
+        raise AssertionError("models.md ## The roster has no fenced block")
+    return dict(re.findall(r"^([a-z-]+):\s+(\S+)", block.group(1), flags=re.MULTILINE))
+
+
+def ledger_example_models() -> dict[str, str]:
+    """The ledger example's `models:` line, role to slug."""
+    line = LEDGER_MODELS_LINE.search(read(SKILL_DIR / "references" / "ledger.md"))
+    if line is None:
+        raise AssertionError("the ledger example has no `models:` line")
+    return dict(pair.split() for pair in line.group(1).split(" | "))
 
 
 def frontmatter_description(text: str) -> str:
@@ -254,6 +271,9 @@ class RosterChoice(unittest.TestCase):
         for value in values:
             self.assertIn(f"`{value}`", listed)
         self.assertNotIn("`local`", listed)
+
+    def test_the_ledger_example_lists_the_shipped_roster(self):
+        self.assertEqual(ledger_example_models(), shipped_roster())
 
     def test_every_doc_naming_a_roster_choice_links_its_one_statement(self):
         tokens = (*ROSTER_CHOICES, ROSTER_ALIAS)
