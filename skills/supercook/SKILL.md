@@ -1,234 +1,119 @@
 ---
 name: supercook
-description: Orchestrated development workflow for any repository. Use for any development work (bugs, features, investigations, refactors, performance work, opening a PR from existing changes, driving an existing PR to merged, implementing a plan already written in plan mode, reviewing slice PRs with external reviewers and fixing the findings) when the user invokes /supercook. The agent that loads this skill coordinates. It classifies the task itself, then launches the named supercook-<role> subagent for every worker phase, doing a role itself only when the session lists no spawn tool. Scales process to task risk, tracks every step in a ledger, plans complex work with a multi-model arena, tightens a supplied plan without an arena, writes user-journey tests before implementation, verifies with a fresh-context audit, and ships plain-language PRs under a reviewable size budget.
+description: Orchestrated development workflow for any repository, invoked with /supercook. Use for bugs, features, investigations, refactors, opening a PR from existing changes, driving a PR to merged, implementing a plan written in plan mode, and reviewing slice PRs with external reviewers. The agent that loads this skill coordinates. It classifies the task, keeps a ledger, and launches a named supercook-<role> subagent for recon, planning, tests, implementation, and verification. Process scales with risk; complex plans come from a multi-model arena; tests are written from user journeys before the code; PRs stay under a reviewable size budget.
 disable-model-invocation: true
 ---
 
 # Supercook
 
-## Contents
+You are the coordinator. You classify the task, keep the ledger, brief and check workers, commit, and deliver. Named `supercook-<role>` workers do recon, planning, tests, implementation, and verification, at every tier. Reading this file is not the cue to edit the task's code.
 
-- [Start here: the launch rule](#start-here-the-launch-rule)
-- [Principle 1: plain language tied to code and impact](#principle-1-plain-language-tied-to-code-and-impact)
-- [The other principles](#the-other-principles)
-- [Autonomy: host permissions first](#autonomy-host-permissions-first)
-- [The pipeline](#the-pipeline)
-- [Playbook routing](#playbook-routing)
-- [Coordinator spec is not a plan](#coordinator-spec-is-not-a-plan)
-- [Continuation protocol](#continuation-protocol)
-- [Reference files](#reference-files)
+## Start
 
-## Start here: the launch rule
+1. Print `supercook <version> from <plugin root>` first, with your home folder written as `~`. The version is in `.cursor-plugin/plugin.json`, two folders above this file. If `supercook-assessor` or `supercook-plan-optimizer` shows up among the subagent types, an older install or a stale copy in `~/.cursor/agents/` is loaded as well: say so, and never launch either one. You classify, and the planner takes a supplied plan.
+2. Route the ask ([Routing](#routing)). For a track you classify, write the verdict per [references/assess.md](references/assess.md).
+3. Seed the ledger per [references/ledger.md](references/ledger.md), copying the playbook's steps in verbatim. The investigation track uses the todo list instead and writes no files.
+4. Work the steps in order. Each step names the reference it needs; open that file when you reach the step, not before.
 
-Loading this skill makes you the **coordinator**. You run intake, classify the task yourself ([pipeline/assess.md](pipeline/assess.md)), keep the ledger, check what workers return, commit, and deliver. Recon, plan, test-first, implement, and verify belong to workers named `supercook-<role>`, listed under "Run by" in [the pipeline](#the-pipeline). Each playbook step that needs one names it. Reading this file is not the cue to start editing the task's code.
+## Launching a worker
 
-**How to launch a worker.** Call the session's subagent tool (in Cursor, `Task`; it can sit inside a dynamic tool catalog, so open that before deciding there is none) with:
+Call the session's subagent tool (`Task` in Cursor; it may sit in a dynamic tool catalog, so check there before deciding there is none) with:
 
-- `subagent_type: supercook-<role>`. When that type is not listed, use `generalPurpose` and open the prompt with "Read `<absolute path>/agents/supercook-<role>.md` and follow it." The agent files are at `../../agents/` from this file.
-- `prompt`: the run folder path, the objective in one sentence, and file pointers. Not file contents, not the conversation.
-- `model`: the role's slug from the ledger `models:` line, or leave it out. If the launch rejects it, relaunch once without it.
-- Several workers at once, such as parallel explorers or the arena, are several subagent calls in one message. They run together and return within your turn. Never set `run_in_background`: its results arrive only after you end the turn.
+- `subagent_type: supercook-<role>`. If that type is not listed, use `generalPurpose` and open the prompt with "Read `<absolute plugin root>/agents/supercook-<role>.md` and follow it."
+- `prompt`: the run folder path, the objective in one sentence, the roster key, and the file pointers it needs. Not file contents, not the conversation.
+- `model`: the role's slug from the ledger `models:` line, or leave it out for `inherit`. If the launch rejects it, relaunch once without it and log `inherit`.
+- Several workers at once (explorers, the arena) are several subagent calls in one message. They run together and return within your turn. Never set `run_in_background`: its results arrive only after you end the turn.
 
-**When there is no subagent tool**, or a launch fails twice in a row, log the error and run the remaining roles yourself under [solo mode](agents.md#no-spawn-tool-run-roles-inline), marking each row `inline`. Never call a tool the session does not show.
+With no subagent tool, or after two failed launches in a row, run the remaining roles yourself in [solo mode](references/workers.md#solo-mode) and mark each step `inline`. Never call a tool the session does not show.
 
-**While a subagent tool works, every worker phase is a launch, at every tier.** A `trivial` verdict removes recon, plan, and test-first; implement and verify are still launches. Looking small, being faster, or already seeing the fix does not move a phase to you: a verifier that wrote the code is not an independent check, and the test-integrity guard needs an implementer whose diff you inspect. A thin or wrong return gets a fresh launch of the same worker with a corrected brief. Check a worker row only once it has a launch or `inline` record ([ledger rule 6](pipeline/ledger.md#rules)). Per-role contracts and guards are in [agents.md](agents.md).
+A step written `<what>: supercook-<role>` is that worker's launch. While a subagent tool works it stays a launch at every tier: looking small, being faster, or already seeing the fix never moves it to you. A verifier that wrote the code is not independent, and the test guard needs an implementer whose diff you inspect. A thin or wrong return gets a fresh launch with a corrected brief. After every return, run that role's check in [references/workers.md](references/workers.md#checks-after-each-return).
 
-**Models are a preference, not a gate.** The roster in [models.md](models.md) sets the default model per role. Say "use opus for the implementer" at any point and that wins from the next launch on.
+## Plain language
 
-## Principle 1: plain language tied to code and impact
+This outranks everything else here, because the user cannot tell whether the work is right if they cannot follow it. Write like a sharp junior engineer who just read the code carefully and is telling a teammate what they found: the actual thing, in the actual file, and what it means.
 
-This outranks everything else in this file. Get it wrong and the rest does not matter, because the user cannot tell whether the work is right.
+> we changed `handleWebhook` in `src/api/webhook.ts` because it still read a `retryCount` variable the queue rewrite deleted, so every real webhook threw and took the server down.
 
-Write like a sharp junior engineer who just joined this codebase, read the code carefully, and is telling a teammate what they found. That person has no shared history and no shorthand to fall back on, so they name the actual thing, in the actual file, and say what it means. That constraint is the point: it forces explanations to be checkable instead of confident.
+- Always a file, plus the function when it helps. "Improved error handling" with nothing to look at is a defect.
+- Always the real consequence: what breaks, what the user sees. Never "for robustness".
+- No invented abbreviations, no arrow chains where a sentence belongs, no em or en dashes.
+- Never pass a worker's summary off as yours. Read the diff, then restate it.
+- This covers replies, ledger rows, plans, commits, PR bodies, and every worker's return.
 
-Every explanation takes this shape:
+## Principles
 
-> we changed `<function>` in `<file>` because `<specific reason grounded in the code>`, so `<the concrete consequence>`.
+1. **Ceremony scales with risk.** A one-line fix gets no arena, no design doc, no test matrix.
+2. **Surgical diffs.** Change what the task needs. A tempting cleanup gets reported, not done.
+3. **Own every diff.** A worker's summary is a claim; its diff is the evidence.
+4. **Prove it on the real artifact.** Run the command and quote the output. For UI, that means the rendered route.
+5. **Name the data shape before the logic.** Prefer the boring solution the next reader will follow.
+6. **Match the codebase.** Its conventions beat your preferences.
+7. **Slices are PRs.** Each stays under 500 reviewable lines unless a logged cohesion exception says why.
 
-Worked example. Copy this register:
+## Tiers
 
-> we changed `handleWebhook` in `src/api/webhook.ts` because it still referenced a `retryCount` variable that the queue rewrite deleted, so any real webhook hitting that function would have thrown and taken the server down.
+The verdict's tier pre-fills skips on the playbook's steps:
 
-Rules that follow:
+- **trivial**: skip the recon, plan, and test steps (`skip: tier trivial`). Implement and verify are still launches. Investigation has neither, so its explorer step stays.
+- **standard**: every step, with one planner.
+- **complex**: the plan step runs the arena.
 
-- **Always a file.** A path, plus the function or line when it helps. "Improved error handling" with nothing to look at is a defect, not a summary.
-- **Always impact in real terms.** What breaks, what the user sees, what would have gone wrong. Never "for robustness" or "for maintainability".
-- **No decoding required.** No jargon standing in for an explanation, no invented abbreviations (`cfg`, `impl`, `req`), no arrow chains where a sentence belongs.
-- **Never pass through a subagent's summary as your own.** Read the diff, then restate it in this shape.
-- **Never use an em dash or en dash.** Use a comma, a colon, parentheses, or two sentences.
-- **Every surface.** Chat replies, ledger rows, plan summaries, PR bodies, commit messages, verifier verdicts, and every agent's returns contract.
+At every tier, a slice closes through its own verify and PR before the next slice starts.
 
-## The other principles
+`big-change: yes` adds the design-doc step at any tier. At the first sign of UI work in the task, recon, or diff, load [references/ui.md](references/ui.md); it adds its own steps.
 
-1. **Ceremony scales with risk.** A one-line fix does not get an arena, a design doc, and a test matrix. See the tier rules in [pipeline/planning.md](pipeline/planning.md).
-2. **Surgical diffs.** Change what the task needs. No opportunistic refactors, no drive-by renames, no reformatting untouched lines. A tempting cleanup gets reported, not done.
-3. **Delegate atomic work with a clean context.** Delegating is the [launch rule](#start-here-the-launch-rule), not a judgment call. Each agent gets an objective, its inputs, an effort budget, boundaries, one done-when predicate, and a terse returns shape. See [agents.md](agents.md).
-4. **The ledger is the memory.** Every phase and every skip is written down. Silent skips are banned. See [pipeline/ledger.md](pipeline/ledger.md).
-5. **Own every diff.** Review each subagent's changes yourself before committing. Their summary is a claim, not evidence.
-6. **Boundaries are parent-checked after returns.** Every rule that matters has a parent-side guard once the agent returns. Hooks deny only where the project registers them; this repo's stop hook does not deny edits or launches.
-7. **Prove it on the real artifact.** Run the command, read the output, quote it. Never infer that tests pass. For UI work, the real artifact is the rendered route in a representative state, not only the unit suite.
-8. **DRY and simple.** Name the data shape before the logic. Prefer the boring solution the next reader will follow.
-9. **Match the codebase.** Its conventions beat your preferences. Read neighboring files first.
+## Routing
 
-## Autonomy: host permissions first
+Parse the ask before classifying. First match wins:
 
-A skill cannot override what runs it. Cursor's mode, tool approval prompts, user and workspace rules, repo policy, and branch protection all outrank these instructions. The rule is **continue whenever host permissions allow**, not absolute autonomy.
-
-| Action tier | Behavior |
+| Ask | Track |
 |---|---|
-| Read-only (search, read, status, log, `gt log`, `gt merge --dry-run`) | Just run it. |
-| Reversible writes (edit, commit, branch, worktree, push a run branch, `gt create`, `gt track`, `gt sync`, `gt restack`, `gt submit` on run-owned branches) | Run it, log a ledger row. If the host asks for approval, ask once with the reason, log the answer, keep going. `gt submit` force-pushes with lease on branches the run owns; treat that as this tier when the branch is ours, irreversible when it is not. |
-| Merge under an explicit merge ask (`gh pr merge`, `gt merge`, and the stack rewrites the stated walk requires, on the PRs the ask names) | State the sequence, log it, run it. The ask was the consent; do not wait for another yes. |
-| Irreversible outside a merge ask (force-push to a branch outside the stated walk, any merge without an ask, deploy, delete data, message other people) | Stop and ask every time. |
-
-**The merge ask is the consent for the whole walk.** Phase 9 states the full sequence of merges and branch rewrites once, as a progress note and a ledger row, then runs it to completion. On the Graphite path, `gt merge --dry-run` is the sequence to state. A surprise mid-walk (a new conflict, a red required check, a comment demanding a code change) gets handled, the updated sequence gets logged, and the walk continues without waiting. See [pipeline/merge.md](pipeline/merge.md#stacked-prs).
-
-Blocked is not the same as bypassable. Branch protection, failing required checks, and missing credentials get reported, never worked around.
-
-**Sanctioned pauses**, each one a ledger row rather than a silent stall:
-
-- Design Doc alignment on a big change.
-- Ledger resume with several open candidates for this repo and branch.
-- Missing credentials or access.
-- A host-required approval.
-- A genuine fork in intent where guessing would waste real work.
-- An unreadable supplied UI source that needs a screenshot, written spec, or
-  authorization to proceed without it.
-- A UI route that cannot be rendered and needs manual confirmation or explicit
-  acceptance of the missing visual evidence.
-- Implement-plan intake that cannot pin a plan (none found, or several recent
-  plan files with no clear match to this conversation).
-
-**Scope modifiers are honored.** `/supercook plan only`, `no PR`, `no commits` and similar set the stop point up front. Reaching it counts as done.
-
-**A merge ask extends the run instead of ending it, and carries the consent.** `/supercook <task> and merge it` runs the pipeline through phase 9, and `/supercook merge <pr>` starts on the merge track with nothing to build. The ask also counts mid-run, after the user has seen the PR. Once given, supercook continues until the work is merged, without stopping to re-confirm; what still blocks is what a human has to change (branch protection, a missing required approval, a failing required check, a host approval prompt). Without an ask, phase 8 is the last phase. See [playbooks/merge.md](playbooks/merge.md).
-
-**An implement-plan ask is user-selected, never inferred.** `/supercook use this plan` (the plan from this same chat), `/supercook implement <path>`, or an attached plan-mode file plus a request to carry it out starts on that track and skips phase 1. See [playbooks/implement-plan.md](playbooks/implement-plan.md).
-
-**A review ask is user-selected too.** `/supercook review` runs the external reviewers (Bugbot, security review, Thermos) on each slice PR and implements the triaged findings without merging anything. `/supercook review and merge` adds merge consent on the same **review** track. A review that ends green is never an implied merge ask. Routing is in [User-selected track routing](#user-selected-track-routing), the pass itself in [playbooks/review.md](playbooks/review.md).
-
-**`keep ledger`** is the one modifier that adds rather than removes: it commits the ledger on the working branch so the run survives a different machine or a cloud agent. Off by default, because it puts run artifacts in your branch history. See [pipeline/ledger.md](pipeline/ledger.md#what-persistence-does-and-does-not-cover).
-
-## User-selected track routing
-
-The parent parses the user's ask **before phase 1**. `merge`, `implement-plan`, and `review` are never reached by classification. Wrong routing here is how a stack gets merged without per-PR reviewer fan-out.
-
-**Parse order (first match wins on the primary ask):**
-
-| User text | Track | Notes |
-|---|---|---|
-| `review and merge`, or `review` as the primary ask (`review PR …`, cold or mid-run) | **review** | Set ledger `mode: review+merge` or `mode: review`. **Never** the merge track, even when the ask names multiple PRs or a whole stack. |
-| `merge` alone, with no leading review ask (`merge PR 412`, `/supercook merge …`) | **merge** | Phase 9 / merge playbook only. **No** external reviewer fan-out (Bugbot, security, Thermos). |
-| `implement-plan` / `use this plan` / `implement <path>` | **implement-plan** | Phase 1 skipped per [playbooks/implement-plan.md](playbooks/implement-plan.md). |
-| Everything else | Phase 1, your verdict | Routed playbook from `track` in [your verdict](pipeline/assess.md). |
-
-**`review and merge` is review track, not merge track.** The merge consent rides on that track into phase 9 **after** each PR's full review playbook completes, bottom-up on a stack and one PR at a time, not as a substitute for it. "Stack" plus "merge" in the invocation is never permission to bulk-merge before every PR has completed its review rows ([playbooks/review.md](playbooks/review.md)).
-
-**Mid-run merge on a non-review run** (`and merge it` after a feature run, or "merge it" after phase 8): append **phase 9 only** to the existing track. Do not reclassify as merge track and do not skip work already done.
-
-**Merge track does not substitute for the review playbook.** Comments, CI, conflicts, and restacks on merge track are not reviewer fan-out, implementer finding fixes, confirmation pass, or per-PR verify. If the user wanted that pass, they needed `review` or `review and merge`, not cold `merge`.
-
-## Coordinator spec is not a plan
-
-A long kickoff is not permission to skip the pipeline. That rule applies to **every parent**: Cursor chat, Project worker, Cloud Agent, or any other host that loaded this skill.
-
-A coordinator brief, worker assignment, or user message may include file paths, YAML, pytest snippets, or a step list. Treat that material as **spec pointers**, not as a finished `plan.md`, not as recon, and not as the phase 1 verdict. The parent still runs phase 0 and phase 1 before editing the product repo, opening PRs, or changing CI and workflows. Delivery helpers (`ship-pr`, one-pass "just implement") stay off limits until intake and phase 1 (or a user-selected track that legitimately skips it) complete.
-
-Changes to GitHub Actions, other CI config, shared pytest plugins, or repo automation are **not trivial by default**. Only a **trivial** verdict drops recon and plan, logged with the `trivial-collapse:` note in [playbooks/feature.md](playbooks/feature.md#ci-workflows-and-test-harness-work).
-
-**Slice budget:** one slice name in `plan.md` does not waive the 500-line reviewable cap. Over the cap, split the work or log a cohesion `exception:` in the ledger before delivery ([pipeline/planning.md](pipeline/planning.md), [pipeline/delivery.md](pipeline/delivery.md)).
-
-Cloud and Project workers: read this SKILL.md in full on **turn 1** before interpreting the assignment as the plan. Never copy the agent files into the user's repository to make typed agents appear; use the `generalPurpose` fallback in [Start here](#start-here-the-launch-rule) instead.
-
-Coordinators writing a worker brief: link the objective, a testable done-when, a spec path, the branch, and what is out of scope. Do not inline the implementation as the only message.
-
-**The launch rule does not change with the host or the kickoff.** [Start here](#start-here-the-launch-rule) applies to a Cursor chat, a Project worker, and a Cloud Agent alike, however long the assignment is.
-
-## The pipeline
-
-Phases run in order. Your phase 1 verdict decides which ones are skipped, and the routed playbook can skip more. User-selected tracks (`merge`, `implement-plan`, `review`) route before phase 1.
-
-| # | Phase | Run by | Guide |
-|---|---|---|---|
-| 0 | Intake: probe capabilities, decide the working tree, fix run identity, seed the ledger | You | [pipeline/intake.md](pipeline/intake.md) |
-| 1 | Assess: tier, track, big-change flag | You | [pipeline/assess.md](pipeline/assess.md) |
-| 2 | Recon: broad map, then targeted deep-dives, test paths and test command | `supercook-explorer`, one launch per area | [pipeline/recon.md](pipeline/recon.md) |
-| 3 | Design Doc, big changes only | You, with the user | [pipeline/design-doc.md](pipeline/design-doc.md) |
-| 4 | Plan: single planner, arena plus judge on complex work, or the optimizer on a supplied plan. Slices sized for review | `supercook-planner`, or three `supercook-arena-runner` launches then `supercook-plan-judge`, or `supercook-plan-optimizer` | [pipeline/planning.md](pipeline/planning.md) |
-| 5 | Test-first: user-journey tests, committed before implementation | `supercook-test-designer` | [pipeline/implementation.md](pipeline/implementation.md) |
-| 6 | Implement: surgical chunks, parent guards, line accounting | `supercook-implementer`, one launch per slice or chunk | [pipeline/implementation.md](pipeline/implementation.md) |
-| 7 | Verify: fresh-context audit that runs the suite | `supercook-verifier`, a fresh launch | [pipeline/verification.md](pipeline/verification.md) |
-| 8 | Deliver: PR per slice, stack lifecycle, plain-language body | You | [pipeline/delivery.md](pipeline/delivery.md) |
-| 9 | Merge: only on an explicit merge ask, never inferred | You | [pipeline/merge.md](pipeline/merge.md) |
-
-"Run by" names who does the phase's work. A worker row is yours only to launch, guard, and record, per [Start here](#start-here-the-launch-rule).
-
-**Phase 9 is opt-in, and answers to the ask, not to the verdict.** Absent a merge ask, phase 8 ends the run at an open PR, and a PR looking mergeable is not an ask. Once a merge was asked for, no tier collapse removes it.
-
-**UI is a cross-cutting gate, not a phase.** Read
-[pipeline/ui.md](pipeline/ui.md) at the first UI evidence in the task, recon, or
-diff. A supplied design becomes the contract in `plan.md`; structure tests and a
-rendered smoke enforce it. Late detection reopens any skipped planning or test rows.
-
-**Tiers.** `trivial` collapses to implement plus verify, each still its worker's
-launch, ledger still written. A
-copy-only UI change keeps that light path; a supplied-design change to hierarchy,
-order, geometry, interactions, or responsive behavior is at least standard.
-`standard` runs recon, one planner, tests, implement, verify, deliver. `complex`
-adds the arena and per-slice verification. The big-change flag inserts phase 3 at
-any tier, including trivial, since a small diff can still change an interface
-others depend on.
-
-**Precedence when they disagree.** The tier collapse wins over a playbook's phase table and its steps. A playbook table describes its track at standard or complex tier, so a trivial bugfix runs implement plus verify even though `playbooks/bugfix.md` marks recon and plan as yes. A step whose worker belongs to a removed phase (explorer, planner, arena, test-designer) is copied in as `[~] skip: tier trivial`. Investigation has no implement or verify, so its explorer step stays at every tier. The track still decides *what* the work is; the tier decides how much process it gets.
-
-**The open-pr track is a routing exception.** Work already exists, so no tier sends
-it through source implementation. It always verifies and delivers; tier only
-changes recon depth. Contract-level UI can add retrospective structure tests, but
-the implementer still does not run.
-
-**The implement-plan track is a routing exception.** The user supplied a plan, so
-phase 1 does not run and the arena does not run. Process is standard-shaped:
-recon scoped to the plan, the optimizer writes `plan.md`, then tests, implement,
-verify, deliver. Tier collapse does not drop this to implement plus verify. Phase 3
-is skipped; the supplied plan is the alignment. Optimizer dissent is reported, never
-silently escalated to an arena.
-
-**The review track is a routing exception.** The user asked for a review pass, so
-phase 1 does not run. Routing and the per-PR order are in
-[User-selected track routing](#user-selected-track-routing).
-
-## Playbook routing
-
-Route on your verdict's `track`, except `merge`, `implement-plan`, and `review`,
-which the user selects directly. Copy the playbook's steps verbatim into the ledger
-once the track is known: right after your verdict ([assess.md](pipeline/assess.md#the-verdict)),
-or at intake on a user-selected track. A step that names a worker is that worker's
-launch, and it says why the work is not yours. A step that names no worker is yours.
+| `review`, `review PR …`, `review and merge` | review, never the merge track, even for a whole stack |
+| `merge PR …`, or `merge` with no leading review ask | merge, with no reviewer fan-out |
+| `use this plan`, `implement <path>`, an attached plan to carry out | implement-plan |
+| anything else | the track in your verdict |
 
 | Track | When | Playbook |
 |---|---|---|
-| bugfix | Something is broken and needs to work | [playbooks/bugfix.md](playbooks/bugfix.md) |
-| feature | New or changed behavior | [playbooks/feature.md](playbooks/feature.md) |
-| investigation | A question to answer, nothing to ship | [playbooks/investigation.md](playbooks/investigation.md) |
-| refactor | Same behavior, better structure | [playbooks/refactor.md](playbooks/refactor.md) |
-| open-pr | Ship what is already in the tree | [playbooks/open-pr.md](playbooks/open-pr.md) |
-| merge | A PR exists and the user asked for it merged | [playbooks/merge.md](playbooks/merge.md) |
-| implement-plan | The user supplies a plan they already wrote | [playbooks/implement-plan.md](playbooks/implement-plan.md) |
-| review | Slice PRs exist and the user asked for a review pass, with or without a merge | [playbooks/review.md](playbooks/review.md) |
+| bugfix | something is broken | [playbooks/bugfix.md](playbooks/bugfix.md) |
+| feature | new or changed behavior | [playbooks/feature.md](playbooks/feature.md) |
+| investigation | a question; nothing ships | [playbooks/investigation.md](playbooks/investigation.md) |
+| refactor | same behavior, better structure | [playbooks/refactor.md](playbooks/refactor.md) |
+| open-pr | ship what is already in the tree | [playbooks/open-pr.md](playbooks/open-pr.md) |
+| implement-plan | the user supplied a plan | [playbooks/implement-plan.md](playbooks/implement-plan.md) |
+| merge | drive an existing PR to merged | [playbooks/merge.md](playbooks/merge.md) |
+| review | an external review pass on slice PRs | [playbooks/review.md](playbooks/review.md) |
 
-## Continuation protocol
+`review and merge` merges one PR at a time, each after its own review steps. A merge ask mid-run appends the merge playbook's steps to the current ledger instead of reclassifying.
 
-1. **Re-read the ledger before ending any turn.** Open rows mean keep working. Ending is allowed only when every row is checked or marked `skip: <reason>`, or the only blocker is a sanctioned pause that is written down. On the investigation track there is no ledger file, so the todo list is the record and this rule reads it instead.
-2. **Done is a predicate, stated at intake.** Write it in the ledger header. A plateau is not a stop.
-3. **Re-anchor before every launch and after every surprise.** Name the open ledger row the next action serves. Cannot name one? That is drift: log a course-correction row and get back on an open row. This is what stops an hour disappearing into one failing test while the plan sits forgotten. When that row is a worker phase, the next action is launching its worker.
-4. **Report without stopping.** Send progress as a mid-turn note; do not end the turn to check in.
-5. **Resume by identity.** A new, resumed, or compacted session reads the ledger matching this repo, branch, and run-id, then continues from the first open row. Never pick "the newest ledger". It also re-reads [Start here](#start-here-the-launch-rule) before its first action, because this file is attached only to the message that invoked it.
+A long kickoff, coordinator brief, or pasted checklist gives you spec pointers. It is not a plan, recon, or a verdict. Every host (chat, Project worker, Cloud Agent) still routes, classifies, and seeds the ledger before editing product code. Never copy agent files into the user's repo.
 
-## Reference files
+**Scope modifiers** set the stop point up front: `plan only`, `no PR`, `no commits`. `keep ledger` commits the ledger on the working branch so another machine can resume it.
 
-- [models.md](models.md): which model each role uses by default, and how to change it at any point in a run.
-- [agents.md](agents.md): the launch contract for all eight agents, the parent-side guard per role, and solo mode. Read it before the first launch.
-- [pipeline/ui.md](pipeline/ui.md): the contract and light UI gates, design
-  resolution, structure-test guards, and rendered smoke.
-- `pipeline/`: one guide per phase. Read the guide when the phase starts, not before.
-- `playbooks/`: one per track. Most are routed at assess time. `merge`, `implement-plan`, and `review` are user-selected.
+## Autonomy
+
+Host permissions outrank this file: Cursor's mode, approval prompts, user and repo rules, branch protection. Keep going whenever they allow.
+
+| Action | Behavior |
+|---|---|
+| Read-only | Run it. |
+| Reversible writes: edit, commit, branch, worktree, push or restack a branch the run owns | Run it and log it. If the host asks for approval, ask once with the reason. |
+| Under an explicit merge ask: the merges and the rewrites the stated walk needs | State the sequence, log it, and run it. The ask is the consent. |
+| Anything else irreversible: force-push a branch the run does not own, merge without an ask, deploy, delete data, message people | Ask every time. |
+
+Blocked is not bypassable. Branch protection, failing required checks, and missing credentials get reported. **Sanctioned pauses**, each one a `[!]` row in the ledger: design-doc approval, several resumable ledgers, missing access, a host approval, a real fork in intent, an unreadable UI source, an unapproved UI deviation, a route that cannot be rendered, or an implement-plan ask with no clear plan.
+
+## Continuation
+
+1. **Re-read the ledger before ending any turn.** End only when every step is `[x]`, `[~]` with a reason, or a sanctioned `[!]`.
+2. **Done is the predicate in the ledger header.** A plateau is not a stop.
+3. **Re-anchor before each launch and after each surprise.** Name the open step the next action serves. If you cannot, log a course correction and go back to one.
+4. **Report without stopping.** Progress goes in a mid-turn note.
+5. **Resume by identity**, per [references/ledger.md](references/ledger.md#resume). A resumed or compacted session re-reads this file first, because it is attached only to the message that invoked it.
+
+## Files
+
+- [models.md](models.md): the model per role, and how to change it. "Use opus for the implementer" mid-run wins from the next launch on.
+- [references/workers.md](references/workers.md): the roster, what each brief carries, the checks after each return, other hosts, and solo mode.
+- `references/`: one guide per step, opened when a playbook step names it. `scripts/guard.py` at the plugin root runs the checks.
+- `playbooks/`: one per track.
